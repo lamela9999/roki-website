@@ -45,6 +45,14 @@ body {
   width: 18px !important;
   height: 18px !important;
 }
+/* Mobile preview: swap Join Crew for Docs button */
+.nav-cta-desktop { display: none !important; }
+.nav-cta-mobile {
+  display: inline-flex !important;
+  color: #ffffff !important;
+  text-decoration: none !important;
+}
+.nav-cta-mobile span { color: #ffffff !important; }
 
 /* Hero: stack vertically with comfortable padding */
 .hero {

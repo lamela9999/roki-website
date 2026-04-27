@@ -54,9 +54,12 @@ const Nav = () => (
       <li><a href="#roadmap">Roadmap</a></li>
     </ul>
     <div className="nav-cta">
-      <a href="https://x.com/rokitherabbit" target="_blank" rel="noopener noreferrer" className="btn btn-primary">
+      <a href="https://x.com/rokitherabbit" target="_blank" rel="noopener noreferrer" className="btn btn-primary nav-cta-desktop">
         <span className="btn-icon-bare"><img src="assets/logo-head.png" alt=""/></span>
         <span>Join Crew</span>
+      </a>
+      <a href="docs/index.html" className="btn btn-primary nav-cta-mobile">
+        <span>Docs</span>
       </a>
     </div>
   </nav>
