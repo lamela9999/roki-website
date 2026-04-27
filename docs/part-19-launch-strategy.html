@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Part 19: Launch Strategy — ROKI Docs</title>
+<meta name="description" content="ROKI — The Complete Project Bible. Game mechanics, ecosystem design, tokenomics, lore, and launch strategy.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23E94560'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='18' font-weight='bold' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="gate.css?v=2">
+<script>(function(){try{if(location.hash==='#lock')sessionStorage.removeItem('roki_docs_unlocked');}catch(e){}if(!sessionStorage.getItem('roki_docs_unlocked'))document.documentElement.classList.add('docs-locked');})();</script>
+<script src="gate.js?v=2" defer></script>
+</head>
+<body>
+<header class="site-header">
+  <button class="menu-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <a class="brand" href="index.html">
+    <span class="brand-mark">R</span>
+    <span>ROKI Docs</span>
+    <span class="brand-tag">v3.0</span>
+  </a>
+  <div class="header-spacer"></div>
+  <a class="header-link desktop-only" href="../Roki.html">Home</a>
+  <a class="header-link desktop-only" href="part-1-project-overview-brand-identity.html">Get Started</a>
+</header>
+<div class="sidebar-overlay"></div>
+<div class="layout">
+  <aside class="sidebar"><div class="sidebar-section">Documentation</div>
+<a href="index.html"><span class="sidebar-num">—</span>Introduction</a>
+<div class="sidebar-section">Project Bible</div>
+<a href="part-1-project-overview-brand-identity.html"><span class="sidebar-num">P1</span>Project Overview &amp; Brand Identity</a>
+<a href="part-2-clan-system.html"><span class="sidebar-num">P2</span>Clan System</a>
+<a href="part-3-core-combat-mechanics-roki-clash.html"><span class="sidebar-num">P3</span>Core Combat Mechanics — ROKI Clash</a>
+<a href="part-4-fighting-styles.html"><span class="sidebar-num">P4</span>Fighting Styles</a>
+<a href="part-5-techniques-system.html"><span class="sidebar-num">P5</span>Techniques System</a>
+<a href="part-6-elite-tiers-copy-ninjas-mirror-fighters.html"><span class="sidebar-num">P6</span>Elite Tiers — Copy Ninjas &amp; Mirror Fighters</a>
+<a href="part-7-player-tier-structure.html"><span class="sidebar-num">P7</span>Player Tier Structure</a>
+<a href="part-8-roki-zen-reflex-training-game.html"><span class="sidebar-num">P8</span>ROKI Zen (Reflex Training Game)</a>
+<a href="part-9-roki-dojo-conditioning-training-sandbox.html"><span class="sidebar-num">P9</span>ROKI Dojo (Conditioning &amp; Training Sandbox)</a>
+<a href="part-9-5-roki-stare-willpower-no-blink-contest.html"><span class="sidebar-num">P9.5</span>ROKI Stare (Willpower / No-Blink Contest)</a>
+<a href="part-9-6-roki-dodge-defensive-reflex-game.html"><span class="sidebar-num">P9.6</span>ROKI Dodge (Defensive Reflex Game)</a>
+<a href="part-9-7-roki-breath-meditative-rhythm-game.html"><span class="sidebar-num">P9.7</span>ROKI Breath (Meditative Rhythm Game)</a>
+<a href="part-9-8-roki-train-irl-exercise-habit-tracker.html"><span class="sidebar-num">P9.8</span>ROKI Train (IRL Exercise Habit Tracker)</a>
+<a href="part-9-9-roki-ar-lite-photo-maker.html"><span class="sidebar-num">P9.9</span>ROKI AR-Lite Photo Maker</a>
+<a href="part-10-cross-game-reward-system.html"><span class="sidebar-num">P10</span>Cross-Game Reward System</a>
+<a href="part-11-fighter-legacy-metadata-architecture.html"><span class="sidebar-num">P11</span>Fighter Legacy &amp; Metadata Architecture</a>
+<a href="part-12-the-roki-verse-ai-generated-living-lore.html"><span class="sidebar-num">P12</span>The ROKI Verse — AI-Generated Living Lore</a>
+<a href="part-13-leaderboards-competitive-structure.html"><span class="sidebar-num">P13</span>Leaderboards &amp; Competitive Structure</a>
+<a href="part-14-tournament-system.html"><span class="sidebar-num">P14</span>Tournament System</a>
+<a href="part-15-tokenomics-roki-utility.html"><span class="sidebar-num">P15</span>Tokenomics &amp; $ROKI Utility</a>
+<a href="part-16-nft-value-proposition-ip-rights.html"><span class="sidebar-num">P16</span>NFT Value Proposition &amp; IP Rights</a>
+<a href="part-17-nft-launchpad.html"><span class="sidebar-num">P17</span>NFT Launchpad</a>
+<a href="part-18-ai-image-generator.html"><span class="sidebar-num">P18</span>AI Image Generator</a>
+<a href="part-18-5-roki-nft-generator-internal-tool.html"><span class="sidebar-num">P18.5</span>ROKI NFT Generator (Internal Tool)</a>
+<a href="part-19-launch-strategy.html" class="active"><span class="sidebar-num">P19</span>Launch Strategy</a>
+<a href="part-20-future-roadmap.html"><span class="sidebar-num">P20</span>Future Roadmap</a>
+<a href="part-21-technical-architecture-decisions.html"><span class="sidebar-num">P21</span>Technical Architecture Decisions</a>
+<a href="part-22-design-philosophy-core-principles.html"><span class="sidebar-num">P22</span>Design Philosophy &amp; Core Principles</a>
+<a href="part-23-changelog.html"><span class="sidebar-num">P23</span>Changelog</a></aside>
+  <main class="content"><div class="crumbs"><a href="index.html">Docs</a> / Part 19</div>
+<div class="eyebrow">PART 19</div>
+<h1 class="page-title">Launch Strategy</h1>
+<h2 id="19-1-strategic-overview"><a class="anchor" href="#19-1-strategic-overview">#</a>19.1 Strategic Overview</h2>
+<p>Token launches first. Game follows. NFT mint happens later, to an already-engaged player base, once market conditions and community are right.</p>
+<h2 id="19-2-phase-1-quiet-build-current"><a class="anchor" href="#19-2-phase-1-quiet-build-current">#</a>19.2 Phase 1: Quiet Build (Current)</h2>
+<ul><li>Finish ROKI Clash to playable beta</li><li>Build the AI art generator as standalone utility</li><li>Build the NFT Launchpad infrastructure (includes the NFT Generator — see 19.11)</li><li>Prepare update pipeline: 2-3 months of announceable content banked in advance</li><li>Internal community of ~70 trusted early supporters</li></ul>
+<h2 id="19-3-phase-2-token-launch"><a class="anchor" href="#19-3-phase-2-token-launch">#</a>19.3 Phase 2: Token Launch</h2>
+<p>Pre-announce treasury accumulation. Disclose policy framework. Token launches on pump.fun. Initial hype cycle with the ~70-person early community. Treasury trims on highs at key price points, funds development.</p>
+<h2 id="19-4-phase-3-quiet-period"><a class="anchor" href="#19-4-phase-3-quiet-period">#</a>19.4 Phase 3: Quiet Period</h2>
+<p>Let initial hype cycle settle. Mercenary flippers exit. Real believers accumulate at lower prices. Project signals continued development without burning banked announcement content.</p>
+<h2 id="19-5-phase-4-announcement-ramp"><a class="anchor" href="#19-5-phase-4-announcement-ramp">#</a>19.5 Phase 4: Announcement Ramp</h2>
+<p>Start releasing banked updates. Early teasers: sneak peeks of the game, character designs, gameplay clips. Momentum-building through consistent delivery. Treasury buybacks during drawdowns.</p>
+<h2 id="19-6-phase-5-game-beta-free-to-play-pre-nft"><a class="anchor" href="#19-6-phase-5-game-beta-free-to-play-pre-nft">#</a>19.6 Phase 5: Game Beta (Free-to-Play, Pre-NFT)</h2>
+<p>ROKI Clash opens as free-to-play with placeholder characters. Community builds around the game, not speculation. Discord/Telegram forms organically. Top 500-1000 players become the pre-qualified NFT mint whitelist.</p>
+<h2 id="19-7-phase-6-nft-mint"><a class="anchor" href="#19-7-phase-6-nft-mint">#</a>19.7 Phase 6: NFT Mint</h2>
+<p>Launch NFT mint once token market cap and player community justify it. Priority whitelist: active Phase 5 players. Mint uses the ROKI Launchpad infrastructure (proof-of-concept for Phase 7).</p>
+<h2 id="19-8-phase-7-ecosystem-expansion"><a class="anchor" href="#19-8-phase-7-ecosystem-expansion">#</a>19.8 Phase 7: Ecosystem Expansion</h2>
+<p>ROKI Zen launches. ROKI Dojo launches. ROKI Verse lore system activates. NFT Launchpad opens to external creators (Phase 2 of the Launchpad product). AI Image Generator launches. First tournaments run.</p>
+<h2 id="19-9-phase-8-mainstream-expansion"><a class="anchor" href="#19-9-phase-8-mainstream-expansion">#</a>19.9 Phase 8: Mainstream Expansion</h2>
+<p>Free tier fully opens. Paid tier launches with $20-50 character purchase. Rookie League onboarding. Token-staking Challenger Cup qualification activates.</p>
+<h2 id="19-10-phase-9-and-beyond"><a class="anchor" href="#19-10-phase-9-and-beyond">#</a>19.10 Phase 9 and Beyond</h2>
+<p>ROKI Lands (18+ months out). Collaborations and partnerships. Seasonal Chronicles published quarterly. Potential second NFT drop (Beasts/Familiars) under consideration.</p>
+<h2 id="19-11-slotting-the-v3-tonight-built-products"><a class="anchor" href="#19-11-slotting-the-v3-tonight-built-products">#</a>19.11 Slotting the v3 Tonight-Built Products</h2>
+<p><strong>NFT Generator (internal tool):</strong></p>
+<ul><li>Phase 1 — must be complete before NFT mint (Phase 6). The Generator IS the mint production pipeline.</li><li>Phase 7 — repackaged as external launchpad SaaS alongside the platform opening to other creators.</li></ul>
+<p><strong>ROKI Zen, Dojo, Stare, Dodge, Breath, Train:</strong></p>
+<ul><li>Ship in waves leading up to or just after the NFT mint as engagement surfaces.</li><li>Zen and Dojo are Phase 7 anchors (already planned).</li><li>Stare and Dodge are high-virality, low-complexity builds — ship between Phase 5 (Game Beta) and Phase 6 (Mint) to attract eyeballs.</li><li>Breath and Train are retention surfaces — ship around or after Phase 6 and 7 to extend daily engagement for the early holder base.</li></ul>
+<p><strong>AR-Lite Photo Maker:</strong></p>
+<ul><li>Ship at Phase 6 (Mint) as day-one organic marketing tool. The primary use case is holders taking AR-lite photos with their fresh NFT on mint day. Without this in place at mint, the project loses a one-time free-virality moment.</li></ul>
+<h2 id="19-12-critical-execution-principles"><a class="anchor" href="#19-12-critical-execution-principles">#</a>19.12 Critical Execution Principles</h2>
+<ul><li>NEVER announce features that aren&#x27;t built</li><li>Maintain 2-3 months of banked updates ahead of announcements</li><li>Transparent treasury operations with published policy</li><li>Ship over polish: rough Clash with 50 real players beats polished Clash with zero players</li><li>Build for long-term franchise, not short-term pump</li></ul>
+<nav class="pager"><a class="pager-prev" href="part-18-5-roki-nft-generator-internal-tool.html"><div class="pager-label">← Previous · Part 18.5</div><div class="pager-title">ROKI NFT Generator (Internal Tool)</div></a><a class="pager-next" href="part-20-future-roadmap.html"><div class="pager-label">Next · Part 20 →</div><div class="pager-title">Future Roadmap</div></a></nav></main>
+  <aside class="toc"><div class="toc-title">On this page</div>
+<a class="toc-link" href="#19-1-strategic-overview">19.1 Strategic Overview</a>
+<a class="toc-link" href="#19-2-phase-1-quiet-build-current">19.2 Phase 1: Quiet Build (Current)</a>
+<a class="toc-link" href="#19-3-phase-2-token-launch">19.3 Phase 2: Token Launch</a>
+<a class="toc-link" href="#19-4-phase-3-quiet-period">19.4 Phase 3: Quiet Period</a>
+<a class="toc-link" href="#19-5-phase-4-announcement-ramp">19.5 Phase 4: Announcement Ramp</a>
+<a class="toc-link" href="#19-6-phase-5-game-beta-free-to-play-pre-nft">19.6 Phase 5: Game Beta (Free-to-Play, Pre-NFT)</a>
+<a class="toc-link" href="#19-7-phase-6-nft-mint">19.7 Phase 6: NFT Mint</a>
+<a class="toc-link" href="#19-8-phase-7-ecosystem-expansion">19.8 Phase 7: Ecosystem Expansion</a>
+<a class="toc-link" href="#19-9-phase-8-mainstream-expansion">19.9 Phase 8: Mainstream Expansion</a>
+<a class="toc-link" href="#19-10-phase-9-and-beyond">19.10 Phase 9 and Beyond</a>
+<a class="toc-link" href="#19-11-slotting-the-v3-tonight-built-products">19.11 Slotting the v3 Tonight-Built Products</a>
+<a class="toc-link" href="#19-12-critical-execution-principles">19.12 Critical Execution Principles</a></aside>
+</div>
+<script src="assets/main.js"></script>
+</body>
+</html>

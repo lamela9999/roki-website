@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Part 13: Leaderboards &amp; Competitive Structure — ROKI Docs</title>
+<meta name="description" content="ROKI — The Complete Project Bible. Game mechanics, ecosystem design, tokenomics, lore, and launch strategy.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23E94560'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='18' font-weight='bold' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="gate.css?v=2">
+<script>(function(){try{if(location.hash==='#lock')sessionStorage.removeItem('roki_docs_unlocked');}catch(e){}if(!sessionStorage.getItem('roki_docs_unlocked'))document.documentElement.classList.add('docs-locked');})();</script>
+<script src="gate.js?v=2" defer></script>
+</head>
+<body>
+<header class="site-header">
+  <button class="menu-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <a class="brand" href="index.html">
+    <span class="brand-mark">R</span>
+    <span>ROKI Docs</span>
+    <span class="brand-tag">v3.0</span>
+  </a>
+  <div class="header-spacer"></div>
+  <a class="header-link desktop-only" href="../Roki.html">Home</a>
+  <a class="header-link desktop-only" href="part-1-project-overview-brand-identity.html">Get Started</a>
+</header>
+<div class="sidebar-overlay"></div>
+<div class="layout">
+  <aside class="sidebar"><div class="sidebar-section">Documentation</div>
+<a href="index.html"><span class="sidebar-num">—</span>Introduction</a>
+<div class="sidebar-section">Project Bible</div>
+<a href="part-1-project-overview-brand-identity.html"><span class="sidebar-num">P1</span>Project Overview &amp; Brand Identity</a>
+<a href="part-2-clan-system.html"><span class="sidebar-num">P2</span>Clan System</a>
+<a href="part-3-core-combat-mechanics-roki-clash.html"><span class="sidebar-num">P3</span>Core Combat Mechanics — ROKI Clash</a>
+<a href="part-4-fighting-styles.html"><span class="sidebar-num">P4</span>Fighting Styles</a>
+<a href="part-5-techniques-system.html"><span class="sidebar-num">P5</span>Techniques System</a>
+<a href="part-6-elite-tiers-copy-ninjas-mirror-fighters.html"><span class="sidebar-num">P6</span>Elite Tiers — Copy Ninjas &amp; Mirror Fighters</a>
+<a href="part-7-player-tier-structure.html"><span class="sidebar-num">P7</span>Player Tier Structure</a>
+<a href="part-8-roki-zen-reflex-training-game.html"><span class="sidebar-num">P8</span>ROKI Zen (Reflex Training Game)</a>
+<a href="part-9-roki-dojo-conditioning-training-sandbox.html"><span class="sidebar-num">P9</span>ROKI Dojo (Conditioning &amp; Training Sandbox)</a>
+<a href="part-9-5-roki-stare-willpower-no-blink-contest.html"><span class="sidebar-num">P9.5</span>ROKI Stare (Willpower / No-Blink Contest)</a>
+<a href="part-9-6-roki-dodge-defensive-reflex-game.html"><span class="sidebar-num">P9.6</span>ROKI Dodge (Defensive Reflex Game)</a>
+<a href="part-9-7-roki-breath-meditative-rhythm-game.html"><span class="sidebar-num">P9.7</span>ROKI Breath (Meditative Rhythm Game)</a>
+<a href="part-9-8-roki-train-irl-exercise-habit-tracker.html"><span class="sidebar-num">P9.8</span>ROKI Train (IRL Exercise Habit Tracker)</a>
+<a href="part-9-9-roki-ar-lite-photo-maker.html"><span class="sidebar-num">P9.9</span>ROKI AR-Lite Photo Maker</a>
+<a href="part-10-cross-game-reward-system.html"><span class="sidebar-num">P10</span>Cross-Game Reward System</a>
+<a href="part-11-fighter-legacy-metadata-architecture.html"><span class="sidebar-num">P11</span>Fighter Legacy &amp; Metadata Architecture</a>
+<a href="part-12-the-roki-verse-ai-generated-living-lore.html"><span class="sidebar-num">P12</span>The ROKI Verse — AI-Generated Living Lore</a>
+<a href="part-13-leaderboards-competitive-structure.html" class="active"><span class="sidebar-num">P13</span>Leaderboards &amp; Competitive Structure</a>
+<a href="part-14-tournament-system.html"><span class="sidebar-num">P14</span>Tournament System</a>
+<a href="part-15-tokenomics-roki-utility.html"><span class="sidebar-num">P15</span>Tokenomics &amp; $ROKI Utility</a>
+<a href="part-16-nft-value-proposition-ip-rights.html"><span class="sidebar-num">P16</span>NFT Value Proposition &amp; IP Rights</a>
+<a href="part-17-nft-launchpad.html"><span class="sidebar-num">P17</span>NFT Launchpad</a>
+<a href="part-18-ai-image-generator.html"><span class="sidebar-num">P18</span>AI Image Generator</a>
+<a href="part-18-5-roki-nft-generator-internal-tool.html"><span class="sidebar-num">P18.5</span>ROKI NFT Generator (Internal Tool)</a>
+<a href="part-19-launch-strategy.html"><span class="sidebar-num">P19</span>Launch Strategy</a>
+<a href="part-20-future-roadmap.html"><span class="sidebar-num">P20</span>Future Roadmap</a>
+<a href="part-21-technical-architecture-decisions.html"><span class="sidebar-num">P21</span>Technical Architecture Decisions</a>
+<a href="part-22-design-philosophy-core-principles.html"><span class="sidebar-num">P22</span>Design Philosophy &amp; Core Principles</a>
+<a href="part-23-changelog.html"><span class="sidebar-num">P23</span>Changelog</a></aside>
+  <main class="content"><div class="crumbs"><a href="index.html">Docs</a> / Part 13</div>
+<div class="eyebrow">PART 13</div>
+<h1 class="page-title">Leaderboards &amp; Competitive Structure</h1>
+<h2 id="13-1-multiple-leaderboards-design-principle"><a class="anchor" href="#13-1-multiple-leaderboards-design-principle">#</a>13.1 Multiple Leaderboards Design Principle</h2>
+<p>Single global leaderboards create the ‘same 5 winners every week’ problem. ROKI runs multiple parallel leaderboards so every player has something specific to chase.</p>
+<h2 id="13-2-the-full-leaderboard-roster"><a class="anchor" href="#13-2-the-full-leaderboard-roster">#</a>13.2 The Full Leaderboard Roster</h2>
+<p><strong>Global Leaderboards</strong></p>
+<ul><li>Global Clash ELO</li><li>Global Zen leaderboard (record-based, skill)</li><li>Global Stare leaderboard (longest hold)</li><li>Global Dodge leaderboard (survival time)</li><li>Global Breath leaderboard (longest daily streak)</li><li>Global Train leaderboard (longest daily streak)</li></ul>
+<p><strong>Clan Leaderboards (5): Top Boxer / Tank / Grappler / Counter Puncher / Kicker</strong></p>
+<p><strong>Elite Leaderboards</strong></p>
+<ul><li>Top Copy Ninja</li><li>Top Mirror Fighter</li><li>Mirror vs Mirror sub-leaderboard (purest skill test — same style matchups by construction in v3)</li></ul>
+<p><strong>Clan Wars Leaderboard — which clan is winning collectively this week/month/season</strong></p>
+<p><strong>Head-to-Head Rivalry Records</strong></p>
+<h2 id="13-3-rewards-are-discretionary-not-scheduled"><a class="anchor" href="#13-3-rewards-are-discretionary-not-scheduled">#</a>13.3 Rewards Are Discretionary, Not Scheduled</h2>
+<p>Leaderboards exist permanently. Rewards do not. The project awards prizes to top performers when budget permits. This prevents financial overcommitment and leverages variable-reward psychology.</p>
+<h2 id="13-4-intrinsic-value-of-leaderboard-rankings"><a class="anchor" href="#13-4-intrinsic-value-of-leaderboard-rankings">#</a>13.4 Intrinsic Value of Leaderboard Rankings</h2>
+<ul><li>Public display on ROKI website homepage</li><li>Permanent achievement badges written to NFT metadata</li><li>Tournament qualification</li><li>Community recognition via ROKI Verse lore updates</li><li>Title inheritance (NFT carries titles forever, even after resale)</li></ul>
+<h2 id="13-5-recognition-tiers-for-free-paid-players"><a class="anchor" href="#13-5-recognition-tiers-for-free-paid-players">#</a>13.5 Recognition Tiers for Free/Paid Players</h2>
+<ul><li>Top 1000: Contender badge</li><li>Top 500: Rising badge</li><li>Top 100: Elite Contender badge</li><li>Top 16: Offered NFT promotion (see Part 14)</li></ul>
+<h2 id="13-6-head-to-head-rivalries"><a class="anchor" href="#13-6-head-to-head-rivalries">#</a>13.6 Head-to-Head Rivalries</h2>
+<p>Every ROKI profile displays a Rivalries section showing opponents faced 3+ times, win/loss record, last match result, and current streak. AI flags rivalries at 3+ matches and generates rivalry paragraphs in the ROKI Verse.</p>
+<nav class="pager"><a class="pager-prev" href="part-12-the-roki-verse-ai-generated-living-lore.html"><div class="pager-label">← Previous · Part 12</div><div class="pager-title">The ROKI Verse — AI-Generated Living Lore</div></a><a class="pager-next" href="part-14-tournament-system.html"><div class="pager-label">Next · Part 14 →</div><div class="pager-title">Tournament System</div></a></nav></main>
+  <aside class="toc"><div class="toc-title">On this page</div>
+<a class="toc-link" href="#13-1-multiple-leaderboards-design-principle">13.1 Multiple Leaderboards Design Principle</a>
+<a class="toc-link" href="#13-2-the-full-leaderboard-roster">13.2 The Full Leaderboard Roster</a>
+<a class="toc-link" href="#13-3-rewards-are-discretionary-not-scheduled">13.3 Rewards Are Discretionary, Not Scheduled</a>
+<a class="toc-link" href="#13-4-intrinsic-value-of-leaderboard-rankings">13.4 Intrinsic Value of Leaderboard Rankings</a>
+<a class="toc-link" href="#13-5-recognition-tiers-for-free-paid-players">13.5 Recognition Tiers for Free/Paid Players</a>
+<a class="toc-link" href="#13-6-head-to-head-rivalries">13.6 Head-to-Head Rivalries</a></aside>
+</div>
+<script src="assets/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Part 17: NFT Launchpad — ROKI Docs</title>
+<meta name="description" content="ROKI — The Complete Project Bible. Game mechanics, ecosystem design, tokenomics, lore, and launch strategy.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23E94560'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='18' font-weight='bold' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="gate.css?v=2">
+<script>(function(){try{if(location.hash==='#lock')sessionStorage.removeItem('roki_docs_unlocked');}catch(e){}if(!sessionStorage.getItem('roki_docs_unlocked'))document.documentElement.classList.add('docs-locked');})();</script>
+<script src="gate.js?v=2" defer></script>
+</head>
+<body>
+<header class="site-header">
+  <button class="menu-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <a class="brand" href="index.html">
+    <span class="brand-mark">R</span>
+    <span>ROKI Docs</span>
+    <span class="brand-tag">v3.0</span>
+  </a>
+  <div class="header-spacer"></div>
+  <a class="header-link desktop-only" href="../Roki.html">Home</a>
+  <a class="header-link desktop-only" href="part-1-project-overview-brand-identity.html">Get Started</a>
+</header>
+<div class="sidebar-overlay"></div>
+<div class="layout">
+  <aside class="sidebar"><div class="sidebar-section">Documentation</div>
+<a href="index.html"><span class="sidebar-num">—</span>Introduction</a>
+<div class="sidebar-section">Project Bible</div>
+<a href="part-1-project-overview-brand-identity.html"><span class="sidebar-num">P1</span>Project Overview &amp; Brand Identity</a>
+<a href="part-2-clan-system.html"><span class="sidebar-num">P2</span>Clan System</a>
+<a href="part-3-core-combat-mechanics-roki-clash.html"><span class="sidebar-num">P3</span>Core Combat Mechanics — ROKI Clash</a>
+<a href="part-4-fighting-styles.html"><span class="sidebar-num">P4</span>Fighting Styles</a>
+<a href="part-5-techniques-system.html"><span class="sidebar-num">P5</span>Techniques System</a>
+<a href="part-6-elite-tiers-copy-ninjas-mirror-fighters.html"><span class="sidebar-num">P6</span>Elite Tiers — Copy Ninjas &amp; Mirror Fighters</a>
+<a href="part-7-player-tier-structure.html"><span class="sidebar-num">P7</span>Player Tier Structure</a>
+<a href="part-8-roki-zen-reflex-training-game.html"><span class="sidebar-num">P8</span>ROKI Zen (Reflex Training Game)</a>
+<a href="part-9-roki-dojo-conditioning-training-sandbox.html"><span class="sidebar-num">P9</span>ROKI Dojo (Conditioning &amp; Training Sandbox)</a>
+<a href="part-9-5-roki-stare-willpower-no-blink-contest.html"><span class="sidebar-num">P9.5</span>ROKI Stare (Willpower / No-Blink Contest)</a>
+<a href="part-9-6-roki-dodge-defensive-reflex-game.html"><span class="sidebar-num">P9.6</span>ROKI Dodge (Defensive Reflex Game)</a>
+<a href="part-9-7-roki-breath-meditative-rhythm-game.html"><span class="sidebar-num">P9.7</span>ROKI Breath (Meditative Rhythm Game)</a>
+<a href="part-9-8-roki-train-irl-exercise-habit-tracker.html"><span class="sidebar-num">P9.8</span>ROKI Train (IRL Exercise Habit Tracker)</a>
+<a href="part-9-9-roki-ar-lite-photo-maker.html"><span class="sidebar-num">P9.9</span>ROKI AR-Lite Photo Maker</a>
+<a href="part-10-cross-game-reward-system.html"><span class="sidebar-num">P10</span>Cross-Game Reward System</a>
+<a href="part-11-fighter-legacy-metadata-architecture.html"><span class="sidebar-num">P11</span>Fighter Legacy &amp; Metadata Architecture</a>
+<a href="part-12-the-roki-verse-ai-generated-living-lore.html"><span class="sidebar-num">P12</span>The ROKI Verse — AI-Generated Living Lore</a>
+<a href="part-13-leaderboards-competitive-structure.html"><span class="sidebar-num">P13</span>Leaderboards &amp; Competitive Structure</a>
+<a href="part-14-tournament-system.html"><span class="sidebar-num">P14</span>Tournament System</a>
+<a href="part-15-tokenomics-roki-utility.html"><span class="sidebar-num">P15</span>Tokenomics &amp; $ROKI Utility</a>
+<a href="part-16-nft-value-proposition-ip-rights.html"><span class="sidebar-num">P16</span>NFT Value Proposition &amp; IP Rights</a>
+<a href="part-17-nft-launchpad.html" class="active"><span class="sidebar-num">P17</span>NFT Launchpad</a>
+<a href="part-18-ai-image-generator.html"><span class="sidebar-num">P18</span>AI Image Generator</a>
+<a href="part-18-5-roki-nft-generator-internal-tool.html"><span class="sidebar-num">P18.5</span>ROKI NFT Generator (Internal Tool)</a>
+<a href="part-19-launch-strategy.html"><span class="sidebar-num">P19</span>Launch Strategy</a>
+<a href="part-20-future-roadmap.html"><span class="sidebar-num">P20</span>Future Roadmap</a>
+<a href="part-21-technical-architecture-decisions.html"><span class="sidebar-num">P21</span>Technical Architecture Decisions</a>
+<a href="part-22-design-philosophy-core-principles.html"><span class="sidebar-num">P22</span>Design Philosophy &amp; Core Principles</a>
+<a href="part-23-changelog.html"><span class="sidebar-num">P23</span>Changelog</a></aside>
+  <main class="content"><div class="crumbs"><a href="index.html">Docs</a> / Part 17</div>
+<div class="eyebrow">PART 17</div>
+<h1 class="page-title">NFT Launchpad</h1>
+<h2 id="17-1-origin-and-strategy"><a class="anchor" href="#17-1-origin-and-strategy">#</a>17.1 Origin and Strategy</h2>
+<p>The NFT Launchpad is the mint infrastructure for ROKI. Every feature needed for ROKI is being built. Post-launch, the same infrastructure opens to other creators as a Phase 2 SaaS product.</p>
+<h2 id="17-2-differentiating-features"><a class="anchor" href="#17-2-differentiating-features">#</a>17.2 Differentiating Features</h2>
+<ul><li>AI-powered NFT image generation built into the mint flow</li><li>Pre-finalization trait rerolls — solves a real creator pain point</li><li>Hybrid visual + metadata traits</li><li>Metaplex-compatible output for Solana</li></ul>
+<h2 id="17-3-revenue-model"><a class="anchor" href="#17-3-revenue-model">#</a>17.3 Revenue Model</h2>
+<ul><li>Platform takes a small per-mint commission</li><li>100% of commission is swapped to $ROKI and burned</li><li>Exact fee percentage TBD</li></ul>
+<h2 id="17-4-phase-1-vs-phase-2"><a class="anchor" href="#17-4-phase-1-vs-phase-2">#</a>17.4 Phase 1 vs Phase 2</h2>
+<p>Phase 1: Private to ROKI — build infrastructure, launch ROKI NFTs, prove the system with a real 3,333-piece collection, case study for Phase 2.</p>
+<p>Phase 2: Public SaaS — open to external creators, begin marketing platform as independent product, burn mechanism activates on every external mint.</p>
+<h2 id="17-5-build-philosophy"><a class="anchor" href="#17-5-build-philosophy">#</a>17.5 Build Philosophy</h2>
+<p>Abstract architecture from day one. Every problem solved for ROKI&#x27;s launch becomes a feature saleable to other creators later.</p>
+<h2 id="17-6-phase-2-validation"><a class="anchor" href="#17-6-phase-2-validation">#</a>17.6 Phase 2 Validation</h2>
+<p>Before opening publicly, conduct ~10-15 creator interviews.</p>
+<h2 id="17-7-legal-infrastructure"><a class="anchor" href="#17-7-legal-infrastructure">#</a>17.7 Legal Infrastructure</h2>
+<p>Terms of service, content policy, liability framework, tax reporting structure, lawyer consultation before Phase 2 launch.</p>
+<nav class="pager"><a class="pager-prev" href="part-16-nft-value-proposition-ip-rights.html"><div class="pager-label">← Previous · Part 16</div><div class="pager-title">NFT Value Proposition &amp; IP Rights</div></a><a class="pager-next" href="part-18-ai-image-generator.html"><div class="pager-label">Next · Part 18 →</div><div class="pager-title">AI Image Generator</div></a></nav></main>
+  <aside class="toc"><div class="toc-title">On this page</div>
+<a class="toc-link" href="#17-1-origin-and-strategy">17.1 Origin and Strategy</a>
+<a class="toc-link" href="#17-2-differentiating-features">17.2 Differentiating Features</a>
+<a class="toc-link" href="#17-3-revenue-model">17.3 Revenue Model</a>
+<a class="toc-link" href="#17-4-phase-1-vs-phase-2">17.4 Phase 1 vs Phase 2</a>
+<a class="toc-link" href="#17-5-build-philosophy">17.5 Build Philosophy</a>
+<a class="toc-link" href="#17-6-phase-2-validation">17.6 Phase 2 Validation</a>
+<a class="toc-link" href="#17-7-legal-infrastructure">17.7 Legal Infrastructure</a></aside>
+</div>
+<script src="assets/main.js"></script>
+</body>
+</html>

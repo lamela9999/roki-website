@@ -1,0 +1,7 @@
+node_modules/
+tmp/
+.deploy-secrets.txt
+.vscode/
+uploads/
+screenshots/
+.claude/

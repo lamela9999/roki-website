@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Part 11: Fighter Legacy &amp; Metadata Architecture — ROKI Docs</title>
+<meta name="description" content="ROKI — The Complete Project Bible. Game mechanics, ecosystem design, tokenomics, lore, and launch strategy.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23E94560'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='18' font-weight='bold' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="gate.css?v=2">
+<script>(function(){try{if(location.hash==='#lock')sessionStorage.removeItem('roki_docs_unlocked');}catch(e){}if(!sessionStorage.getItem('roki_docs_unlocked'))document.documentElement.classList.add('docs-locked');})();</script>
+<script src="gate.js?v=2" defer></script>
+</head>
+<body>
+<header class="site-header">
+  <button class="menu-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <a class="brand" href="index.html">
+    <span class="brand-mark">R</span>
+    <span>ROKI Docs</span>
+    <span class="brand-tag">v3.0</span>
+  </a>
+  <div class="header-spacer"></div>
+  <a class="header-link desktop-only" href="../Roki.html">Home</a>
+  <a class="header-link desktop-only" href="part-1-project-overview-brand-identity.html">Get Started</a>
+</header>
+<div class="sidebar-overlay"></div>
+<div class="layout">
+  <aside class="sidebar"><div class="sidebar-section">Documentation</div>
+<a href="index.html"><span class="sidebar-num">—</span>Introduction</a>
+<div class="sidebar-section">Project Bible</div>
+<a href="part-1-project-overview-brand-identity.html"><span class="sidebar-num">P1</span>Project Overview &amp; Brand Identity</a>
+<a href="part-2-clan-system.html"><span class="sidebar-num">P2</span>Clan System</a>
+<a href="part-3-core-combat-mechanics-roki-clash.html"><span class="sidebar-num">P3</span>Core Combat Mechanics — ROKI Clash</a>
+<a href="part-4-fighting-styles.html"><span class="sidebar-num">P4</span>Fighting Styles</a>
+<a href="part-5-techniques-system.html"><span class="sidebar-num">P5</span>Techniques System</a>
+<a href="part-6-elite-tiers-copy-ninjas-mirror-fighters.html"><span class="sidebar-num">P6</span>Elite Tiers — Copy Ninjas &amp; Mirror Fighters</a>
+<a href="part-7-player-tier-structure.html"><span class="sidebar-num">P7</span>Player Tier Structure</a>
+<a href="part-8-roki-zen-reflex-training-game.html"><span class="sidebar-num">P8</span>ROKI Zen (Reflex Training Game)</a>
+<a href="part-9-roki-dojo-conditioning-training-sandbox.html"><span class="sidebar-num">P9</span>ROKI Dojo (Conditioning &amp; Training Sandbox)</a>
+<a href="part-9-5-roki-stare-willpower-no-blink-contest.html"><span class="sidebar-num">P9.5</span>ROKI Stare (Willpower / No-Blink Contest)</a>
+<a href="part-9-6-roki-dodge-defensive-reflex-game.html"><span class="sidebar-num">P9.6</span>ROKI Dodge (Defensive Reflex Game)</a>
+<a href="part-9-7-roki-breath-meditative-rhythm-game.html"><span class="sidebar-num">P9.7</span>ROKI Breath (Meditative Rhythm Game)</a>
+<a href="part-9-8-roki-train-irl-exercise-habit-tracker.html"><span class="sidebar-num">P9.8</span>ROKI Train (IRL Exercise Habit Tracker)</a>
+<a href="part-9-9-roki-ar-lite-photo-maker.html"><span class="sidebar-num">P9.9</span>ROKI AR-Lite Photo Maker</a>
+<a href="part-10-cross-game-reward-system.html"><span class="sidebar-num">P10</span>Cross-Game Reward System</a>
+<a href="part-11-fighter-legacy-metadata-architecture.html" class="active"><span class="sidebar-num">P11</span>Fighter Legacy &amp; Metadata Architecture</a>
+<a href="part-12-the-roki-verse-ai-generated-living-lore.html"><span class="sidebar-num">P12</span>The ROKI Verse — AI-Generated Living Lore</a>
+<a href="part-13-leaderboards-competitive-structure.html"><span class="sidebar-num">P13</span>Leaderboards &amp; Competitive Structure</a>
+<a href="part-14-tournament-system.html"><span class="sidebar-num">P14</span>Tournament System</a>
+<a href="part-15-tokenomics-roki-utility.html"><span class="sidebar-num">P15</span>Tokenomics &amp; $ROKI Utility</a>
+<a href="part-16-nft-value-proposition-ip-rights.html"><span class="sidebar-num">P16</span>NFT Value Proposition &amp; IP Rights</a>
+<a href="part-17-nft-launchpad.html"><span class="sidebar-num">P17</span>NFT Launchpad</a>
+<a href="part-18-ai-image-generator.html"><span class="sidebar-num">P18</span>AI Image Generator</a>
+<a href="part-18-5-roki-nft-generator-internal-tool.html"><span class="sidebar-num">P18.5</span>ROKI NFT Generator (Internal Tool)</a>
+<a href="part-19-launch-strategy.html"><span class="sidebar-num">P19</span>Launch Strategy</a>
+<a href="part-20-future-roadmap.html"><span class="sidebar-num">P20</span>Future Roadmap</a>
+<a href="part-21-technical-architecture-decisions.html"><span class="sidebar-num">P21</span>Technical Architecture Decisions</a>
+<a href="part-22-design-philosophy-core-principles.html"><span class="sidebar-num">P22</span>Design Philosophy &amp; Core Principles</a>
+<a href="part-23-changelog.html"><span class="sidebar-num">P23</span>Changelog</a></aside>
+  <main class="content"><div class="crumbs"><a href="index.html">Docs</a> / Part 11</div>
+<div class="eyebrow">PART 11</div>
+<h1 class="page-title">Fighter Legacy &amp; Metadata Architecture</h1>
+<h2 id="11-1-the-fighter-legacy-system"><a class="anchor" href="#11-1-the-fighter-legacy-system">#</a>11.1 The Fighter Legacy System</h2>
+<p>Every NFT accumulates a permanent fight history that cannot be reset. When the NFT is sold, the new owner inherits the full career and reputation. Reputation is an attribute of the NFT, not of the wallet that holds it.</p>
+<p><strong>Tracked Elements</strong></p>
+<ul><li>Win/loss record, KOs dealt and received, highest ELO rank ever achieved, longest winning streak</li><li>Signature victories (beat #1 fighter, season champion KO, upset victories)</li><li>Titles: Head Hunter (10 head KOs), Leg Breaker (8 leg KOs), Iron Wall (15 counter blocks), The Undefeated (10 win streak), Season Champion</li><li>Achievements: Still Mind, The Unyielding, Iron Gaze (Stare), Untouchable (Dodge), The Mountain (Breath), Disciplined / Devoted / The Iron Heart (Train streaks), Clan Champion of Season X, etc.</li><li>All lore chapters generated about the ROKI in the ROKI Verse</li><li>Head-to-head records against specific rivals</li></ul>
+<h2 id="11-2-technical-architecture-path-1-to-path-3-migration"><a class="anchor" href="#11-2-technical-architecture-path-1-to-path-3-migration">#</a>11.2 Technical Architecture — Path 1 to Path 3 Migration</h2>
+<p class="callout">Launch on Path 1 (off-chain database). Migrate to Path 3 (hybrid on-chain snapshots) when the ecosystem is mature enough to justify the engineering investment.</p>
+<p><strong>Path 1: Off-Chain Database (Launch)</strong></p>
+<ul><li>NFT image and base traits are immutable on-chain (Metaplex Token Metadata)</li><li>All dynamic data lives in MongoDB, keyed to NFT token ID, not wallet address</li><li>Updates are free and instant</li></ul>
+<p><strong>Path 3: Hybrid On-Chain Snapshots</strong></p>
+<ul><li>Routine data stays in the database (matches, ELO, daily stats)</li><li>Milestone events get written permanently to on-chain metadata via Metaplex updateMetadataAccount</li><li>On-chain writes cost a fraction of a cent on Solana</li><li>Gives collectors true decentralized ownership of reputation</li></ul>
+<h2 id="11-3-launch-time-architectural-decisions"><a class="anchor" href="#11-3-launch-time-architectural-decisions">#</a>11.3 Launch-Time Architectural Decisions</h2>
+<ul><li>DO NOT revoke the NFT collection&#x27;s metadata update authority at mint. Keep it with a controlled multisig.</li><li>Use IPFS or Arweave for decentralized storage of images and JSON.</li><li>Follow Metaplex Token Metadata standard strictly.</li><li>Key the database by token ID from day one.</li><li>Timestamp every significant event.</li><li>Keep a separate ‘achievements’ field — distinct from routine stats.</li><li>Log all user actions even if not yet displayed.</li></ul>
+<h2 id="11-4-database-schema-fighterlegacy-collection"><a class="anchor" href="#11-4-database-schema-fighterlegacy-collection">#</a>11.4 Database Schema (FighterLegacy Collection)</h2>
+<p>Document structure in MongoDB, one document per NFT token: tokenId (number, unique, keyed to NFT); contractAddress (string); createdAt (date); style (string); techniques (array of technique IDs); elo (number); wins/losses (numbers); kos (number); kosDealt (object: head/body/arms/legs counts); achievements (array of objects with name, date, metadata, source [clash/zen/dojo/stare/dodge/breath/train]); dojoConditioning (object per zone); minigameStreaks (object: breathDailyStreak, trainDailyStreak); titles (array of strings); rivalries (array of head-to-head records); loreChapters (array of lore IDs); lastUpdated (date).</p>
+<nav class="pager"><a class="pager-prev" href="part-10-cross-game-reward-system.html"><div class="pager-label">← Previous · Part 10</div><div class="pager-title">Cross-Game Reward System</div></a><a class="pager-next" href="part-12-the-roki-verse-ai-generated-living-lore.html"><div class="pager-label">Next · Part 12 →</div><div class="pager-title">The ROKI Verse — AI-Generated Living Lore</div></a></nav></main>
+  <aside class="toc"><div class="toc-title">On this page</div>
+<a class="toc-link" href="#11-1-the-fighter-legacy-system">11.1 The Fighter Legacy System</a>
+<a class="toc-link" href="#11-2-technical-architecture-path-1-to-path-3-migration">11.2 Technical Architecture — Path 1 to Path 3 Migration</a>
+<a class="toc-link" href="#11-3-launch-time-architectural-decisions">11.3 Launch-Time Architectural Decisions</a>
+<a class="toc-link" href="#11-4-database-schema-fighterlegacy-collection">11.4 Database Schema (FighterLegacy Collection)</a></aside>
+</div>
+<script src="assets/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Part 6: Elite Tiers — Copy Ninjas &amp; Mirror Fighters — ROKI Docs</title>
+<meta name="description" content="ROKI — The Complete Project Bible. Game mechanics, ecosystem design, tokenomics, lore, and launch strategy.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23E94560'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='18' font-weight='bold' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="gate.css?v=2">
+<script>(function(){try{if(location.hash==='#lock')sessionStorage.removeItem('roki_docs_unlocked');}catch(e){}if(!sessionStorage.getItem('roki_docs_unlocked'))document.documentElement.classList.add('docs-locked');})();</script>
+<script src="gate.js?v=2" defer></script>
+</head>
+<body>
+<header class="site-header">
+  <button class="menu-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <a class="brand" href="index.html">
+    <span class="brand-mark">R</span>
+    <span>ROKI Docs</span>
+    <span class="brand-tag">v3.0</span>
+  </a>
+  <div class="header-spacer"></div>
+  <a class="header-link desktop-only" href="../Roki.html">Home</a>
+  <a class="header-link desktop-only" href="part-1-project-overview-brand-identity.html">Get Started</a>
+</header>
+<div class="sidebar-overlay"></div>
+<div class="layout">
+  <aside class="sidebar"><div class="sidebar-section">Documentation</div>
+<a href="index.html"><span class="sidebar-num">—</span>Introduction</a>
+<div class="sidebar-section">Project Bible</div>
+<a href="part-1-project-overview-brand-identity.html"><span class="sidebar-num">P1</span>Project Overview &amp; Brand Identity</a>
+<a href="part-2-clan-system.html"><span class="sidebar-num">P2</span>Clan System</a>
+<a href="part-3-core-combat-mechanics-roki-clash.html"><span class="sidebar-num">P3</span>Core Combat Mechanics — ROKI Clash</a>
+<a href="part-4-fighting-styles.html"><span class="sidebar-num">P4</span>Fighting Styles</a>
+<a href="part-5-techniques-system.html"><span class="sidebar-num">P5</span>Techniques System</a>
+<a href="part-6-elite-tiers-copy-ninjas-mirror-fighters.html" class="active"><span class="sidebar-num">P6</span>Elite Tiers — Copy Ninjas &amp; Mirror Fighters</a>
+<a href="part-7-player-tier-structure.html"><span class="sidebar-num">P7</span>Player Tier Structure</a>
+<a href="part-8-roki-zen-reflex-training-game.html"><span class="sidebar-num">P8</span>ROKI Zen (Reflex Training Game)</a>
+<a href="part-9-roki-dojo-conditioning-training-sandbox.html"><span class="sidebar-num">P9</span>ROKI Dojo (Conditioning &amp; Training Sandbox)</a>
+<a href="part-9-5-roki-stare-willpower-no-blink-contest.html"><span class="sidebar-num">P9.5</span>ROKI Stare (Willpower / No-Blink Contest)</a>
+<a href="part-9-6-roki-dodge-defensive-reflex-game.html"><span class="sidebar-num">P9.6</span>ROKI Dodge (Defensive Reflex Game)</a>
+<a href="part-9-7-roki-breath-meditative-rhythm-game.html"><span class="sidebar-num">P9.7</span>ROKI Breath (Meditative Rhythm Game)</a>
+<a href="part-9-8-roki-train-irl-exercise-habit-tracker.html"><span class="sidebar-num">P9.8</span>ROKI Train (IRL Exercise Habit Tracker)</a>
+<a href="part-9-9-roki-ar-lite-photo-maker.html"><span class="sidebar-num">P9.9</span>ROKI AR-Lite Photo Maker</a>
+<a href="part-10-cross-game-reward-system.html"><span class="sidebar-num">P10</span>Cross-Game Reward System</a>
+<a href="part-11-fighter-legacy-metadata-architecture.html"><span class="sidebar-num">P11</span>Fighter Legacy &amp; Metadata Architecture</a>
+<a href="part-12-the-roki-verse-ai-generated-living-lore.html"><span class="sidebar-num">P12</span>The ROKI Verse — AI-Generated Living Lore</a>
+<a href="part-13-leaderboards-competitive-structure.html"><span class="sidebar-num">P13</span>Leaderboards &amp; Competitive Structure</a>
+<a href="part-14-tournament-system.html"><span class="sidebar-num">P14</span>Tournament System</a>
+<a href="part-15-tokenomics-roki-utility.html"><span class="sidebar-num">P15</span>Tokenomics &amp; $ROKI Utility</a>
+<a href="part-16-nft-value-proposition-ip-rights.html"><span class="sidebar-num">P16</span>NFT Value Proposition &amp; IP Rights</a>
+<a href="part-17-nft-launchpad.html"><span class="sidebar-num">P17</span>NFT Launchpad</a>
+<a href="part-18-ai-image-generator.html"><span class="sidebar-num">P18</span>AI Image Generator</a>
+<a href="part-18-5-roki-nft-generator-internal-tool.html"><span class="sidebar-num">P18.5</span>ROKI NFT Generator (Internal Tool)</a>
+<a href="part-19-launch-strategy.html"><span class="sidebar-num">P19</span>Launch Strategy</a>
+<a href="part-20-future-roadmap.html"><span class="sidebar-num">P20</span>Future Roadmap</a>
+<a href="part-21-technical-architecture-decisions.html"><span class="sidebar-num">P21</span>Technical Architecture Decisions</a>
+<a href="part-22-design-philosophy-core-principles.html"><span class="sidebar-num">P22</span>Design Philosophy &amp; Core Principles</a>
+<a href="part-23-changelog.html"><span class="sidebar-num">P23</span>Changelog</a></aside>
+  <main class="content"><div class="crumbs"><a href="index.html">Docs</a> / Part 6</div>
+<div class="eyebrow">PART 6</div>
+<h1 class="page-title">Elite Tiers — Copy Ninjas &amp; Mirror Fighters</h1>
+<h2 id="6-1-copy-ninjas"><a class="anchor" href="#6-1-copy-ninjas">#</a>6.1 Copy Ninjas</h2>
+<p>50 NFTs out of 3,333. Pink background that overrides their underlying style color, marking them as outsiders.</p>
+<p><strong>Mechanics</strong></p>
+<ul><li>Have a fixed underlying fighting style (Boxer, Grappler, Tank, Counter Puncher, or Kicker) — they fight with that style&#x27;s damage profile</li><li>Standard 5-technique loadout from their own assignment</li><li>6th technique slot: the Copy Ability</li><li>During any match, can use ONE technique that the opponent has used earlier in that same match</li><li>One-time use per match; must choose to activate</li><li>Copy Ability cannot be used in Round 1 (nothing has been seen yet)</li></ul>
+<p><strong>Strategic Profile</strong></p>
+<ul><li>Strictly mechanically better than a base NFT (5 techniques + 1 copied = 6 usable abilities)</li><li>Forces opponents to think carefully about when to reveal their strongest techniques</li><li>Most dangerous against aggressive technique users; least dangerous against conservative players</li></ul>
+<h2 id="6-2-mirror-fighters-v3-refined-mechanic"><a class="anchor" href="#6-2-mirror-fighters-v3-refined-mechanic">#</a>6.2 Mirror Fighters (v3 Refined Mechanic)</h2>
+<p>50 NFTs out of 3,333. Orange background. Unlike Copy Ninjas, they have NO fixed style.</p>
+<p><strong>Mechanics (UPDATED IN v3)</strong></p>
+<ul><li><strong>Mirror Fighter automatically takes on the opponent&#x27;s style each match </strong>(not picked — automatic). The mirror is a property of the NFT, not a pre-match choice the player makes.</li><li>Their own 5 techniques (their personal loadout) stay with them; only the style profile mirrors the opponent&#x27;s clan style for that match.</li><li>This means every Mirror match is a same-style mirror matchup in the matchup pentagon — which guarantees no style imbalance. The Mirror Fighter trades matchup-web upside for guaranteed equality of style.</li><li>Style is locked for the duration of the match (it tracks whatever the opponent entered as).</li><li>Standard 5-technique loadout from their own assignment (no Copy Ability).</li></ul>
+<p><strong>Mirror vs Mirror Rule (unchanged from v2)</strong></p>
+<p>When two Mirror Fighters face each other, the system randomly assigns one of the 5 styles. Both fighters play as that style for the match. Could be Boxer vs Boxer, or any pairing. The random result is written to the match log permanently as part of Fighter Legacy.</p>
+<p><strong>Design Rationale for the v3 Change</strong></p>
+<p>The v2 framing (Mirror picks their style from 5 options before the match) created a shallow information-warfare minigame that ran before combat even started. The v3 framing (automatic same-style mirror) strips that out and replaces it with an identity that is mechanically pure: the Mirror Fighter is the opponent&#x27;s stylistic twin, always. Their own personal techniques are what individuate the match. This is philosophically cleaner — the Mirror Fighter&#x27;s essence is ‘I become you, then I beat you with my own weapons.’</p>
+<p><strong>Strategic Profile</strong></p>
+<ul><li>Always plays a same-style matchup in the pentagon — no rock-paper-scissors advantage OR disadvantage</li><li>Power comes entirely from technique loadout and player skill</li><li>Most predictable archetype stylistically; most expressive archetype technique-wise</li><li>Mirror vs any opponent is effectively the purest skill test in the ecosystem — identical style profiles, personal loadouts decide</li></ul>
+<h2 id="6-3-the-two-elite-types-philosophical-contrast"><a class="anchor" href="#6-3-the-two-elite-types-philosophical-contrast">#</a>6.3 The Two Elite Types — Philosophical Contrast</h2>
+<ul><li>Copy Ninja: keeps their identity, steals one weapon. The thief who remains themselves.</li><li>Mirror Fighter: abandons their stylistic identity, becomes the opponent&#x27;s type. The actor who disappears into the role.</li></ul>
+<p>Both are elite. Neither is strictly superior to the other. They appeal to different collector and player archetypes:</p>
+<ul><li>Copy Ninjas: guaranteed +1 advantage (extra technique), no risk. The &#x27;safe premium&#x27; buyer.</li><li>Mirror Fighters: guaranteed equality (same-style matchup), pure skill test. The &#x27;purist premium&#x27; buyer.</li></ul>
+<h2 id="6-4-elite-tier-leaderboards"><a class="anchor" href="#6-4-elite-tier-leaderboards">#</a>6.4 Elite Tier Leaderboards</h2>
+<ul><li>Top Copy Ninja leaderboard</li><li>Top Mirror Fighter leaderboard</li><li>Mirror vs Mirror sub-leaderboard: the highest win rate in Mirror-vs-Mirror matchups only. The &#x27;true master chameleon.&#x27; Pure skill, zero style advantage, zero information edge.</li></ul>
+<nav class="pager"><a class="pager-prev" href="part-5-techniques-system.html"><div class="pager-label">← Previous · Part 5</div><div class="pager-title">Techniques System</div></a><a class="pager-next" href="part-7-player-tier-structure.html"><div class="pager-label">Next · Part 7 →</div><div class="pager-title">Player Tier Structure</div></a></nav></main>
+  <aside class="toc"><div class="toc-title">On this page</div>
+<a class="toc-link" href="#6-1-copy-ninjas">6.1 Copy Ninjas</a>
+<a class="toc-link" href="#6-2-mirror-fighters-v3-refined-mechanic">6.2 Mirror Fighters (v3 Refined Mechanic)</a>
+<a class="toc-link" href="#6-3-the-two-elite-types-philosophical-contrast">6.3 The Two Elite Types — Philosophical Contrast</a>
+<a class="toc-link" href="#6-4-elite-tier-leaderboards">6.4 Elite Tier Leaderboards</a></aside>
+</div>
+<script src="assets/main.js"></script>
+</body>
+</html>

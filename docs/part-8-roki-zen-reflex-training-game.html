@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Part 8: ROKI Zen (Reflex Training Game) — ROKI Docs</title>
+<meta name="description" content="ROKI — The Complete Project Bible. Game mechanics, ecosystem design, tokenomics, lore, and launch strategy.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23E94560'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='18' font-weight='bold' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="gate.css?v=2">
+<script>(function(){try{if(location.hash==='#lock')sessionStorage.removeItem('roki_docs_unlocked');}catch(e){}if(!sessionStorage.getItem('roki_docs_unlocked'))document.documentElement.classList.add('docs-locked');})();</script>
+<script src="gate.js?v=2" defer></script>
+</head>
+<body>
+<header class="site-header">
+  <button class="menu-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <a class="brand" href="index.html">
+    <span class="brand-mark">R</span>
+    <span>ROKI Docs</span>
+    <span class="brand-tag">v3.0</span>
+  </a>
+  <div class="header-spacer"></div>
+  <a class="header-link desktop-only" href="../Roki.html">Home</a>
+  <a class="header-link desktop-only" href="part-1-project-overview-brand-identity.html">Get Started</a>
+</header>
+<div class="sidebar-overlay"></div>
+<div class="layout">
+  <aside class="sidebar"><div class="sidebar-section">Documentation</div>
+<a href="index.html"><span class="sidebar-num">—</span>Introduction</a>
+<div class="sidebar-section">Project Bible</div>
+<a href="part-1-project-overview-brand-identity.html"><span class="sidebar-num">P1</span>Project Overview &amp; Brand Identity</a>
+<a href="part-2-clan-system.html"><span class="sidebar-num">P2</span>Clan System</a>
+<a href="part-3-core-combat-mechanics-roki-clash.html"><span class="sidebar-num">P3</span>Core Combat Mechanics — ROKI Clash</a>
+<a href="part-4-fighting-styles.html"><span class="sidebar-num">P4</span>Fighting Styles</a>
+<a href="part-5-techniques-system.html"><span class="sidebar-num">P5</span>Techniques System</a>
+<a href="part-6-elite-tiers-copy-ninjas-mirror-fighters.html"><span class="sidebar-num">P6</span>Elite Tiers — Copy Ninjas &amp; Mirror Fighters</a>
+<a href="part-7-player-tier-structure.html"><span class="sidebar-num">P7</span>Player Tier Structure</a>
+<a href="part-8-roki-zen-reflex-training-game.html" class="active"><span class="sidebar-num">P8</span>ROKI Zen (Reflex Training Game)</a>
+<a href="part-9-roki-dojo-conditioning-training-sandbox.html"><span class="sidebar-num">P9</span>ROKI Dojo (Conditioning &amp; Training Sandbox)</a>
+<a href="part-9-5-roki-stare-willpower-no-blink-contest.html"><span class="sidebar-num">P9.5</span>ROKI Stare (Willpower / No-Blink Contest)</a>
+<a href="part-9-6-roki-dodge-defensive-reflex-game.html"><span class="sidebar-num">P9.6</span>ROKI Dodge (Defensive Reflex Game)</a>
+<a href="part-9-7-roki-breath-meditative-rhythm-game.html"><span class="sidebar-num">P9.7</span>ROKI Breath (Meditative Rhythm Game)</a>
+<a href="part-9-8-roki-train-irl-exercise-habit-tracker.html"><span class="sidebar-num">P9.8</span>ROKI Train (IRL Exercise Habit Tracker)</a>
+<a href="part-9-9-roki-ar-lite-photo-maker.html"><span class="sidebar-num">P9.9</span>ROKI AR-Lite Photo Maker</a>
+<a href="part-10-cross-game-reward-system.html"><span class="sidebar-num">P10</span>Cross-Game Reward System</a>
+<a href="part-11-fighter-legacy-metadata-architecture.html"><span class="sidebar-num">P11</span>Fighter Legacy &amp; Metadata Architecture</a>
+<a href="part-12-the-roki-verse-ai-generated-living-lore.html"><span class="sidebar-num">P12</span>The ROKI Verse — AI-Generated Living Lore</a>
+<a href="part-13-leaderboards-competitive-structure.html"><span class="sidebar-num">P13</span>Leaderboards &amp; Competitive Structure</a>
+<a href="part-14-tournament-system.html"><span class="sidebar-num">P14</span>Tournament System</a>
+<a href="part-15-tokenomics-roki-utility.html"><span class="sidebar-num">P15</span>Tokenomics &amp; $ROKI Utility</a>
+<a href="part-16-nft-value-proposition-ip-rights.html"><span class="sidebar-num">P16</span>NFT Value Proposition &amp; IP Rights</a>
+<a href="part-17-nft-launchpad.html"><span class="sidebar-num">P17</span>NFT Launchpad</a>
+<a href="part-18-ai-image-generator.html"><span class="sidebar-num">P18</span>AI Image Generator</a>
+<a href="part-18-5-roki-nft-generator-internal-tool.html"><span class="sidebar-num">P18.5</span>ROKI NFT Generator (Internal Tool)</a>
+<a href="part-19-launch-strategy.html"><span class="sidebar-num">P19</span>Launch Strategy</a>
+<a href="part-20-future-roadmap.html"><span class="sidebar-num">P20</span>Future Roadmap</a>
+<a href="part-21-technical-architecture-decisions.html"><span class="sidebar-num">P21</span>Technical Architecture Decisions</a>
+<a href="part-22-design-philosophy-core-principles.html"><span class="sidebar-num">P22</span>Design Philosophy &amp; Core Principles</a>
+<a href="part-23-changelog.html"><span class="sidebar-num">P23</span>Changelog</a></aside>
+  <main class="content"><div class="crumbs"><a href="index.html">Docs</a> / Part 8</div>
+<div class="eyebrow">PART 8</div>
+<h1 class="page-title">ROKI Zen (Reflex Training Game)</h1>
+<p class="callout">RENAMED IN v3: ‘ROKI Mushin’ is now ‘ROKI Zen’ as a product. The three inner modes keep their existing names — Strike Mode, Mushin Mode (the blindfold mode), and Rhythm Chain — because ‘Mushin’ (no-mind) is the authentic martial-arts concept for the blindfold state. Zen is the product family; Mushin is one of its modes.</p>
+<h2 id="8-1-concept"><a class="anchor" href="#8-1-concept">#</a>8.1 Concept</h2>
+<p>ROKI Zen is a reflex-based tapping game inspired by martial arts timing and the cultivation of no-mind (mushin). Players test their timing precision, building records that translate into in-game advantages within ROKI Clash.</p>
+<p>The name ‘Zen’ gives the product family a calm, meditative umbrella. Clash is external strategy; Zen is internal mastery. They are yin and yang.</p>
+<h2 id="8-2-core-mechanic-the-zen-cut-visual"><a class="anchor" href="#8-2-core-mechanic-the-zen-cut-visual">#</a>8.2 Core Mechanic — The Zen Cut (Visual)</h2>
+<p>The core visual mechanic is a katana slicing a falling drop. This is the signature readout for every Zen tap.</p>
+<ul><li>A drop falls from the top of the screen toward a strike zone near the bottom.</li><li>The player taps when ready; a katana blade arcs through the screen leaving a visible trail.</li><li>The trail angle and position reflect timing accuracy.</li></ul>
+<p><strong>Timing outcomes and their visual reading:</strong></p>
+<ul><li>Perfect timing — clean diagonal slice through the drop&#x27;s center; the drop splits cleanly into two equal halves.</li><li>Great — trail is slightly off-angle; the drop splits unevenly (one half bigger than the other).</li><li>Good — the blade only nicks the drop; it sheds a small piece but mostly survives.</li><li>Miss — the blade swings through empty air; the drop falls intact and lands/escapes.</li></ul>
+<h2 id="8-3-three-modes"><a class="anchor" href="#8-3-three-modes">#</a>8.3 Three Modes</h2>
+<p><strong>Strike Mode (Eyes Open)</strong></p>
+<ul><li>The full visual Zen Cut is shown — the drop is visible, the strike zone is visible, the blade and trail are fully rendered.</li><li>Scoring: Perfect (within ±30ms), Great (±80ms), Good (±150ms), Miss.</li><li>Three rounds per run.</li><li>This is the standard reaction mode and the primary teaching surface for the mechanic.</li></ul>
+<p><strong>Mushin Mode (Blindfold) — Audio-First Design</strong></p>
+<p>Mushin Mode hides the visual. The drop is invisible behind a visual curtain during its fall. The player cannot see when to tap — they must feel it.</p>
+<ul><li>A countdown warning precedes the fall (‘3, 2, 1’) using a distinctive incoming sound cue — a temple bell strike or the sound of a katana being unsheathed. This is the only pre-tap information.</li><li>The drop&#x27;s fall happens behind the curtain; the player internally estimates the timing.</li></ul>
+<p><strong>Audio layers that play on the player&#x27;s tap:</strong></p>
+<ul><li>Always on tap: katana swing whoosh.</li><li>Perfect: crisp blade-through-flesh slice sound + drop splitting sound + soft bell ring (triple layer — the richest auditory reward).</li><li>Great: crisp slice (no bell).</li><li>Good: muffled slice + a slight whiff of air.</li><li>Miss: pure air whoosh (no contact sounds).</li><li>After each tap, a brief reveal moment lifts the curtain and shows where the drop actually was relative to the blade trail — this is the learning moment.</li><li>The audio scaling IS the score readout for blindfold mode. Better cut = richer sound. The player learns to associate sonic texture with precision.</li><li>Mushin Mode scoring is more generous (±200ms = Perfect) but the feeling of landing it blind is the addictive core.</li><li>This is the ‘TikTok mode’ — visually dramatic, meme-able, screen-recordable.</li></ul>
+<p><strong>Rhythm Chain Mode</strong></p>
+<ul><li>Multiple taps in sequence, varying intervals between drops.</li><li>Tests pattern recognition and flow state.</li><li>Combo multiplier builds with consecutive Perfects.</li><li>Skill ceiling mode — where elite players compete.</li></ul>
+<h2 id="8-4-future-variant-deferred"><a class="anchor" href="#8-4-future-variant-deferred">#</a>8.4 Future Variant (Deferred)</h2>
+<p>A fast-velocity slicing mode is under consideration as a possible second game variant in the Zen family. Multiple objects would fly across the screen and the player would slice them with finger-drag motions — a different mechanic from the Zen Cut timing tap. This is explicitly deferred and not part of the v1 launch scope; noted here so it doesn&#x27;t get confused with the core tap mechanic.</p>
+<h2 id="8-5-scoring-leaderboards"><a class="anchor" href="#8-5-scoring-leaderboards">#</a>8.5 Scoring &amp; Leaderboards</h2>
+<p>ROKI Zen is pure record-based, not time-based. The leaderboard reflects the highest single-run score, all-time and weekly. A player could play 3 times and sit at #1 all week by hitting a perfect run; another player could play 500 times and never match it. Zen honors mastery, not volume.</p>
+<h2 id="8-6-roki-zen-bonuses-for-roki-clash"><a class="anchor" href="#8-6-roki-zen-bonuses-for-roki-clash">#</a>8.6 ROKI Zen Bonuses for ROKI Clash</h2>
+<p><strong>Weekly Zen Leaderboard Bonus</strong></p>
+<ul><li>Top 10 global Zen performers at week end receive a Clash combat bonus for the following week.</li><li>Player chooses at week start: +1 damage OR -1 damage taken.</li><li>Top 1 receives +2 or -2 (enhanced tier).</li><li>Weekly reset — bonus must be re-earned.</li><li>Ranks 11–50 receive a minor zone-specific bonus (+1 damage to one chosen zone OR +5 HP to one zone).</li><li>Ranks 51–100 receive cosmetic ‘Disciplined’ badge only (no stat bonus).</li></ul>
+<p><strong>The Still Mind Achievement</strong></p>
+<ul><li>Permanent, one-time. 3 Perfect taps in a single run across 3 rounds unlocks The Still Mind.</li><li>Permanent +1 damage to a chosen zone (player selects at unlock).</li><li>One-time per NFT (cannot stack).</li><li>Written to Fighter Legacy metadata permanently.</li><li>Ultra-rare — only a small fraction of NFTs will ever achieve it.</li><li>Screen presentation on unlock: ‘You have found The Still Mind.’</li></ul>
+<h2 id="8-7-zen-access-by-tier"><a class="anchor" href="#8-7-zen-access-by-tier">#</a>8.7 Zen Access by Tier</h2>
+<ul><li>NFT holders: full Zen bonuses flow to their NFT fighter; Still Mind achievement permanently recorded to their NFT.</li><li>Paid/Free players: can play Zen, appear on leaderboards, receive cosmetic recognition; do not get permanent achievements. Still Mind is NFT-only.</li><li>Weekly leaderboard bonuses flow to any tier&#x27;s Clash fighter if they earn top 10.</li></ul>
+<h2 id="8-8-why-roki-zen-matters-to-the-ecosystem"><a class="anchor" href="#8-8-why-roki-zen-matters-to-the-ecosystem">#</a>8.8 Why ROKI Zen Matters to the Ecosystem</h2>
+<ul><li>Creates a second daily engagement surface beyond Clash.</li><li>Mushin Mode generates shareable content (blindfold screen recordings).</li><li>Gives players a non-PvP way to grow their fighter&#x27;s strength.</li><li>Differentiates ROKI from any competitor — martial arts games rarely reward reflex mastery this directly.</li><li>The audio-blindfold layer is a rare design choice in mobile/web games — it creates a distinctive sonic identity.</li></ul>
+<nav class="pager"><a class="pager-prev" href="part-7-player-tier-structure.html"><div class="pager-label">← Previous · Part 7</div><div class="pager-title">Player Tier Structure</div></a><a class="pager-next" href="part-9-roki-dojo-conditioning-training-sandbox.html"><div class="pager-label">Next · Part 9 →</div><div class="pager-title">ROKI Dojo (Conditioning &amp; Training Sandbox)</div></a></nav></main>
+  <aside class="toc"><div class="toc-title">On this page</div>
+<a class="toc-link" href="#8-1-concept">8.1 Concept</a>
+<a class="toc-link" href="#8-2-core-mechanic-the-zen-cut-visual">8.2 Core Mechanic — The Zen Cut (Visual)</a>
+<a class="toc-link" href="#8-3-three-modes">8.3 Three Modes</a>
+<a class="toc-link" href="#8-4-future-variant-deferred">8.4 Future Variant (Deferred)</a>
+<a class="toc-link" href="#8-5-scoring-leaderboards">8.5 Scoring &amp; Leaderboards</a>
+<a class="toc-link" href="#8-6-roki-zen-bonuses-for-roki-clash">8.6 ROKI Zen Bonuses for ROKI Clash</a>
+<a class="toc-link" href="#8-7-zen-access-by-tier">8.7 Zen Access by Tier</a>
+<a class="toc-link" href="#8-8-why-roki-zen-matters-to-the-ecosystem">8.8 Why ROKI Zen Matters to the Ecosystem</a></aside>
+</div>
+<script src="assets/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Part 22: Design Philosophy &amp; Core Principles — ROKI Docs</title>
+<meta name="description" content="ROKI — The Complete Project Bible. Game mechanics, ecosystem design, tokenomics, lore, and launch strategy.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23E94560'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='18' font-weight='bold' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="gate.css?v=2">
+<script>(function(){try{if(location.hash==='#lock')sessionStorage.removeItem('roki_docs_unlocked');}catch(e){}if(!sessionStorage.getItem('roki_docs_unlocked'))document.documentElement.classList.add('docs-locked');})();</script>
+<script src="gate.js?v=2" defer></script>
+</head>
+<body>
+<header class="site-header">
+  <button class="menu-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <a class="brand" href="index.html">
+    <span class="brand-mark">R</span>
+    <span>ROKI Docs</span>
+    <span class="brand-tag">v3.0</span>
+  </a>
+  <div class="header-spacer"></div>
+  <a class="header-link desktop-only" href="../Roki.html">Home</a>
+  <a class="header-link desktop-only" href="part-1-project-overview-brand-identity.html">Get Started</a>
+</header>
+<div class="sidebar-overlay"></div>
+<div class="layout">
+  <aside class="sidebar"><div class="sidebar-section">Documentation</div>
+<a href="index.html"><span class="sidebar-num">—</span>Introduction</a>
+<div class="sidebar-section">Project Bible</div>
+<a href="part-1-project-overview-brand-identity.html"><span class="sidebar-num">P1</span>Project Overview &amp; Brand Identity</a>
+<a href="part-2-clan-system.html"><span class="sidebar-num">P2</span>Clan System</a>
+<a href="part-3-core-combat-mechanics-roki-clash.html"><span class="sidebar-num">P3</span>Core Combat Mechanics — ROKI Clash</a>
+<a href="part-4-fighting-styles.html"><span class="sidebar-num">P4</span>Fighting Styles</a>
+<a href="part-5-techniques-system.html"><span class="sidebar-num">P5</span>Techniques System</a>
+<a href="part-6-elite-tiers-copy-ninjas-mirror-fighters.html"><span class="sidebar-num">P6</span>Elite Tiers — Copy Ninjas &amp; Mirror Fighters</a>
+<a href="part-7-player-tier-structure.html"><span class="sidebar-num">P7</span>Player Tier Structure</a>
+<a href="part-8-roki-zen-reflex-training-game.html"><span class="sidebar-num">P8</span>ROKI Zen (Reflex Training Game)</a>
+<a href="part-9-roki-dojo-conditioning-training-sandbox.html"><span class="sidebar-num">P9</span>ROKI Dojo (Conditioning &amp; Training Sandbox)</a>
+<a href="part-9-5-roki-stare-willpower-no-blink-contest.html"><span class="sidebar-num">P9.5</span>ROKI Stare (Willpower / No-Blink Contest)</a>
+<a href="part-9-6-roki-dodge-defensive-reflex-game.html"><span class="sidebar-num">P9.6</span>ROKI Dodge (Defensive Reflex Game)</a>
+<a href="part-9-7-roki-breath-meditative-rhythm-game.html"><span class="sidebar-num">P9.7</span>ROKI Breath (Meditative Rhythm Game)</a>
+<a href="part-9-8-roki-train-irl-exercise-habit-tracker.html"><span class="sidebar-num">P9.8</span>ROKI Train (IRL Exercise Habit Tracker)</a>
+<a href="part-9-9-roki-ar-lite-photo-maker.html"><span class="sidebar-num">P9.9</span>ROKI AR-Lite Photo Maker</a>
+<a href="part-10-cross-game-reward-system.html"><span class="sidebar-num">P10</span>Cross-Game Reward System</a>
+<a href="part-11-fighter-legacy-metadata-architecture.html"><span class="sidebar-num">P11</span>Fighter Legacy &amp; Metadata Architecture</a>
+<a href="part-12-the-roki-verse-ai-generated-living-lore.html"><span class="sidebar-num">P12</span>The ROKI Verse — AI-Generated Living Lore</a>
+<a href="part-13-leaderboards-competitive-structure.html"><span class="sidebar-num">P13</span>Leaderboards &amp; Competitive Structure</a>
+<a href="part-14-tournament-system.html"><span class="sidebar-num">P14</span>Tournament System</a>
+<a href="part-15-tokenomics-roki-utility.html"><span class="sidebar-num">P15</span>Tokenomics &amp; $ROKI Utility</a>
+<a href="part-16-nft-value-proposition-ip-rights.html"><span class="sidebar-num">P16</span>NFT Value Proposition &amp; IP Rights</a>
+<a href="part-17-nft-launchpad.html"><span class="sidebar-num">P17</span>NFT Launchpad</a>
+<a href="part-18-ai-image-generator.html"><span class="sidebar-num">P18</span>AI Image Generator</a>
+<a href="part-18-5-roki-nft-generator-internal-tool.html"><span class="sidebar-num">P18.5</span>ROKI NFT Generator (Internal Tool)</a>
+<a href="part-19-launch-strategy.html"><span class="sidebar-num">P19</span>Launch Strategy</a>
+<a href="part-20-future-roadmap.html"><span class="sidebar-num">P20</span>Future Roadmap</a>
+<a href="part-21-technical-architecture-decisions.html"><span class="sidebar-num">P21</span>Technical Architecture Decisions</a>
+<a href="part-22-design-philosophy-core-principles.html" class="active"><span class="sidebar-num">P22</span>Design Philosophy &amp; Core Principles</a>
+<a href="part-23-changelog.html"><span class="sidebar-num">P23</span>Changelog</a></aside>
+  <main class="content"><div class="crumbs"><a href="index.html">Docs</a> / Part 22</div>
+<div class="eyebrow">PART 22</div>
+<h1 class="page-title">Design Philosophy &amp; Core Principles</h1>
+<h2 id="22-1-the-roki-design-philosophy"><a class="anchor" href="#22-1-the-roki-design-philosophy">#</a>22.1 The ROKI Design Philosophy</h2>
+<p>Every design decision in ROKI traces back to a small set of core principles. These principles are non-negotiable and should guide all future decisions.</p>
+<h2 id="22-2-halal-conscious-design"><a class="anchor" href="#22-2-halal-conscious-design">#</a>22.2 Halal-Conscious Design</h2>
+<ul><li>No gambling mechanics (no loot boxes, no random paid rewards)</li><li>No maysir-style competitions where entry fees fund prize pools</li><li>Prize pools funded by treasury/sponsors, not pooled player entries</li><li>No riba dynamics — no staking-for-yield-created-from-thin-air</li><li>No gharar (deceptive uncertainty) in disclosures</li><li>Transparent treasury operations, disclosed pre-launch</li><li>Sheikh consultation planned for any gray-area tokenomics decisions</li></ul>
+<h2 id="22-2-1-halal-philosophy-clarification-v3"><a class="anchor" href="#22-2-1-halal-philosophy-clarification-v3">#</a>22.2.1 Halal Philosophy Clarification (v3)</h2>
+<p>The halal-by-design framework is specifically about what is practiced or endorsed, not about what is depicted. This distinction matters for the character art, the lore, and the broader creative palette.</p>
+<ul><li>Real haram items are removed from the collection. Cigars, alcohol, gambling mechanics — out.</li><li>Cultural and fictional depictions of other belief systems and archetypes are acceptable. Priest, monk, wizard, dracula clothing, and similar character-flavor archetypes are fine. Sharia permits depicting other cultures; the believer simply doesn&#x27;t have to believe in them.</li><li>The operative distinction is between fictional or cultural representation (acceptable) and practice or endorsement (not acceptable).</li><li>Sihr — real occult magic practice — would be unacceptable. Cartoonish wizard depictions used for character flavor are fine. The difference is promoting the thing vs. representing that the thing exists in the world.</li><li>The framework is consistent with how individual cuts have been made so far: cigars were removed from the collection; tarot cards were renamed to neutral ‘Cards’; paper talismans were renamed to ‘Paper Seals.’ None of these were absolute bans on imagery — they were calibrations around what the name or object endorses vs. represents.</li><li>New characters and items should be evaluated through this lens: is the item practicing haram, or is it flavor for a fictional world? Flavor is fine; practice is not.</li></ul>
+<h2 id="22-3-skill-over-time"><a class="anchor" href="#22-3-skill-over-time">#</a>22.3 Skill Over Time</h2>
+<ul><li>Record-based leaderboards, not volume-based</li><li>Zen rewards the player with the best single run, not the one who plays most</li><li>Dedication rewards (Dojo) are capped</li><li>A 14-year-old with unlimited time cannot overtake a skilled adult through raw hours</li></ul>
+<h2 id="22-4-dedication-capped-not-infinite"><a class="anchor" href="#22-4-dedication-capped-not-infinite">#</a>22.4 Dedication Capped, Not Infinite</h2>
+<ul><li>Dojo conditioning maxes at +5 HP total, spread across zones</li><li>Once maxed, no more dedication rewards</li><li>The Unyielding title achievable by anyone willing to commit moderate time</li><li>Minigame streak badges (Train, Breath) are badges of honor, NOT combat bonuses</li><li>No ‘pay-to-win through time’ dynamics</li></ul>
+<h2 id="22-5-no-pay-to-win"><a class="anchor" href="#22-5-no-pay-to-win">#</a>22.5 No Pay-to-Win</h2>
+<ul><li>NFTs give access, not guaranteed victory</li><li>A skilled free-tier player can beat a maxed NFT through better strategy and reads</li><li>Tokens stake for qualification access, not for combat advantages</li><li>No purchasable stat bonuses. No purchasable technique slots.</li></ul>
+<h2 id="22-6-dignity-for-all-characters"><a class="anchor" href="#22-6-dignity-for-all-characters">#</a>22.6 Dignity for All Characters</h2>
+<ul><li>Losing ROKIs receive dignified lore</li><li>No lore calls a ROKI ‘bad’ or ‘terrible’</li><li>Every ROKI gets career snapshots — none are invisible</li><li>No ‘hall of shame’ or public humiliation surfaces</li></ul>
+<h2 id="22-7-transparency-over-secrecy"><a class="anchor" href="#22-7-transparency-over-secrecy">#</a>22.7 Transparency Over Secrecy</h2>
+<ul><li>Treasury operations disclosed pre-launch</li><li>Tokenomics published in detail</li><li>Development progress visible (GitHub, dev log, shipped updates)</li><li>No hidden insider mechanics</li></ul>
+<h2 id="22-8-ship-before-polish"><a class="anchor" href="#22-8-ship-before-polish">#</a>22.8 Ship Before Polish</h2>
+<ul><li>Rough Clash with 50 players teaches more than polished Clash with zero</li><li>Feedback from real users beats perfectionism</li><li>Launch a rough v1 on a shorter timeline rather than a polished v2 on a longer one</li></ul>
+<h2 id="22-9-founder-as-editor-in-chief"><a class="anchor" href="#22-9-founder-as-editor-in-chief">#</a>22.9 Founder as Editor-in-Chief</h2>
+<ul><li>AI drafts, human curates</li><li>No AI content published without review at launch</li><li>Review queue for lore, events, commissions</li><li>Editorial voice consistency maintained by a single authorial perspective</li></ul>
+<h2 id="22-10-nft-holders-as-equity-partners"><a class="anchor" href="#22-10-nft-holders-as-equity-partners">#</a>22.10 NFT Holders as Equity Partners</h2>
+<ul><li>Full commercial IP rights</li><li>Priority access to all future ecosystem benefits</li><li>Reputation follows the NFT, not the wallet</li><li>Every project decision either includes NFT holders or justifies why it doesn&#x27;t</li></ul>
+<h2 id="22-11-ecosystem-over-single-product"><a class="anchor" href="#22-11-ecosystem-over-single-product">#</a>22.11 Ecosystem Over Single Product</h2>
+<ul><li>ROKI is a franchise, not a game</li><li>Clash + Zen + Dojo + Stare + Dodge + Breath + Train + Verse + Launchpad + NFT Generator + AR-Lite + Lands — all one universe</li><li>Each product reinforces the others</li><li>If one layer dies, the others survive and rebuild momentum</li></ul>
+<nav class="pager"><a class="pager-prev" href="part-21-technical-architecture-decisions.html"><div class="pager-label">← Previous · Part 21</div><div class="pager-title">Technical Architecture Decisions</div></a><a class="pager-next" href="part-23-changelog.html"><div class="pager-label">Next · Part 23 →</div><div class="pager-title">Changelog</div></a></nav></main>
+  <aside class="toc"><div class="toc-title">On this page</div>
+<a class="toc-link" href="#22-1-the-roki-design-philosophy">22.1 The ROKI Design Philosophy</a>
+<a class="toc-link" href="#22-2-halal-conscious-design">22.2 Halal-Conscious Design</a>
+<a class="toc-link" href="#22-2-1-halal-philosophy-clarification-v3">22.2.1 Halal Philosophy Clarification (v3)</a>
+<a class="toc-link" href="#22-3-skill-over-time">22.3 Skill Over Time</a>
+<a class="toc-link" href="#22-4-dedication-capped-not-infinite">22.4 Dedication Capped, Not Infinite</a>
+<a class="toc-link" href="#22-5-no-pay-to-win">22.5 No Pay-to-Win</a>
+<a class="toc-link" href="#22-6-dignity-for-all-characters">22.6 Dignity for All Characters</a>
+<a class="toc-link" href="#22-7-transparency-over-secrecy">22.7 Transparency Over Secrecy</a>
+<a class="toc-link" href="#22-8-ship-before-polish">22.8 Ship Before Polish</a>
+<a class="toc-link" href="#22-9-founder-as-editor-in-chief">22.9 Founder as Editor-in-Chief</a>
+<a class="toc-link" href="#22-10-nft-holders-as-equity-partners">22.10 NFT Holders as Equity Partners</a>
+<a class="toc-link" href="#22-11-ecosystem-over-single-product">22.11 Ecosystem Over Single Product</a></aside>
+</div>
+<script src="assets/main.js"></script>
+</body>
+</html>

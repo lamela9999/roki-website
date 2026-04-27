@@ -1,0 +1,273 @@
+/* ==========================================================
+   ROKI mobile-overrides.css
+   Loaded by mobile.html into each iframe (Roki.html + docs gate)
+   to polish the mobile rendering inside the device frames.
+   These styles only apply to the mobile preview; desktop is untouched.
+   ========================================================== */
+
+html, body {
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ---------- ROKI public site (Roki.html) ---------- */
+
+/* Safe-area top padding so the nav clears the dynamic island/notch */
+body {
+  padding-top: max(56px, env(safe-area-inset-top, 56px)) !important;
+}
+
+/* Nav: shrink, keep inside safe edges, prevent overflow */
+.nav {
+  margin: 0 12px !important;
+  padding: 10px 12px !important;
+  border-radius: 14px !important;
+  gap: 8px !important;
+}
+.nav-links { display: none !important; }
+.nav-brand .brand-name { font-size: 18px !important; }
+.brand-mark { width: 32px !important; height: 32px !important; }
+.nav-cta .btn {
+  padding: 9px 12px !important;
+  font-size: 11px !important;
+  letter-spacing: 0.08em !important;
+}
+.nav-cta .btn span:not(.btn-icon-bare) {
+  display: inline !important;
+}
+.nav-cta .btn-icon-bare {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+/* Hero: stack vertically with comfortable padding */
+.hero {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  text-align: center !important;
+  padding: 28px 18px 40px !important;
+  gap: 20px !important;
+}
+.hero-text {
+  padding-right: 0 !important;
+  width: 100% !important;
+  text-align: center !important;
+}
+.hero-title {
+  font-size: 88px !important;
+  line-height: 0.88 !important;
+  margin-bottom: 12px !important;
+  text-align: center !important;
+  display: inline-block !important;
+}
+.hero-rule {
+  margin: 0 auto 16px !important;
+}
+.hero-tagline {
+  font-size: 22px !important;
+  line-height: 1.1 !important;
+  margin-bottom: 14px !important;
+}
+.hero-body {
+  font-size: 14px !important;
+  line-height: 1.55 !important;
+  margin-bottom: 20px !important;
+}
+.hero-ctas {
+  justify-content: center !important;
+}
+.hero-ctas .btn,
+.cta-wrap .btn {
+  width: 100% !important;
+  min-height: 50px !important;
+  justify-content: center !important;
+  font-size: 13px !important;
+  padding: 14px 18px !important;
+}
+.cta-wrap { width: 100% !important; }
+.hero-mascot {
+  width: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+  margin: 4px auto 0 !important;
+}
+.hero-mascot img {
+  max-width: 240px !important;
+  width: 100% !important;
+  height: auto !important;
+  margin: 0 auto !important;
+  display: block !important;
+}
+
+/* Sections — consistent horizontal padding */
+section, .features, .crew-section, .roadmap-section, .footer {
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+  box-sizing: border-box !important;
+}
+
+/* Sticker / values cards */
+.features.stickers {
+  flex-wrap: wrap !important;
+  gap: 14px !important;
+  padding: 24px 16px 60px !important;
+}
+.sticker {
+  flex: 1 1 calc(50% - 7px) !important;
+  min-width: 0 !important;
+  padding: 14px 12px 12px !important;
+}
+.sticker-title { font-size: 16px !important; }
+.sticker-desc { font-size: 11px !important; }
+.built-different {
+  font-size: 11px !important;
+  gap: 18px !important;
+  margin-top: 10px !important;
+}
+
+/* Crew grid: two-up on phones */
+.crew-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+.crew-name { font-size: 12px !important; }
+.crew-line { font-size: 10px !important; }
+.section-head {
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  align-items: baseline !important;
+}
+.section-title { font-size: 22px !important; }
+
+/* Roadmap */
+.roadmap-grid { grid-template-columns: 1fr !important; }
+.phase-title { font-size: 14px !important; }
+
+/* Footer: stack and center */
+.footer {
+  grid-template-columns: 1fr !important;
+  gap: 20px !important;
+  text-align: center !important;
+  padding: 28px 16px 32px !important;
+}
+.footer-col-title { font-size: 12px !important; }
+.footer-socials {
+  justify-content: center !important;
+}
+.footer-legal,
+.footer-bottom {
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 8px !important;
+  text-align: center !important;
+}
+
+/* Crown sized for mobile hero */
+.hero-crown {
+  width: 22px !important;
+  height: 14px !important;
+  top: -8px !important;
+}
+
+/* ---------- Docs gate (docs/index.html) ---------- */
+
+#docs-gate {
+  padding: max(56px, env(safe-area-inset-top, 56px)) 16px 24px !important;
+  align-items: flex-start !important;
+}
+
+#docs-gate .dg-card {
+  width: calc(100vw - 32px) !important;
+  max-width: 360px !important;
+  padding: 28px 20px 18px !important;
+  margin: 0 auto !important;
+  overflow: visible !important;
+}
+
+/* CLASSIFIED stamp on the docs gate at mobile sizes — moved to the LEFT
+   so the HOME button can occupy the right corner. */
+#docs-gate .dg-stamp {
+  top: 8px !important;
+  left: 10px !important;
+  right: auto !important;
+  transform: rotate(-9deg) !important;
+  font-size: 11.5px !important;
+  padding: 4px 9px 3px !important;
+  letter-spacing: 0.2em !important;
+}
+
+/* CLASSIFIED stamp on the Phase 2 roadmap card (Roki.html) — keep it
+   inside the card at narrow widths and scale the type down. */
+.classified-stamp {
+  top: 12px !important;
+  right: 10px !important;
+  font-size: 14px !important;
+  padding: 4px 10px 3px !important;
+  letter-spacing: 0.2em !important;
+}
+
+/* HOME button on docs gate — shrink slightly for thumb reach */
+#docs-gate .dg-home {
+  top: 10px !important;
+  right: 10px !important;
+  padding: 7px 10px !important;
+  font-size: 10px !important;
+  letter-spacing: 0.16em !important;
+}
+#docs-gate .dg-corner-tr { top: 50px !important; right: 14px !important; }
+
+/* HOME button in unlocked docs index header — always visible and sized
+   for mobile tap targets */
+.docs-home-btn {
+  padding: 6px 10px !important;
+  font-size: 10.5px !important;
+  letter-spacing: 0.14em !important;
+}
+
+#docs-gate .dg-mark { width: 48px !important; height: 48px !important; margin-bottom: 14px !important; }
+#docs-gate .dg-mark img { width: 32px !important; height: 32px !important; }
+#docs-gate .dg-eyebrow { font-size: 9.5px !important; letter-spacing: 0.18em !important; }
+#docs-gate .dg-title { font-size: 22px !important; line-height: 1.05 !important; }
+#docs-gate .dg-sub { font-size: 12px !important; margin-bottom: 18px !important; }
+
+/* Stack input + button vertically — full width */
+#docs-gate #dg-form {
+  flex-direction: column !important;
+  gap: 10px !important;
+}
+#docs-gate #dg-input {
+  width: 100% !important;
+  font-size: 14px !important;
+  padding: 13px 12px !important;
+  letter-spacing: 0.18em !important;
+  box-sizing: border-box !important;
+}
+#docs-gate #dg-input::placeholder { font-size: 10px !important; letter-spacing: 0.16em !important; }
+#docs-gate #dg-form button {
+  width: 100% !important;
+  min-height: 48px !important;
+  padding: 14px 18px !important;
+  font-size: 12px !important;
+  letter-spacing: 0.18em !important;
+}
+
+#docs-gate .dg-msg { font-size: 9.5px !important; }
+#docs-gate .dg-meta { font-size: 9px !important; flex-wrap: wrap !important; gap: 6px !important; }
+#docs-gate .dg-back { font-size: 10px !important; }
+
+/* Corner labels — nudge in so they don't kiss the device edge */
+#docs-gate .dg-corner-tl { top: 14px !important; left: 14px !important; }
+#docs-gate .dg-corner-tr { top: 14px !important; right: 14px !important; }
+#docs-gate .dg-corner-bl { bottom: 14px !important; left: 14px !important; }
+#docs-gate .dg-corner-br { bottom: 14px !important; right: 14px !important; }
+#docs-gate .dg-corner { font-size: 9px !important; }
+
+/* Docs index list (when unlocked) — readable on mobile */
+.docs-shell, .docs-wrap, main {
+  padding: 16px !important;
+  box-sizing: border-box !important;
+}

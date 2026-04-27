@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ROKI — Mobile Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg-1: #0e0c0a;
+    --bg-2: #15110e;
+    --ink: #f5efe6;
+    --muted: rgba(245,239,230,0.55);
+    --line: rgba(245,239,230,0.08);
+    --accent: #e75a4a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg-1);
+    background-image:
+      radial-gradient(ellipse at 20% -10%, rgba(231,90,74,0.10), transparent 55%),
+      radial-gradient(ellipse at 80% 110%, rgba(231,90,74,0.06), transparent 55%);
+    min-height: 100vh;
+    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+    color: var(--ink);
+    padding: 56px 24px 64px;
+  }
+
+  /* Header */
+  .page-head {
+    text-align: center;
+    margin: 0 auto 48px;
+    max-width: 720px;
+  }
+  .eyebrow {
+    display: inline-block;
+    font-size: 10px;
+    letter-spacing: 0.28em;
+    color: var(--accent);
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border: 1px solid rgba(231,90,74,0.4);
+    border-radius: 99px;
+    margin-bottom: 18px;
+  }
+  h1.page-title {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: clamp(32px, 4vw, 44px);
+    letter-spacing: 0.02em;
+    margin: 0 0 10px;
+  }
+  .page-sub {
+    color: var(--muted);
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    margin: 0;
+  }
+
+  /* Frames row */
+  .frames {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 56px 48px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  .frame-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+  }
+
+  /* iPhone frame */
+  .device {
+    --w: 390px;
+    --h: 780px;
+    width: calc(var(--w) + 24px);
+    height: calc(var(--h) + 24px);
+    background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
+    border-radius: 56px;
+    padding: 12px;
+    position: relative;
+    box-shadow:
+      0 30px 80px -20px rgba(0,0,0,0.7),
+      0 10px 30px -10px rgba(0,0,0,0.5),
+      inset 0 0 0 2px #2a2a2a,
+      inset 0 0 0 4px #0a0a0a,
+      inset 0 0 0 5px #2a2a2a;
+  }
+  .device::before {
+    content: '';
+    position: absolute;
+    top: 22px; left: 50%;
+    transform: translateX(-50%);
+    width: 118px; height: 32px;
+    background: #000;
+    border-radius: 18px;
+    z-index: 3;
+    box-shadow: inset 0 0 0 1px #1a1a1a;
+  }
+  .device::after {
+    /* pinhole / camera dot */
+    content: '';
+    position: absolute;
+    top: 32px;
+    left: calc(50% + 38px);
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #0a0a0a;
+    box-shadow: inset 0 0 0 1px #1a1a1a, inset 0 0 2px rgba(40,80,120,0.4);
+    z-index: 4;
+  }
+  .device-screen {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 44px;
+    background: #f6efe2;
+  }
+  .device-screen iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: #f6efe2;
+    display: block;
+  }
+  .device-loading {
+    position: absolute; inset: 0;
+    display: grid; place-items: center;
+    background: #f6efe2;
+    color: rgba(0,0,0,0.35);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+  }
+  .device-loading.gone { opacity: 0; }
+
+  /* Caption under each phone */
+  .caption {
+    text-align: center;
+    margin-top: 4px;
+  }
+  .caption-eye {
+    display: block;
+    font-size: 9.5px;
+    letter-spacing: 0.28em;
+    color: rgba(245,239,230,0.4);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .caption-title {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .caption-rule {
+    width: 32px; height: 2px;
+    background: var(--accent);
+    margin: 10px auto 0;
+    border-radius: 1px;
+  }
+
+  /* Footer */
+  .page-foot {
+    text-align: center;
+    margin: 72px auto 0;
+    color: rgba(245,239,230,0.35);
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+
+  /* Smaller screens — scale down the phones and stack */
+  @media (max-width: 1280px) {
+    .frames { gap: 48px 36px; }
+  }
+  @media (max-width: 720px) {
+    body { padding: 32px 16px 48px; }
+    .device {
+      --w: 320px;
+      --h: 640px;
+      border-radius: 48px;
+    }
+    .device::before { width: 96px; height: 26px; top: 18px; }
+    .device::after { top: 27px; left: calc(50% + 30px); }
+    .device-screen { border-radius: 38px; }
+    .frames { gap: 40px; }
+  }
+</style>
+</head>
+<body>
+  <header class="page-head">
+    <span class="eyebrow">Mobile Preview · 390 × 780</span>
+    <h1 class="page-title">ROKI on iPhone</h1>
+    <p class="page-sub">Live frames — public site &amp; access gate, polished for narrow viewports.</p>
+  </header>
+
+  <main class="frames">
+    <div class="frame-col">
+      <div class="device">
+        <div class="device-screen">
+          <div class="device-loading" data-loading>Loading</div>
+          <iframe data-src="Roki.html" data-overrides="public" title="ROKI main site" loading="lazy" scrolling="yes"></iframe>
+        </div>
+      </div>
+      <figcaption class="caption">
+        <span class="caption-eye">01</span>
+        <span class="caption-title">Main Site · roki.com</span>
+        <div class="caption-rule"></div>
+      </figcaption>
+    </div>
+
+    <div class="frame-col">
+      <div class="device">
+        <div class="device-screen">
+          <div class="device-loading" data-loading>Loading</div>
+          <iframe data-src="docs/index.html#lock" data-overrides="gate" title="ROKI docs gate" loading="lazy" scrolling="yes"></iframe>
+        </div>
+      </div>
+      <figcaption class="caption">
+        <span class="caption-eye">02</span>
+        <span class="caption-title">Docs · Access Gate</span>
+        <div class="caption-rule"></div>
+      </figcaption>
+    </div>
+
+    <div class="frame-col">
+      <div class="device">
+        <div class="device-screen">
+          <div class="device-loading" data-loading>Loading</div>
+          <iframe data-src="docs/index.html" data-overrides="docs" data-unlock="1" title="ROKI docs unlocked" loading="lazy" scrolling="yes"></iframe>
+        </div>
+      </div>
+      <figcaption class="caption">
+        <span class="caption-eye">03</span>
+        <span class="caption-title">Docs · Index (unlocked)</span>
+        <div class="caption-rule"></div>
+      </figcaption>
+    </div>
+  </main>
+
+  <footer class="page-foot">ROKI · INTERNAL // MOBILE QA</footer>
+
+  <script>
+    // Inject mobile-overrides.css into each same-origin iframe so the
+    // public site & docs gate render with mobile-specific polish without
+    // touching the source files themselves.
+    (function () {
+      const overridesHref = 'mobile-overrides.css?v=' + Date.now();
+      let cssText = '';
+
+      function injectInto(iframe) {
+        try {
+          const doc = iframe.contentDocument;
+          if (!doc || !doc.body) return false;
+
+          // Force mobile viewport so the inner page lays out as a phone
+          let meta = doc.querySelector('meta[name="viewport"]');
+          if (!meta) {
+            meta = doc.createElement('meta');
+            meta.setAttribute('name', 'viewport');
+            doc.head.appendChild(meta);
+          }
+          meta.setAttribute('content', 'width=390, initial-scale=1, viewport-fit=cover');
+
+          if (!doc.getElementById('__mobile_overrides') && cssText) {
+            const style = doc.createElement('style');
+            style.id = '__mobile_overrides';
+            style.textContent = cssText;
+            doc.head.appendChild(style);
+          }
+          return true;
+        } catch (e) {
+          return false;
+        }
+      }
+
+      function hideLoader(iframe) {
+        const loader = iframe.parentElement.querySelector('[data-loading]');
+        if (loader) {
+          loader.classList.add('gone');
+          setTimeout(() => loader.remove(), 500);
+        }
+      }
+
+      // Poll each iframe until it has a body, inject, then hide loader.
+      // Keep re-injecting on subsequent load events (internal nav).
+      function watch(iframe) {
+        let injected = false;
+        let unlocked = false;
+        const tryInject = () => {
+          // For the "unlocked" docs phone: set the session flag once
+          // we have access to the iframe's same-origin window, then
+          // reload so the gate skips itself.
+          if (iframe.dataset.unlock === '1' && !unlocked) {
+            try {
+              const w = iframe.contentWindow;
+              const href = w && w.location && w.location.href || '';
+              if (href.includes('/docs/index.html') && !href.includes('about:')) {
+                const cur = w.sessionStorage.getItem('roki_docs_unlocked');
+                console.log('[mobile] unlock check', { href, cur });
+                if (cur !== '1') {
+                  w.sessionStorage.setItem('roki_docs_unlocked', '1');
+                  unlocked = true;
+                  w.location.reload();
+                  return;
+                }
+                unlocked = true;
+              }
+            } catch (e) { console.warn('[mobile] unlock err', e); }
+          }
+          if (injectInto(iframe)) {
+            if (!injected) {
+              injected = true;
+              hideLoader(iframe);
+            }
+          }
+        };
+        const interval = setInterval(tryInject, 200);
+        setTimeout(() => clearInterval(interval), 30000);
+        iframe.addEventListener('load', () => {
+          // Re-inject after each navigation inside the iframe
+          injected = false;
+          setTimeout(tryInject, 50);
+          setTimeout(tryInject, 300);
+          setTimeout(tryInject, 800);
+        });
+      }
+
+      async function init() {
+        try {
+          cssText = await (await fetch(overridesHref, { cache: 'no-store' })).text();
+        } catch (e) { cssText = ''; }
+
+        document.querySelectorAll('iframe[data-src]').forEach((iframe) => {
+          watch(iframe);
+          // iframe.src = ... is blocked in this preview context; navigate
+          // the inner window instead.
+          const target = iframe.getAttribute('data-src');
+          const go = () => {
+            try {
+              iframe.contentWindow.location.replace(target);
+            } catch (e) {
+              iframe.src = target;
+            }
+          };
+          // contentWindow is available immediately for same-origin iframes
+          if (iframe.contentWindow) go();
+          else iframe.addEventListener('load', go, { once: true });
+        });
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
+  </script>
+</body>
+</html>

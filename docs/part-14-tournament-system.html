@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Part 14: Tournament System — ROKI Docs</title>
+<meta name="description" content="ROKI — The Complete Project Bible. Game mechanics, ecosystem design, tokenomics, lore, and launch strategy.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23E94560'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='18' font-weight='bold' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="gate.css?v=2">
+<script>(function(){try{if(location.hash==='#lock')sessionStorage.removeItem('roki_docs_unlocked');}catch(e){}if(!sessionStorage.getItem('roki_docs_unlocked'))document.documentElement.classList.add('docs-locked');})();</script>
+<script src="gate.js?v=2" defer></script>
+</head>
+<body>
+<header class="site-header">
+  <button class="menu-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <a class="brand" href="index.html">
+    <span class="brand-mark">R</span>
+    <span>ROKI Docs</span>
+    <span class="brand-tag">v3.0</span>
+  </a>
+  <div class="header-spacer"></div>
+  <a class="header-link desktop-only" href="../Roki.html">Home</a>
+  <a class="header-link desktop-only" href="part-1-project-overview-brand-identity.html">Get Started</a>
+</header>
+<div class="sidebar-overlay"></div>
+<div class="layout">
+  <aside class="sidebar"><div class="sidebar-section">Documentation</div>
+<a href="index.html"><span class="sidebar-num">—</span>Introduction</a>
+<div class="sidebar-section">Project Bible</div>
+<a href="part-1-project-overview-brand-identity.html"><span class="sidebar-num">P1</span>Project Overview &amp; Brand Identity</a>
+<a href="part-2-clan-system.html"><span class="sidebar-num">P2</span>Clan System</a>
+<a href="part-3-core-combat-mechanics-roki-clash.html"><span class="sidebar-num">P3</span>Core Combat Mechanics — ROKI Clash</a>
+<a href="part-4-fighting-styles.html"><span class="sidebar-num">P4</span>Fighting Styles</a>
+<a href="part-5-techniques-system.html"><span class="sidebar-num">P5</span>Techniques System</a>
+<a href="part-6-elite-tiers-copy-ninjas-mirror-fighters.html"><span class="sidebar-num">P6</span>Elite Tiers — Copy Ninjas &amp; Mirror Fighters</a>
+<a href="part-7-player-tier-structure.html"><span class="sidebar-num">P7</span>Player Tier Structure</a>
+<a href="part-8-roki-zen-reflex-training-game.html"><span class="sidebar-num">P8</span>ROKI Zen (Reflex Training Game)</a>
+<a href="part-9-roki-dojo-conditioning-training-sandbox.html"><span class="sidebar-num">P9</span>ROKI Dojo (Conditioning &amp; Training Sandbox)</a>
+<a href="part-9-5-roki-stare-willpower-no-blink-contest.html"><span class="sidebar-num">P9.5</span>ROKI Stare (Willpower / No-Blink Contest)</a>
+<a href="part-9-6-roki-dodge-defensive-reflex-game.html"><span class="sidebar-num">P9.6</span>ROKI Dodge (Defensive Reflex Game)</a>
+<a href="part-9-7-roki-breath-meditative-rhythm-game.html"><span class="sidebar-num">P9.7</span>ROKI Breath (Meditative Rhythm Game)</a>
+<a href="part-9-8-roki-train-irl-exercise-habit-tracker.html"><span class="sidebar-num">P9.8</span>ROKI Train (IRL Exercise Habit Tracker)</a>
+<a href="part-9-9-roki-ar-lite-photo-maker.html"><span class="sidebar-num">P9.9</span>ROKI AR-Lite Photo Maker</a>
+<a href="part-10-cross-game-reward-system.html"><span class="sidebar-num">P10</span>Cross-Game Reward System</a>
+<a href="part-11-fighter-legacy-metadata-architecture.html"><span class="sidebar-num">P11</span>Fighter Legacy &amp; Metadata Architecture</a>
+<a href="part-12-the-roki-verse-ai-generated-living-lore.html"><span class="sidebar-num">P12</span>The ROKI Verse — AI-Generated Living Lore</a>
+<a href="part-13-leaderboards-competitive-structure.html"><span class="sidebar-num">P13</span>Leaderboards &amp; Competitive Structure</a>
+<a href="part-14-tournament-system.html" class="active"><span class="sidebar-num">P14</span>Tournament System</a>
+<a href="part-15-tokenomics-roki-utility.html"><span class="sidebar-num">P15</span>Tokenomics &amp; $ROKI Utility</a>
+<a href="part-16-nft-value-proposition-ip-rights.html"><span class="sidebar-num">P16</span>NFT Value Proposition &amp; IP Rights</a>
+<a href="part-17-nft-launchpad.html"><span class="sidebar-num">P17</span>NFT Launchpad</a>
+<a href="part-18-ai-image-generator.html"><span class="sidebar-num">P18</span>AI Image Generator</a>
+<a href="part-18-5-roki-nft-generator-internal-tool.html"><span class="sidebar-num">P18.5</span>ROKI NFT Generator (Internal Tool)</a>
+<a href="part-19-launch-strategy.html"><span class="sidebar-num">P19</span>Launch Strategy</a>
+<a href="part-20-future-roadmap.html"><span class="sidebar-num">P20</span>Future Roadmap</a>
+<a href="part-21-technical-architecture-decisions.html"><span class="sidebar-num">P21</span>Technical Architecture Decisions</a>
+<a href="part-22-design-philosophy-core-principles.html"><span class="sidebar-num">P22</span>Design Philosophy &amp; Core Principles</a>
+<a href="part-23-changelog.html"><span class="sidebar-num">P23</span>Changelog</a></aside>
+  <main class="content"><div class="crumbs"><a href="index.html">Docs</a> / Part 14</div>
+<div class="eyebrow">PART 14</div>
+<h1 class="page-title">Tournament System</h1>
+<h2 id="14-1-three-tournament-brackets"><a class="anchor" href="#14-1-three-tournament-brackets">#</a>14.1 Three Tournament Brackets</h2>
+<p><strong>NFT Grand Championship</strong></p>
+<ul><li>NFTs only; flagship event; largest prize pool</li><li>Canonical lore coverage; Fighter Legacy tracked</li><li>Qualification: top 16 NFT holders by seasonal ELO</li><li>Format: knockout bracket, best-of-3 per round</li></ul>
+<p><strong>Challenger Cup</strong></p>
+<ul><li>NFTs + Paid-tier holders who stake sufficient $ROKI</li><li>Mid-tier prize pool</li><li>Token staking: 2-week minimum, tokens locked</li></ul>
+<p><strong>Open Bracket</strong></p>
+<ul><li>All tiers eligible</li><li>Modest prize pool</li><li>Top finishers may be offered NFT promotion</li></ul>
+<h2 id="14-2-tournament-cadence"><a class="anchor" href="#14-2-tournament-cadence">#</a>14.2 Tournament Cadence</h2>
+<p>Not on a fixed schedule. Announced when budget and strategic timing align. Minimum soft target: at least one tournament per quarter. Open Brackets can run monthly or bi-weekly at low prize pool; Challenger Cups every 2-4 weeks; NFT Grand Championship once per season (quarterly).</p>
+<h2 id="14-3-prize-funding-sources"><a class="anchor" href="#14-3-prize-funding-sources">#</a>14.3 Prize Funding Sources</h2>
+<ul><li>Treasury surplus from token operations</li><li>Creator fees (up to 2% per transaction on $ROKI trades)</li><li>Launchpad platform fees</li><li>NFT mint proceeds and secondary royalties</li><li>Sponsor partnerships</li></ul>
+<h2 id="14-4-prize-announcement-structure"><a class="anchor" href="#14-4-prize-announcement-structure">#</a>14.4 Prize Announcement Structure</h2>
+<p>Base prize pool is small and guaranteed. Variable boost comes from accumulated revenue since last tournament. Final prize pool announced at bracket start. Never announce a prize pool you cannot pay.</p>
+<h2 id="14-5-halal-prize-structure"><a class="anchor" href="#14-5-halal-prize-structure">#</a>14.5 Halal Prize Structure</h2>
+<p>Prize pools are treasury- or sponsor-funded, NOT formed from player entry fees. Players do not bet against each other. They compete for prizes provided by the organizer. This sidesteps the maysir (gambling) concern. Consultation with a sheikh is planned before final structure is locked.</p>
+<h2 id="14-6-the-nft-promotion-mechanism"><a class="anchor" href="#14-6-the-nft-promotion-mechanism">#</a>14.6 The NFT Promotion Mechanism</h2>
+<p>A Free or Paid tier player who reaches top 16 of the global ELO leaderboard is offered NFT promotion — purchase at a discount or receive a treasury-granted NFT. The NFT&#x27;s canonical lore is generated based on their existing fighter&#x27;s identity. Full career record transfers.</p>
+<h2 id="14-7-token-staking-for-challenger-cup"><a class="anchor" href="#14-7-token-staking-for-challenger-cup">#</a>14.7 Token Staking for Challenger Cup</h2>
+<ul><li>Players stake $ROKI, minimum 2 weeks locked</li><li>Early unstaking penalty: 5-10% burn (to be finalized)</li></ul>
+<h2 id="14-8-crypto-only-prize-payouts"><a class="anchor" href="#14-8-crypto-only-prize-payouts">#</a>14.8 Crypto-Only Prize Payouts</h2>
+<p>All prizes are paid in crypto. Free-tier winners must connect a wallet to claim. 30-day claim window.</p>
+<nav class="pager"><a class="pager-prev" href="part-13-leaderboards-competitive-structure.html"><div class="pager-label">← Previous · Part 13</div><div class="pager-title">Leaderboards &amp; Competitive Structure</div></a><a class="pager-next" href="part-15-tokenomics-roki-utility.html"><div class="pager-label">Next · Part 15 →</div><div class="pager-title">Tokenomics &amp; $ROKI Utility</div></a></nav></main>
+  <aside class="toc"><div class="toc-title">On this page</div>
+<a class="toc-link" href="#14-1-three-tournament-brackets">14.1 Three Tournament Brackets</a>
+<a class="toc-link" href="#14-2-tournament-cadence">14.2 Tournament Cadence</a>
+<a class="toc-link" href="#14-3-prize-funding-sources">14.3 Prize Funding Sources</a>
+<a class="toc-link" href="#14-4-prize-announcement-structure">14.4 Prize Announcement Structure</a>
+<a class="toc-link" href="#14-5-halal-prize-structure">14.5 Halal Prize Structure</a>
+<a class="toc-link" href="#14-6-the-nft-promotion-mechanism">14.6 The NFT Promotion Mechanism</a>
+<a class="toc-link" href="#14-7-token-staking-for-challenger-cup">14.7 Token Staking for Challenger Cup</a>
+<a class="toc-link" href="#14-8-crypto-only-prize-payouts">14.8 Crypto-Only Prize Payouts</a></aside>
+</div>
+<script src="assets/main.js"></script>
+</body>
+</html>

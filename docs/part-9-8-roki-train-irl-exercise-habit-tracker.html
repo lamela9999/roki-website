@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Part 9.8: ROKI Train (IRL Exercise Habit Tracker) — ROKI Docs</title>
+<meta name="description" content="ROKI — The Complete Project Bible. Game mechanics, ecosystem design, tokenomics, lore, and launch strategy.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23E94560'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='18' font-weight='bold' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="gate.css?v=2">
+<script>(function(){try{if(location.hash==='#lock')sessionStorage.removeItem('roki_docs_unlocked');}catch(e){}if(!sessionStorage.getItem('roki_docs_unlocked'))document.documentElement.classList.add('docs-locked');})();</script>
+<script src="gate.js?v=2" defer></script>
+</head>
+<body>
+<header class="site-header">
+  <button class="menu-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <a class="brand" href="index.html">
+    <span class="brand-mark">R</span>
+    <span>ROKI Docs</span>
+    <span class="brand-tag">v3.0</span>
+  </a>
+  <div class="header-spacer"></div>
+  <a class="header-link desktop-only" href="../Roki.html">Home</a>
+  <a class="header-link desktop-only" href="part-1-project-overview-brand-identity.html">Get Started</a>
+</header>
+<div class="sidebar-overlay"></div>
+<div class="layout">
+  <aside class="sidebar"><div class="sidebar-section">Documentation</div>
+<a href="index.html"><span class="sidebar-num">—</span>Introduction</a>
+<div class="sidebar-section">Project Bible</div>
+<a href="part-1-project-overview-brand-identity.html"><span class="sidebar-num">P1</span>Project Overview &amp; Brand Identity</a>
+<a href="part-2-clan-system.html"><span class="sidebar-num">P2</span>Clan System</a>
+<a href="part-3-core-combat-mechanics-roki-clash.html"><span class="sidebar-num">P3</span>Core Combat Mechanics — ROKI Clash</a>
+<a href="part-4-fighting-styles.html"><span class="sidebar-num">P4</span>Fighting Styles</a>
+<a href="part-5-techniques-system.html"><span class="sidebar-num">P5</span>Techniques System</a>
+<a href="part-6-elite-tiers-copy-ninjas-mirror-fighters.html"><span class="sidebar-num">P6</span>Elite Tiers — Copy Ninjas &amp; Mirror Fighters</a>
+<a href="part-7-player-tier-structure.html"><span class="sidebar-num">P7</span>Player Tier Structure</a>
+<a href="part-8-roki-zen-reflex-training-game.html"><span class="sidebar-num">P8</span>ROKI Zen (Reflex Training Game)</a>
+<a href="part-9-roki-dojo-conditioning-training-sandbox.html"><span class="sidebar-num">P9</span>ROKI Dojo (Conditioning &amp; Training Sandbox)</a>
+<a href="part-9-5-roki-stare-willpower-no-blink-contest.html"><span class="sidebar-num">P9.5</span>ROKI Stare (Willpower / No-Blink Contest)</a>
+<a href="part-9-6-roki-dodge-defensive-reflex-game.html"><span class="sidebar-num">P9.6</span>ROKI Dodge (Defensive Reflex Game)</a>
+<a href="part-9-7-roki-breath-meditative-rhythm-game.html"><span class="sidebar-num">P9.7</span>ROKI Breath (Meditative Rhythm Game)</a>
+<a href="part-9-8-roki-train-irl-exercise-habit-tracker.html" class="active"><span class="sidebar-num">P9.8</span>ROKI Train (IRL Exercise Habit Tracker)</a>
+<a href="part-9-9-roki-ar-lite-photo-maker.html"><span class="sidebar-num">P9.9</span>ROKI AR-Lite Photo Maker</a>
+<a href="part-10-cross-game-reward-system.html"><span class="sidebar-num">P10</span>Cross-Game Reward System</a>
+<a href="part-11-fighter-legacy-metadata-architecture.html"><span class="sidebar-num">P11</span>Fighter Legacy &amp; Metadata Architecture</a>
+<a href="part-12-the-roki-verse-ai-generated-living-lore.html"><span class="sidebar-num">P12</span>The ROKI Verse — AI-Generated Living Lore</a>
+<a href="part-13-leaderboards-competitive-structure.html"><span class="sidebar-num">P13</span>Leaderboards &amp; Competitive Structure</a>
+<a href="part-14-tournament-system.html"><span class="sidebar-num">P14</span>Tournament System</a>
+<a href="part-15-tokenomics-roki-utility.html"><span class="sidebar-num">P15</span>Tokenomics &amp; $ROKI Utility</a>
+<a href="part-16-nft-value-proposition-ip-rights.html"><span class="sidebar-num">P16</span>NFT Value Proposition &amp; IP Rights</a>
+<a href="part-17-nft-launchpad.html"><span class="sidebar-num">P17</span>NFT Launchpad</a>
+<a href="part-18-ai-image-generator.html"><span class="sidebar-num">P18</span>AI Image Generator</a>
+<a href="part-18-5-roki-nft-generator-internal-tool.html"><span class="sidebar-num">P18.5</span>ROKI NFT Generator (Internal Tool)</a>
+<a href="part-19-launch-strategy.html"><span class="sidebar-num">P19</span>Launch Strategy</a>
+<a href="part-20-future-roadmap.html"><span class="sidebar-num">P20</span>Future Roadmap</a>
+<a href="part-21-technical-architecture-decisions.html"><span class="sidebar-num">P21</span>Technical Architecture Decisions</a>
+<a href="part-22-design-philosophy-core-principles.html"><span class="sidebar-num">P22</span>Design Philosophy &amp; Core Principles</a>
+<a href="part-23-changelog.html"><span class="sidebar-num">P23</span>Changelog</a></aside>
+  <main class="content"><div class="crumbs"><a href="index.html">Docs</a> / Part 9.8</div>
+<div class="eyebrow">PART 9.8</div>
+<h1 class="page-title">ROKI Train (IRL Exercise Habit Tracker)</h1>
+<p class="callout">NEW IN v3 — a daily ritual habit tracker tied to real-world exercise, giving temporary in-game boosts.</p>
+<h2 id="9-8-1-concept"><a class="anchor" href="#9-8-1-concept">#</a>9.8.1 Concept</h2>
+<p>ROKI Train is a daily ritual surface that gives temporary in-game boosts in exchange for the player doing real-world exercises. The design goal is habit formation and brand affinity, not fitness verification.</p>
+<h2 id="9-8-2-the-two-daily-exercises"><a class="anchor" href="#9-8-2-the-two-daily-exercises">#</a>9.8.2 The Two Daily Exercises</h2>
+<ul><li>50 push-ups → +1 damage to a chosen zone for that day only</li><li>50 squats → +5 HP to a chosen zone for that day only</li></ul>
+<h2 id="9-8-3-how-counting-works"><a class="anchor" href="#9-8-3-how-counting-works">#</a>9.8.3 How Counting Works</h2>
+<ul><li>A 60-second window opens per exercise.</li><li>The player can tap a button in rhythm with each rep, OR shake the phone (accelerometer detects rhythmic motion).</li><li>50 ticks within the window completes the exercise.</li><li>After completing, the player picks which zone gets the boost.</li></ul>
+<h2 id="9-8-4-no-anti-cheat-by-design"><a class="anchor" href="#9-8-4-no-anti-cheat-by-design">#</a>9.8.4 No Anti-Cheat by Design</h2>
+<p>The mechanic does not try to prove that the player actually did the push-ups. The point is not fitness verification — it is the daily ritual. If someone cheats by tapping the button 50 times without doing the pushups, they cheat themselves; the brand still wins because the player engaged with the app daily either way. Ritual over policing.</p>
+<h2 id="9-8-5-boosts-expire-daily"><a class="anchor" href="#9-8-5-boosts-expire-daily">#</a>9.8.5 Boosts Expire Daily</h2>
+<ul><li>All Train boosts expire at the next 00:00 UTC.</li><li>No rollover. Strictly daily.</li><li>No permanent stat impact on the NFT comes from the exercise output itself — only from streak achievements.</li></ul>
+<h2 id="9-8-6-the-streak-counter"><a class="anchor" href="#9-8-6-the-streak-counter">#</a>9.8.6 The Streak Counter</h2>
+<ul><li>Completing at least one of the two exercises per day increments the daily Train streak.</li><li>A missed day resets the streak to 0.</li><li>The streak is the actual retention hook — not the per-day boost.</li></ul>
+<h2 id="9-8-7-streak-achievements-nft-only-permanent-badges"><a class="anchor" href="#9-8-7-streak-achievements-nft-only-permanent-badges">#</a>9.8.7 Streak Achievements (NFT-only, permanent badges)</h2>
+<p>Streak badges are permanent on the NFT but have NO combat impact in Clash. They are badges of discipline, not stat bonuses.</p>
+<ul><li>30-day streak: Disciplined</li><li>100-day streak: Devoted</li><li>365-day streak: The Iron Heart</li></ul>
+<h2 id="9-8-8-tier-access"><a class="anchor" href="#9-8-8-tier-access">#</a>9.8.8 Tier Access</h2>
+<ul><li>All tiers can use Train.</li><li>NFT holders earn permanent streak badges on their Fighter Legacy.</li><li>Free and Paid tier streaks are tracked but not written to permanent records.</li></ul>
+<h2 id="9-8-9-halal-alignment"><a class="anchor" href="#9-8-9-halal-alignment">#</a>9.8.9 Halal Alignment</h2>
+<p>Real physical training is encouraged in Islam (multiple hadith reference the virtue of physical strength). The mechanic rewards self-discipline and daily commitment to the body — a deliberate ecosystem-wide tone consistent with the project&#x27;s halal-conscious design.</p>
+<nav class="pager"><a class="pager-prev" href="part-9-7-roki-breath-meditative-rhythm-game.html"><div class="pager-label">← Previous · Part 9.7</div><div class="pager-title">ROKI Breath (Meditative Rhythm Game)</div></a><a class="pager-next" href="part-9-9-roki-ar-lite-photo-maker.html"><div class="pager-label">Next · Part 9.9 →</div><div class="pager-title">ROKI AR-Lite Photo Maker</div></a></nav></main>
+  <aside class="toc"><div class="toc-title">On this page</div>
+<a class="toc-link" href="#9-8-1-concept">9.8.1 Concept</a>
+<a class="toc-link" href="#9-8-2-the-two-daily-exercises">9.8.2 The Two Daily Exercises</a>
+<a class="toc-link" href="#9-8-3-how-counting-works">9.8.3 How Counting Works</a>
+<a class="toc-link" href="#9-8-4-no-anti-cheat-by-design">9.8.4 No Anti-Cheat by Design</a>
+<a class="toc-link" href="#9-8-5-boosts-expire-daily">9.8.5 Boosts Expire Daily</a>
+<a class="toc-link" href="#9-8-6-the-streak-counter">9.8.6 The Streak Counter</a>
+<a class="toc-link" href="#9-8-7-streak-achievements-nft-only-permanent-badges">9.8.7 Streak Achievements (NFT-only, permanent badges)</a>
+<a class="toc-link" href="#9-8-8-tier-access">9.8.8 Tier Access</a>
+<a class="toc-link" href="#9-8-9-halal-alignment">9.8.9 Halal Alignment</a></aside>
+</div>
+<script src="assets/main.js"></script>
+</body>
+</html>

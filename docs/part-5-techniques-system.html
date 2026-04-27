@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Part 5: Techniques System — ROKI Docs</title>
+<meta name="description" content="ROKI — The Complete Project Bible. Game mechanics, ecosystem design, tokenomics, lore, and launch strategy.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23E94560'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='18' font-weight='bold' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="gate.css?v=2">
+<script>(function(){try{if(location.hash==='#lock')sessionStorage.removeItem('roki_docs_unlocked');}catch(e){}if(!sessionStorage.getItem('roki_docs_unlocked'))document.documentElement.classList.add('docs-locked');})();</script>
+<script src="gate.js?v=2" defer></script>
+</head>
+<body>
+<header class="site-header">
+  <button class="menu-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <a class="brand" href="index.html">
+    <span class="brand-mark">R</span>
+    <span>ROKI Docs</span>
+    <span class="brand-tag">v3.0</span>
+  </a>
+  <div class="header-spacer"></div>
+  <a class="header-link desktop-only" href="../Roki.html">Home</a>
+  <a class="header-link desktop-only" href="part-1-project-overview-brand-identity.html">Get Started</a>
+</header>
+<div class="sidebar-overlay"></div>
+<div class="layout">
+  <aside class="sidebar"><div class="sidebar-section">Documentation</div>
+<a href="index.html"><span class="sidebar-num">—</span>Introduction</a>
+<div class="sidebar-section">Project Bible</div>
+<a href="part-1-project-overview-brand-identity.html"><span class="sidebar-num">P1</span>Project Overview &amp; Brand Identity</a>
+<a href="part-2-clan-system.html"><span class="sidebar-num">P2</span>Clan System</a>
+<a href="part-3-core-combat-mechanics-roki-clash.html"><span class="sidebar-num">P3</span>Core Combat Mechanics — ROKI Clash</a>
+<a href="part-4-fighting-styles.html"><span class="sidebar-num">P4</span>Fighting Styles</a>
+<a href="part-5-techniques-system.html" class="active"><span class="sidebar-num">P5</span>Techniques System</a>
+<a href="part-6-elite-tiers-copy-ninjas-mirror-fighters.html"><span class="sidebar-num">P6</span>Elite Tiers — Copy Ninjas &amp; Mirror Fighters</a>
+<a href="part-7-player-tier-structure.html"><span class="sidebar-num">P7</span>Player Tier Structure</a>
+<a href="part-8-roki-zen-reflex-training-game.html"><span class="sidebar-num">P8</span>ROKI Zen (Reflex Training Game)</a>
+<a href="part-9-roki-dojo-conditioning-training-sandbox.html"><span class="sidebar-num">P9</span>ROKI Dojo (Conditioning &amp; Training Sandbox)</a>
+<a href="part-9-5-roki-stare-willpower-no-blink-contest.html"><span class="sidebar-num">P9.5</span>ROKI Stare (Willpower / No-Blink Contest)</a>
+<a href="part-9-6-roki-dodge-defensive-reflex-game.html"><span class="sidebar-num">P9.6</span>ROKI Dodge (Defensive Reflex Game)</a>
+<a href="part-9-7-roki-breath-meditative-rhythm-game.html"><span class="sidebar-num">P9.7</span>ROKI Breath (Meditative Rhythm Game)</a>
+<a href="part-9-8-roki-train-irl-exercise-habit-tracker.html"><span class="sidebar-num">P9.8</span>ROKI Train (IRL Exercise Habit Tracker)</a>
+<a href="part-9-9-roki-ar-lite-photo-maker.html"><span class="sidebar-num">P9.9</span>ROKI AR-Lite Photo Maker</a>
+<a href="part-10-cross-game-reward-system.html"><span class="sidebar-num">P10</span>Cross-Game Reward System</a>
+<a href="part-11-fighter-legacy-metadata-architecture.html"><span class="sidebar-num">P11</span>Fighter Legacy &amp; Metadata Architecture</a>
+<a href="part-12-the-roki-verse-ai-generated-living-lore.html"><span class="sidebar-num">P12</span>The ROKI Verse — AI-Generated Living Lore</a>
+<a href="part-13-leaderboards-competitive-structure.html"><span class="sidebar-num">P13</span>Leaderboards &amp; Competitive Structure</a>
+<a href="part-14-tournament-system.html"><span class="sidebar-num">P14</span>Tournament System</a>
+<a href="part-15-tokenomics-roki-utility.html"><span class="sidebar-num">P15</span>Tokenomics &amp; $ROKI Utility</a>
+<a href="part-16-nft-value-proposition-ip-rights.html"><span class="sidebar-num">P16</span>NFT Value Proposition &amp; IP Rights</a>
+<a href="part-17-nft-launchpad.html"><span class="sidebar-num">P17</span>NFT Launchpad</a>
+<a href="part-18-ai-image-generator.html"><span class="sidebar-num">P18</span>AI Image Generator</a>
+<a href="part-18-5-roki-nft-generator-internal-tool.html"><span class="sidebar-num">P18.5</span>ROKI NFT Generator (Internal Tool)</a>
+<a href="part-19-launch-strategy.html"><span class="sidebar-num">P19</span>Launch Strategy</a>
+<a href="part-20-future-roadmap.html"><span class="sidebar-num">P20</span>Future Roadmap</a>
+<a href="part-21-technical-architecture-decisions.html"><span class="sidebar-num">P21</span>Technical Architecture Decisions</a>
+<a href="part-22-design-philosophy-core-principles.html"><span class="sidebar-num">P22</span>Design Philosophy &amp; Core Principles</a>
+<a href="part-23-changelog.html"><span class="sidebar-num">P23</span>Changelog</a></aside>
+  <main class="content"><div class="crumbs"><a href="index.html">Docs</a> / Part 5</div>
+<div class="eyebrow">PART 5</div>
+<h1 class="page-title">Techniques System</h1>
+<h2 id="5-1-overview"><a class="anchor" href="#5-1-overview">#</a>5.1 Overview</h2>
+<p>110 techniques exist in ROKI Clash, organized into three rarity tiers. Each ROKI has a loadout of 5 technique slots (Copy Ninjas get a 6th slot — see Part 6). The loadout is assigned at Fighter Creation and is permanent except through the Reforging mechanic (see Part 15).</p>
+<h2 id="5-2-rarity-tiers"><a class="anchor" href="#5-2-rarity-tiers">#</a>5.2 Rarity Tiers</h2>
+<ul><li>Legendary: 13 techniques. Extremely powerful, often game-defining. NFT tier only.</li><li>Rare: 43 techniques. Strong, strategic. NFT and Paid tiers.</li><li>Common: 54 techniques. Solid baseline. All tiers.</li></ul>
+<h2 id="5-3-loadout-formula"><a class="anchor" href="#5-3-loadout-formula">#</a>5.3 Loadout Formula</h2>
+<ul><li>Every base NFT ROKI gets 2-3 Commons, 1-2 Rares, and ~30% chance of 1 Legendary</li><li>Most ROKIs have zero Legendaries; two Legendaries is a collector&#x27;s item; three is almost mythical</li></ul>
+<h2 id="5-4-cooldown-rules"><a class="anchor" href="#5-4-cooldown-rules">#</a>5.4 Cooldown Rules</h2>
+<p>Default cooldown is 2 rounds after use. Some techniques have longer cooldowns (3 or 4 rounds). Once-per-match techniques exist for the most extreme abilities.</p>
+<h2 id="5-5-the-13-legendary-techniques"><a class="anchor" href="#5-5-the-13-legendary-techniques">#</a>5.5 The 13 Legendary Techniques</h2>
+<ul><li><strong>Swap — </strong>Switch ALL zone HP values with opponent. Total HP reversal.</li><li><strong>Resurrection — </strong>Zone KO&#x27;d to 0 HP comes back at 25 HP. Works once.</li><li><strong>Power Absorb — </strong>Every block permanently reduces opponent&#x27;s damage for that zone by 5. Caps at -15 per zone.</li><li><strong>Power Surge — </strong>Every clean hit permanently increases your damage for that zone by 5. Caps at +15 per zone.</li><li><strong>Iron Will — </strong>No zone can drop below 10 HP. Can only lose by points decision.</li><li><strong>Berserker Mode — </strong>Permanently block 1 zone but attack damage increased 50%.</li><li><strong>Clone — </strong>Attack 2 zones AND defend 3 zones at full power this round. 4-round cooldown.</li><li><strong>Weakening Aura — </strong>All opponent attacks do 10 less damage permanently.</li><li><strong>Fortress Mode — </strong>Permanently block 3 zones instead of 2. Attack damage reduced 25%.</li><li><strong>Executioner — </strong>If attack hits zone below 50 HP that is undefended, double damage.</li><li><strong>Condemned — </strong>Mark opponent zone. If not healed above 70 HP in 3 rounds, drops to 10 HP.</li><li><strong>Momentum Lock — </strong>If you win a round cleanly, next round attack is unblockable.</li><li><strong>Bloodlust — </strong>Every undefended hit gives +5 permanent stacking attack bonus. Caps at +15 per zone.</li></ul>
+<h2 id="5-6-rare-and-common-techniques"><a class="anchor" href="#5-6-rare-and-common-techniques">#</a>5.6 Rare and Common Techniques</h2>
+<p>Full lists preserved from the original ROKI Everything document. 43 Rares cover damage boosts, zone targeting, disruption, healing, reflection, disabling, and utility. 54 Commons cover consistent bread-and-butter effects. All effect handlers are implemented in techniqueHandlers.ts in the codebase.</p>
+<p>Notable Rare examples: Double Strike, Ambush, Precision Strike, Combo, Bulldoze, Haymaker, Fortress, Parry, Poison, Predator, Time Bomb, Phantom, Final Stand.</p>
+<p>Notable Common examples: Cheap Shot, Lunge, Heavy Slam, Iron Skin, Deflect, Dodge, Brace, Last Stand, Second Wind, Adrenaline, Thorns, Punish, Rage, All or Nothing.</p>
+<h2 id="5-7-technique-access-by-player-tier"><a class="anchor" href="#5-7-technique-access-by-player-tier">#</a>5.7 Technique Access by Player Tier</h2>
+<div class="table-wrap"><table><thead><tr><th><strong>Tier</strong></th><th><strong>Commons</strong></th><th><strong>Rares</strong></th><th><strong>Legendaries</strong></th></tr></thead><tbody><tr><td>Free tier</td><td>Yes</td><td>No</td><td>No</td></tr><tr><td>Paid tier</td><td>Yes</td><td>Yes</td><td>No</td></tr><tr><td>NFT tier</td><td>Yes</td><td>Yes</td><td>Yes</td></tr></tbody></table></div>
+<p class="callout">Legendaries are exclusive to NFTs. This preserves NFT mechanical value. Free tier additionally cannot access Rares (3-technique loadout, Commons only).</p>
+<nav class="pager"><a class="pager-prev" href="part-4-fighting-styles.html"><div class="pager-label">← Previous · Part 4</div><div class="pager-title">Fighting Styles</div></a><a class="pager-next" href="part-6-elite-tiers-copy-ninjas-mirror-fighters.html"><div class="pager-label">Next · Part 6 →</div><div class="pager-title">Elite Tiers — Copy Ninjas &amp; Mirror Fighters</div></a></nav></main>
+  <aside class="toc"><div class="toc-title">On this page</div>
+<a class="toc-link" href="#5-1-overview">5.1 Overview</a>
+<a class="toc-link" href="#5-2-rarity-tiers">5.2 Rarity Tiers</a>
+<a class="toc-link" href="#5-3-loadout-formula">5.3 Loadout Formula</a>
+<a class="toc-link" href="#5-4-cooldown-rules">5.4 Cooldown Rules</a>
+<a class="toc-link" href="#5-5-the-13-legendary-techniques">5.5 The 13 Legendary Techniques</a>
+<a class="toc-link" href="#5-6-rare-and-common-techniques">5.6 Rare and Common Techniques</a>
+<a class="toc-link" href="#5-7-technique-access-by-player-tier">5.7 Technique Access by Player Tier</a></aside>
+</div>
+<script src="assets/main.js"></script>
+</body>
+</html>

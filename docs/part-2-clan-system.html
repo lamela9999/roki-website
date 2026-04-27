@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Part 2: Clan System — ROKI Docs</title>
+<meta name="description" content="ROKI — The Complete Project Bible. Game mechanics, ecosystem design, tokenomics, lore, and launch strategy.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23E94560'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='18' font-weight='bold' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="gate.css?v=2">
+<script>(function(){try{if(location.hash==='#lock')sessionStorage.removeItem('roki_docs_unlocked');}catch(e){}if(!sessionStorage.getItem('roki_docs_unlocked'))document.documentElement.classList.add('docs-locked');})();</script>
+<script src="gate.js?v=2" defer></script>
+</head>
+<body>
+<header class="site-header">
+  <button class="menu-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <a class="brand" href="index.html">
+    <span class="brand-mark">R</span>
+    <span>ROKI Docs</span>
+    <span class="brand-tag">v3.0</span>
+  </a>
+  <div class="header-spacer"></div>
+  <a class="header-link desktop-only" href="../Roki.html">Home</a>
+  <a class="header-link desktop-only" href="part-1-project-overview-brand-identity.html">Get Started</a>
+</header>
+<div class="sidebar-overlay"></div>
+<div class="layout">
+  <aside class="sidebar"><div class="sidebar-section">Documentation</div>
+<a href="index.html"><span class="sidebar-num">—</span>Introduction</a>
+<div class="sidebar-section">Project Bible</div>
+<a href="part-1-project-overview-brand-identity.html"><span class="sidebar-num">P1</span>Project Overview &amp; Brand Identity</a>
+<a href="part-2-clan-system.html" class="active"><span class="sidebar-num">P2</span>Clan System</a>
+<a href="part-3-core-combat-mechanics-roki-clash.html"><span class="sidebar-num">P3</span>Core Combat Mechanics — ROKI Clash</a>
+<a href="part-4-fighting-styles.html"><span class="sidebar-num">P4</span>Fighting Styles</a>
+<a href="part-5-techniques-system.html"><span class="sidebar-num">P5</span>Techniques System</a>
+<a href="part-6-elite-tiers-copy-ninjas-mirror-fighters.html"><span class="sidebar-num">P6</span>Elite Tiers — Copy Ninjas &amp; Mirror Fighters</a>
+<a href="part-7-player-tier-structure.html"><span class="sidebar-num">P7</span>Player Tier Structure</a>
+<a href="part-8-roki-zen-reflex-training-game.html"><span class="sidebar-num">P8</span>ROKI Zen (Reflex Training Game)</a>
+<a href="part-9-roki-dojo-conditioning-training-sandbox.html"><span class="sidebar-num">P9</span>ROKI Dojo (Conditioning &amp; Training Sandbox)</a>
+<a href="part-9-5-roki-stare-willpower-no-blink-contest.html"><span class="sidebar-num">P9.5</span>ROKI Stare (Willpower / No-Blink Contest)</a>
+<a href="part-9-6-roki-dodge-defensive-reflex-game.html"><span class="sidebar-num">P9.6</span>ROKI Dodge (Defensive Reflex Game)</a>
+<a href="part-9-7-roki-breath-meditative-rhythm-game.html"><span class="sidebar-num">P9.7</span>ROKI Breath (Meditative Rhythm Game)</a>
+<a href="part-9-8-roki-train-irl-exercise-habit-tracker.html"><span class="sidebar-num">P9.8</span>ROKI Train (IRL Exercise Habit Tracker)</a>
+<a href="part-9-9-roki-ar-lite-photo-maker.html"><span class="sidebar-num">P9.9</span>ROKI AR-Lite Photo Maker</a>
+<a href="part-10-cross-game-reward-system.html"><span class="sidebar-num">P10</span>Cross-Game Reward System</a>
+<a href="part-11-fighter-legacy-metadata-architecture.html"><span class="sidebar-num">P11</span>Fighter Legacy &amp; Metadata Architecture</a>
+<a href="part-12-the-roki-verse-ai-generated-living-lore.html"><span class="sidebar-num">P12</span>The ROKI Verse — AI-Generated Living Lore</a>
+<a href="part-13-leaderboards-competitive-structure.html"><span class="sidebar-num">P13</span>Leaderboards &amp; Competitive Structure</a>
+<a href="part-14-tournament-system.html"><span class="sidebar-num">P14</span>Tournament System</a>
+<a href="part-15-tokenomics-roki-utility.html"><span class="sidebar-num">P15</span>Tokenomics &amp; $ROKI Utility</a>
+<a href="part-16-nft-value-proposition-ip-rights.html"><span class="sidebar-num">P16</span>NFT Value Proposition &amp; IP Rights</a>
+<a href="part-17-nft-launchpad.html"><span class="sidebar-num">P17</span>NFT Launchpad</a>
+<a href="part-18-ai-image-generator.html"><span class="sidebar-num">P18</span>AI Image Generator</a>
+<a href="part-18-5-roki-nft-generator-internal-tool.html"><span class="sidebar-num">P18.5</span>ROKI NFT Generator (Internal Tool)</a>
+<a href="part-19-launch-strategy.html"><span class="sidebar-num">P19</span>Launch Strategy</a>
+<a href="part-20-future-roadmap.html"><span class="sidebar-num">P20</span>Future Roadmap</a>
+<a href="part-21-technical-architecture-decisions.html"><span class="sidebar-num">P21</span>Technical Architecture Decisions</a>
+<a href="part-22-design-philosophy-core-principles.html"><span class="sidebar-num">P22</span>Design Philosophy &amp; Core Principles</a>
+<a href="part-23-changelog.html"><span class="sidebar-num">P23</span>Changelog</a></aside>
+  <main class="content"><div class="crumbs"><a href="index.html">Docs</a> / Part 2</div>
+<div class="eyebrow">PART 2</div>
+<h1 class="page-title">Clan System</h1>
+<p class="callout">MAJOR CHANGE FROM ORIGINAL: Clans are now defined by fighting style, not by arbitrary background color. This replaces the original background-color clan system entirely.</p>
+<h2 id="2-1-the-core-change"><a class="anchor" href="#2-1-the-core-change">#</a>2.1 The Core Change</h2>
+<p>In the original ROKI bible, clans were determined by NFT background color — Red Clan, Blue Clan, Yellow Clan, etc. — with no mechanical meaning. That system is retired.</p>
+<p>New system: a ROKI&#x27;s fighting style IS their clan. Background color follows the style. This gives clans real identity: members share a fighting philosophy, a visual marker, and a collective strategic identity in the meta.</p>
+<h2 id="2-2-the-five-clans-base-tier"><a class="anchor" href="#2-2-the-five-clans-base-tier">#</a>2.2 The Five Clans (Base Tier)</h2>
+<div class="table-wrap"><table><thead><tr><th><strong>Clan</strong></th><th><strong>Background</strong></th><th><strong>Style</strong></th><th><strong>Identity</strong></th></tr></thead><tbody><tr><td>Red Clan</td><td>Red</td><td>Boxer</td><td>Aggressive, direct, high-damage strikers. Consistent pressure, every round a real threat.</td></tr><tr><td>Blue Clan</td><td>Blue</td><td>Tank</td><td>Defensive, patient, counter-damage specialists. Punish the aggressive and predictable.</td></tr><tr><td>Green Clan</td><td>Green</td><td>Grappler</td><td>Attrition fighters. Wear opponents down through arm cripple. Win long fights.</td></tr><tr><td>Purple Clan</td><td>Purple</td><td>Counter Puncher</td><td>Cerebral readers. Risk/reward fighters who dominate when they outthink the opponent.</td></tr><tr><td>Yellow Clan</td><td>Yellow</td><td>Kicker</td><td>Devastating leg specialists. Own the most crippling permanent debuff in the game.</td></tr></tbody></table></div>
+<h2 id="2-3-the-outsider-tiers-elite"><a class="anchor" href="#2-3-the-outsider-tiers-elite">#</a>2.3 The Outsider Tiers (Elite)</h2>
+<p>Two elite NFT types sit outside the clan system entirely. Their backgrounds override whatever style they possess, marking them as outsiders who do not belong to any clan.</p>
+<div class="table-wrap"><table><thead><tr><th><strong>Type</strong></th><th><strong>Background</strong></th><th><strong>Count</strong></th><th><strong>Identity</strong></th></tr></thead><tbody><tr><td>Copy Ninja</td><td>Pink</td><td>50 NFTs</td><td>Have a fixed style like any base ROKI, but can copy ONE technique the opponent has used during a match. Thieves who keep their identity.</td></tr><tr><td>Mirror Fighter</td><td>Orange</td><td>50 NFTs</td><td>No fixed style. Automatically take on the opponent&#x27;s style each match (see Part 6 for refined v3 mechanic). Chameleons who abandon identity.</td></tr></tbody></table></div>
+<h2 id="2-4-collection-composition-3-333-total"><a class="anchor" href="#2-4-collection-composition-3-333-total">#</a>2.4 Collection Composition (3,333 Total)</h2>
+<ul><li>~3,233 base NFTs distributed across the 5 clans</li><li>50 Copy Ninjas (pink background)</li><li>50 Mirror Fighters (orange background)</li></ul>
+<h2 id="2-5-style-matchup-pentagon"><a class="anchor" href="#2-5-style-matchup-pentagon">#</a>2.5 Style Matchup Pentagon</h2>
+<p>Clans are balanced in a rock-paper-scissors pentagon. No clan dominates all others; each has two it beats and two it loses to.</p>
+<ul><li>Red (Boxer) beats Purple (Counter Puncher), Yellow (Kicker)</li><li>Purple (Counter Puncher) beats Yellow (Kicker), Blue (Tank)</li><li>Yellow (Kicker) beats Blue (Tank), Green (Grappler)</li><li>Blue (Tank) beats Red (Boxer), Green (Grappler)</li><li>Green (Grappler) beats Red (Boxer), Purple (Counter Puncher)</li></ul>
+<p>These are advantages, not guarantees. Skill, technique selection, and psychological reads decide individual matches.</p>
+<h2 id="2-6-outsiders-vs-clans-the-narrative-tension"><a class="anchor" href="#2-6-outsiders-vs-clans-the-narrative-tension">#</a>2.6 Outsiders vs Clans — The Narrative Tension</h2>
+<p>Copy Ninjas and Mirror Fighters are hated by the clan warriors. Clan fighters earn their styles through generations of discipline. Copy Ninjas steal techniques. Mirror Fighters wear styles like costumes. To the traditional clan warrior, both are frauds. The hostility lives in the ROKI Verse lore, not in combat numbers.</p>
+<p>Copy Ninjas and Mirror Fighters form an uneasy alliance with each other — bound together by mutual exclusion from the clans, but philosophically distrustful. Copy Ninjas see Mirror Fighters as lacking true self. Mirror Fighters see Copy Ninjas as parasites. A marriage of convenience, not brotherhood.</p>
+<nav class="pager"><a class="pager-prev" href="part-1-project-overview-brand-identity.html"><div class="pager-label">← Previous · Part 1</div><div class="pager-title">Project Overview &amp; Brand Identity</div></a><a class="pager-next" href="part-3-core-combat-mechanics-roki-clash.html"><div class="pager-label">Next · Part 3 →</div><div class="pager-title">Core Combat Mechanics — ROKI Clash</div></a></nav></main>
+  <aside class="toc"><div class="toc-title">On this page</div>
+<a class="toc-link" href="#2-1-the-core-change">2.1 The Core Change</a>
+<a class="toc-link" href="#2-2-the-five-clans-base-tier">2.2 The Five Clans (Base Tier)</a>
+<a class="toc-link" href="#2-3-the-outsider-tiers-elite">2.3 The Outsider Tiers (Elite)</a>
+<a class="toc-link" href="#2-4-collection-composition-3-333-total">2.4 Collection Composition (3,333 Total)</a>
+<a class="toc-link" href="#2-5-style-matchup-pentagon">2.5 Style Matchup Pentagon</a>
+<a class="toc-link" href="#2-6-outsiders-vs-clans-the-narrative-tension">2.6 Outsiders vs Clans — The Narrative Tension</a></aside>
+</div>
+<script src="assets/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Part 18.5: ROKI NFT Generator (Internal Tool) — ROKI Docs</title>
+<meta name="description" content="ROKI — The Complete Project Bible. Game mechanics, ecosystem design, tokenomics, lore, and launch strategy.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23E94560'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='18' font-weight='bold' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="gate.css?v=2">
+<script>(function(){try{if(location.hash==='#lock')sessionStorage.removeItem('roki_docs_unlocked');}catch(e){}if(!sessionStorage.getItem('roki_docs_unlocked'))document.documentElement.classList.add('docs-locked');})();</script>
+<script src="gate.js?v=2" defer></script>
+</head>
+<body>
+<header class="site-header">
+  <button class="menu-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <a class="brand" href="index.html">
+    <span class="brand-mark">R</span>
+    <span>ROKI Docs</span>
+    <span class="brand-tag">v3.0</span>
+  </a>
+  <div class="header-spacer"></div>
+  <a class="header-link desktop-only" href="../Roki.html">Home</a>
+  <a class="header-link desktop-only" href="part-1-project-overview-brand-identity.html">Get Started</a>
+</header>
+<div class="sidebar-overlay"></div>
+<div class="layout">
+  <aside class="sidebar"><div class="sidebar-section">Documentation</div>
+<a href="index.html"><span class="sidebar-num">—</span>Introduction</a>
+<div class="sidebar-section">Project Bible</div>
+<a href="part-1-project-overview-brand-identity.html"><span class="sidebar-num">P1</span>Project Overview &amp; Brand Identity</a>
+<a href="part-2-clan-system.html"><span class="sidebar-num">P2</span>Clan System</a>
+<a href="part-3-core-combat-mechanics-roki-clash.html"><span class="sidebar-num">P3</span>Core Combat Mechanics — ROKI Clash</a>
+<a href="part-4-fighting-styles.html"><span class="sidebar-num">P4</span>Fighting Styles</a>
+<a href="part-5-techniques-system.html"><span class="sidebar-num">P5</span>Techniques System</a>
+<a href="part-6-elite-tiers-copy-ninjas-mirror-fighters.html"><span class="sidebar-num">P6</span>Elite Tiers — Copy Ninjas &amp; Mirror Fighters</a>
+<a href="part-7-player-tier-structure.html"><span class="sidebar-num">P7</span>Player Tier Structure</a>
+<a href="part-8-roki-zen-reflex-training-game.html"><span class="sidebar-num">P8</span>ROKI Zen (Reflex Training Game)</a>
+<a href="part-9-roki-dojo-conditioning-training-sandbox.html"><span class="sidebar-num">P9</span>ROKI Dojo (Conditioning &amp; Training Sandbox)</a>
+<a href="part-9-5-roki-stare-willpower-no-blink-contest.html"><span class="sidebar-num">P9.5</span>ROKI Stare (Willpower / No-Blink Contest)</a>
+<a href="part-9-6-roki-dodge-defensive-reflex-game.html"><span class="sidebar-num">P9.6</span>ROKI Dodge (Defensive Reflex Game)</a>
+<a href="part-9-7-roki-breath-meditative-rhythm-game.html"><span class="sidebar-num">P9.7</span>ROKI Breath (Meditative Rhythm Game)</a>
+<a href="part-9-8-roki-train-irl-exercise-habit-tracker.html"><span class="sidebar-num">P9.8</span>ROKI Train (IRL Exercise Habit Tracker)</a>
+<a href="part-9-9-roki-ar-lite-photo-maker.html"><span class="sidebar-num">P9.9</span>ROKI AR-Lite Photo Maker</a>
+<a href="part-10-cross-game-reward-system.html"><span class="sidebar-num">P10</span>Cross-Game Reward System</a>
+<a href="part-11-fighter-legacy-metadata-architecture.html"><span class="sidebar-num">P11</span>Fighter Legacy &amp; Metadata Architecture</a>
+<a href="part-12-the-roki-verse-ai-generated-living-lore.html"><span class="sidebar-num">P12</span>The ROKI Verse — AI-Generated Living Lore</a>
+<a href="part-13-leaderboards-competitive-structure.html"><span class="sidebar-num">P13</span>Leaderboards &amp; Competitive Structure</a>
+<a href="part-14-tournament-system.html"><span class="sidebar-num">P14</span>Tournament System</a>
+<a href="part-15-tokenomics-roki-utility.html"><span class="sidebar-num">P15</span>Tokenomics &amp; $ROKI Utility</a>
+<a href="part-16-nft-value-proposition-ip-rights.html"><span class="sidebar-num">P16</span>NFT Value Proposition &amp; IP Rights</a>
+<a href="part-17-nft-launchpad.html"><span class="sidebar-num">P17</span>NFT Launchpad</a>
+<a href="part-18-ai-image-generator.html"><span class="sidebar-num">P18</span>AI Image Generator</a>
+<a href="part-18-5-roki-nft-generator-internal-tool.html" class="active"><span class="sidebar-num">P18.5</span>ROKI NFT Generator (Internal Tool)</a>
+<a href="part-19-launch-strategy.html"><span class="sidebar-num">P19</span>Launch Strategy</a>
+<a href="part-20-future-roadmap.html"><span class="sidebar-num">P20</span>Future Roadmap</a>
+<a href="part-21-technical-architecture-decisions.html"><span class="sidebar-num">P21</span>Technical Architecture Decisions</a>
+<a href="part-22-design-philosophy-core-principles.html"><span class="sidebar-num">P22</span>Design Philosophy &amp; Core Principles</a>
+<a href="part-23-changelog.html"><span class="sidebar-num">P23</span>Changelog</a></aside>
+  <main class="content"><div class="crumbs"><a href="index.html">Docs</a> / Part 18.5</div>
+<div class="eyebrow">PART 18.5</div>
+<h1 class="page-title">ROKI NFT Generator (Internal Tool)</h1>
+<p class="callout">NEW IN v3 — an internal web-based NFT art generator and creative-review tool. Built first for the 3,333 ROKI mint, designed to become a sellable product later (NFT launchpad infrastructure).</p>
+<h2 id="18-5-1-purpose"><a class="anchor" href="#18-5-1-purpose">#</a>18.5.1 Purpose</h2>
+<p>The NFT Generator is the practical tool that produces the 3,333 ROKI collection. It is Phase 1 of the launchpad infrastructure — a working generator UI with creator-review features that go beyond what competitors like LaunchMyNFT currently offer. Post-mint, the same tool is repackaged as a SaaS launchpad component, with the generator as the core differentiator.</p>
+<h2 id="18-5-2-stack"><a class="anchor" href="#18-5-2-stack">#</a>18.5.2 Stack</h2>
+<p><strong>API</strong></p>
+<ul><li>Node + TypeScript + Express</li><li>node:sqlite for local persistence</li><li>sharp for image composition</li></ul>
+<p><strong>Web</strong></p>
+<ul><li>React + TypeScript</li><li>Tailwind</li><li>Vite</li></ul>
+<p><strong>Repo</strong></p>
+<ul><li>Monorepo via npm workspaces</li></ul>
+<h2 id="18-5-3-core-features-shipped"><a class="anchor" href="#18-5-3-core-features-shipped">#</a>18.5.3 Core Features (Shipped)</h2>
+<ul><li>Seven layer categories — Background, Body, Face, Head, Clothes, Effects, Hand</li><li>Layer incompatibility matrix — prevents invalid combinations at generation time</li><li>Z-order management with per-combo overrides (for edge cases where default layer order breaks)</li><li>Count-as-source-of-truth rarity — the counts of each trait are the canonical number; percentages are derived for display</li><li>Two-variant output per NFT — a full composite image AND a transparent-background version for in-game use. Pixel parity is guaranteed by construction, not by post-hoc alignment</li><li>Browse grid — paginated, 50 per page, 5×10 layout for reviewing the full collection</li><li>Per-NFT regen with deterministic sub-seeding — regenerate one specific NFT without disturbing any others</li><li>Lock-and-reroll — lock specific traits, reroll the rest. The creator can say ‘keep this hat and these eyes, re-roll everything else.’</li><li>Live rarity ledger drawer — a drawer view that shows the current rarity distribution across the whole collection, highlighting any traits that are over- or under-represented vs their target rarity</li><li>Staging/commit model — regens land in a staged state and require an explicit commit step before they become part of the collection. Prevents accidental commits of test rolls</li><li>Manual character creation — hand-pick every trait for a specific NFT. Save-as-draft, seed-from-existing-NFT (clone any existing ID as a starting point), and explicit assignment to a specific token ID</li><li>Final export pipeline — produces an Arweave-ready folder using the Metaplex Core metadata schema. Rarity counts in the export reflect the real post-manual-edit state of the collection, not pre-edit projections</li><li>AI lore CLI prototype — Anthropic Haiku generates 2-3 sentence fight-night style bios per NFT, seeded from the NFT&#x27;s trait set</li><li>Metadata validator (npm run validate) — catches schema violations before Arweave upload</li></ul>
+<h2 id="18-5-4-output-structure"><a class="anchor" href="#18-5-4-output-structure">#</a>18.5.4 Output Structure</h2>
+<ul><li>export/images/full/&lt;id&gt;.png — full composite image</li><li>export/images/transparent/&lt;id&gt;.png — transparent background for in-game use</li><li>export/metadata/&lt;id&gt;.json — per-NFT Metaplex Core metadata</li><li>export/collection.json — collection-level metadata</li><li>export/rarity-final.json — true final rarity counts after all manual edits</li><li>export/manifest.json — upload manifest for Arweave pipeline</li></ul>
+<h2 id="18-5-5-future-product-path"><a class="anchor" href="#18-5-5-future-product-path">#</a>18.5.5 Future Product Path</h2>
+<p>Repackage the Generator as a SaaS launchpad after ROKI&#x27;s own mint validates it. Positioning vs. LaunchMyNFT: the generator UI is the core differentiator — live rarity management, lock-and-reroll, staging, and hybrid visible/invisible trait support are real advantages competitors don&#x27;t address well. Halal-conscious framing and the game-coupling story give the platform a distinct pitch for any partner project that wants in.</p>
+<nav class="pager"><a class="pager-prev" href="part-18-ai-image-generator.html"><div class="pager-label">← Previous · Part 18</div><div class="pager-title">AI Image Generator</div></a><a class="pager-next" href="part-19-launch-strategy.html"><div class="pager-label">Next · Part 19 →</div><div class="pager-title">Launch Strategy</div></a></nav></main>
+  <aside class="toc"><div class="toc-title">On this page</div>
+<a class="toc-link" href="#18-5-1-purpose">18.5.1 Purpose</a>
+<a class="toc-link" href="#18-5-2-stack">18.5.2 Stack</a>
+<a class="toc-link" href="#18-5-3-core-features-shipped">18.5.3 Core Features (Shipped)</a>
+<a class="toc-link" href="#18-5-4-output-structure">18.5.4 Output Structure</a>
+<a class="toc-link" href="#18-5-5-future-product-path">18.5.5 Future Product Path</a></aside>
+</div>
+<script src="assets/main.js"></script>
+</body>
+</html>

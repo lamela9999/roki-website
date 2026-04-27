@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ROKI Docs — The Complete Project Bible</title>
+<meta name="description" content="ROKI — The Complete Project Bible. Game mechanics, ecosystem design, tokenomics, lore, and launch strategy.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23E94560'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='18' font-weight='bold' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="gate.css?v=3">
+<script>(function(){try{if(location.hash==='#lock')sessionStorage.removeItem('roki_docs_unlocked');}catch(e){}if(!sessionStorage.getItem('roki_docs_unlocked'))document.documentElement.classList.add('docs-locked');})();</script>
+<script src="gate.js?v=3" defer></script>
+</head>
+<body>
+<header class="site-header">
+  <button class="menu-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <a class="brand" href="index.html">
+    <span class="brand-mark">R</span>
+    <span>ROKI Docs</span>
+    <span class="brand-tag">v3.0</span>
+  </a>
+  <div class="header-spacer"></div>
+  <a class="docs-home-btn" href="../Roki.html" aria-label="Return home">
+    <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><path d="M2 7 L8 2 L14 7 L14 14 L10 14 L10 9 L6 9 L6 14 L2 14 Z"></path></svg>
+    <span>Home</span>
+  </a>
+  <a class="header-link desktop-only" href="part-1-project-overview-brand-identity.html">Get Started</a>
+</header>
+<div class="sidebar-overlay"></div>
+<div class="layout">
+  <aside class="sidebar"><div class="sidebar-section">Documentation</div>
+<a href="index.html" class="active"><span class="sidebar-num">—</span>Introduction</a>
+<div class="sidebar-section">Project Bible</div>
+<a href="part-1-project-overview-brand-identity.html"><span class="sidebar-num">P1</span>Project Overview &amp; Brand Identity</a>
+<a href="part-2-clan-system.html"><span class="sidebar-num">P2</span>Clan System</a>
+<a href="part-3-core-combat-mechanics-roki-clash.html"><span class="sidebar-num">P3</span>Core Combat Mechanics — ROKI Clash</a>
+<a href="part-4-fighting-styles.html"><span class="sidebar-num">P4</span>Fighting Styles</a>
+<a href="part-5-techniques-system.html"><span class="sidebar-num">P5</span>Techniques System</a>
+<a href="part-6-elite-tiers-copy-ninjas-mirror-fighters.html"><span class="sidebar-num">P6</span>Elite Tiers — Copy Ninjas &amp; Mirror Fighters</a>
+<a href="part-7-player-tier-structure.html"><span class="sidebar-num">P7</span>Player Tier Structure</a>
+<a href="part-8-roki-zen-reflex-training-game.html"><span class="sidebar-num">P8</span>ROKI Zen (Reflex Training Game)</a>
+<a href="part-9-roki-dojo-conditioning-training-sandbox.html"><span class="sidebar-num">P9</span>ROKI Dojo (Conditioning &amp; Training Sandbox)</a>
+<a href="part-9-5-roki-stare-willpower-no-blink-contest.html"><span class="sidebar-num">P9.5</span>ROKI Stare (Willpower / No-Blink Contest)</a>
+<a href="part-9-6-roki-dodge-defensive-reflex-game.html"><span class="sidebar-num">P9.6</span>ROKI Dodge (Defensive Reflex Game)</a>
+<a href="part-9-7-roki-breath-meditative-rhythm-game.html"><span class="sidebar-num">P9.7</span>ROKI Breath (Meditative Rhythm Game)</a>
+<a href="part-9-8-roki-train-irl-exercise-habit-tracker.html"><span class="sidebar-num">P9.8</span>ROKI Train (IRL Exercise Habit Tracker)</a>
+<a href="part-9-9-roki-ar-lite-photo-maker.html"><span class="sidebar-num">P9.9</span>ROKI AR-Lite Photo Maker</a>
+<a href="part-10-cross-game-reward-system.html"><span class="sidebar-num">P10</span>Cross-Game Reward System</a>
+<a href="part-11-fighter-legacy-metadata-architecture.html"><span class="sidebar-num">P11</span>Fighter Legacy &amp; Metadata Architecture</a>
+<a href="part-12-the-roki-verse-ai-generated-living-lore.html"><span class="sidebar-num">P12</span>The ROKI Verse — AI-Generated Living Lore</a>
+<a href="part-13-leaderboards-competitive-structure.html"><span class="sidebar-num">P13</span>Leaderboards &amp; Competitive Structure</a>
+<a href="part-14-tournament-system.html"><span class="sidebar-num">P14</span>Tournament System</a>
+<a href="part-15-tokenomics-roki-utility.html"><span class="sidebar-num">P15</span>Tokenomics &amp; $ROKI Utility</a>
+<a href="part-16-nft-value-proposition-ip-rights.html"><span class="sidebar-num">P16</span>NFT Value Proposition &amp; IP Rights</a>
+<a href="part-17-nft-launchpad.html"><span class="sidebar-num">P17</span>NFT Launchpad</a>
+<a href="part-18-ai-image-generator.html"><span class="sidebar-num">P18</span>AI Image Generator</a>
+<a href="part-18-5-roki-nft-generator-internal-tool.html"><span class="sidebar-num">P18.5</span>ROKI NFT Generator (Internal Tool)</a>
+<a href="part-19-launch-strategy.html"><span class="sidebar-num">P19</span>Launch Strategy</a>
+<a href="part-20-future-roadmap.html"><span class="sidebar-num">P20</span>Future Roadmap</a>
+<a href="part-21-technical-architecture-decisions.html"><span class="sidebar-num">P21</span>Technical Architecture Decisions</a>
+<a href="part-22-design-philosophy-core-principles.html"><span class="sidebar-num">P22</span>Design Philosophy &amp; Core Principles</a>
+<a href="part-23-changelog.html"><span class="sidebar-num">P23</span>Changelog</a></aside>
+  <main class="content"><section class="hero">
+<div class="eyebrow">v3.0 · April 2026</div>
+<h1>The ROKI Project Bible</h1>
+<p>The complete reference for the ROKI ecosystem — game mechanics, ecosystem design, tokenomics, lore architecture, launch strategy, and every decision made to date.</p>
+<div class="hero-meta">
+<span><strong>29</strong>parts</span>
+<span><strong>3,333</strong>NFTs on Solana</span>
+<span><strong>5</strong>fighting style clans</span>
+<span><strong>110</strong>techniques</span>
+</div>
+</section>
+<h2 style="margin-top:0">Browse the documentation</h2>
+<div class="cards">
+<a class="card" href="part-1-project-overview-brand-identity.html"><div class="card-num">PART 1</div><div class="card-title">Project Overview &amp; Brand Identity</div></a>
+<a class="card" href="part-2-clan-system.html"><div class="card-num">PART 2</div><div class="card-title">Clan System</div></a>
+<a class="card" href="part-3-core-combat-mechanics-roki-clash.html"><div class="card-num">PART 3</div><div class="card-title">Core Combat Mechanics — ROKI Clash</div></a>
+<a class="card" href="part-4-fighting-styles.html"><div class="card-num">PART 4</div><div class="card-title">Fighting Styles</div></a>
+<a class="card" href="part-5-techniques-system.html"><div class="card-num">PART 5</div><div class="card-title">Techniques System</div></a>
+<a class="card" href="part-6-elite-tiers-copy-ninjas-mirror-fighters.html"><div class="card-num">PART 6</div><div class="card-title">Elite Tiers — Copy Ninjas &amp; Mirror Fighters</div></a>
+<a class="card" href="part-7-player-tier-structure.html"><div class="card-num">PART 7</div><div class="card-title">Player Tier Structure</div></a>
+<a class="card" href="part-8-roki-zen-reflex-training-game.html"><div class="card-num">PART 8</div><div class="card-title">ROKI Zen (Reflex Training Game)</div></a>
+<a class="card" href="part-9-roki-dojo-conditioning-training-sandbox.html"><div class="card-num">PART 9</div><div class="card-title">ROKI Dojo (Conditioning &amp; Training Sandbox)</div></a>
+<a class="card" href="part-9-5-roki-stare-willpower-no-blink-contest.html"><div class="card-num">PART 9.5</div><div class="card-title">ROKI Stare (Willpower / No-Blink Contest)</div></a>
+<a class="card" href="part-9-6-roki-dodge-defensive-reflex-game.html"><div class="card-num">PART 9.6</div><div class="card-title">ROKI Dodge (Defensive Reflex Game)</div></a>
+<a class="card" href="part-9-7-roki-breath-meditative-rhythm-game.html"><div class="card-num">PART 9.7</div><div class="card-title">ROKI Breath (Meditative Rhythm Game)</div></a>
+<a class="card" href="part-9-8-roki-train-irl-exercise-habit-tracker.html"><div class="card-num">PART 9.8</div><div class="card-title">ROKI Train (IRL Exercise Habit Tracker)</div></a>
+<a class="card" href="part-9-9-roki-ar-lite-photo-maker.html"><div class="card-num">PART 9.9</div><div class="card-title">ROKI AR-Lite Photo Maker</div></a>
+<a class="card" href="part-10-cross-game-reward-system.html"><div class="card-num">PART 10</div><div class="card-title">Cross-Game Reward System</div></a>
+<a class="card" href="part-11-fighter-legacy-metadata-architecture.html"><div class="card-num">PART 11</div><div class="card-title">Fighter Legacy &amp; Metadata Architecture</div></a>
+<a class="card" href="part-12-the-roki-verse-ai-generated-living-lore.html"><div class="card-num">PART 12</div><div class="card-title">The ROKI Verse — AI-Generated Living Lore</div></a>
+<a class="card" href="part-13-leaderboards-competitive-structure.html"><div class="card-num">PART 13</div><div class="card-title">Leaderboards &amp; Competitive Structure</div></a>
+<a class="card" href="part-14-tournament-system.html"><div class="card-num">PART 14</div><div class="card-title">Tournament System</div></a>
+<a class="card" href="part-15-tokenomics-roki-utility.html"><div class="card-num">PART 15</div><div class="card-title">Tokenomics &amp; $ROKI Utility</div></a>
+<a class="card" href="part-16-nft-value-proposition-ip-rights.html"><div class="card-num">PART 16</div><div class="card-title">NFT Value Proposition &amp; IP Rights</div></a>
+<a class="card" href="part-17-nft-launchpad.html"><div class="card-num">PART 17</div><div class="card-title">NFT Launchpad</div></a>
+<a class="card" href="part-18-ai-image-generator.html"><div class="card-num">PART 18</div><div class="card-title">AI Image Generator</div></a>
+<a class="card" href="part-18-5-roki-nft-generator-internal-tool.html"><div class="card-num">PART 18.5</div><div class="card-title">ROKI NFT Generator (Internal Tool)</div></a>
+<a class="card" href="part-19-launch-strategy.html"><div class="card-num">PART 19</div><div class="card-title">Launch Strategy</div></a>
+<a class="card" href="part-20-future-roadmap.html"><div class="card-num">PART 20</div><div class="card-title">Future Roadmap</div></a>
+<a class="card" href="part-21-technical-architecture-decisions.html"><div class="card-num">PART 21</div><div class="card-title">Technical Architecture Decisions</div></a>
+<a class="card" href="part-22-design-philosophy-core-principles.html"><div class="card-num">PART 22</div><div class="card-title">Design Philosophy &amp; Core Principles</div></a>
+<a class="card" href="part-23-changelog.html"><div class="card-num">PART 23</div><div class="card-title">Changelog</div></a>
+</div></main>
+  <aside class="toc"></aside>
+</div>
+<script src="assets/main.js"></script>
+</body>
+</html>

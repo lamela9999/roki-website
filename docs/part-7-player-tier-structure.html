@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Part 7: Player Tier Structure — ROKI Docs</title>
+<meta name="description" content="ROKI — The Complete Project Bible. Game mechanics, ecosystem design, tokenomics, lore, and launch strategy.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23E94560'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='18' font-weight='bold' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="gate.css?v=2">
+<script>(function(){try{if(location.hash==='#lock')sessionStorage.removeItem('roki_docs_unlocked');}catch(e){}if(!sessionStorage.getItem('roki_docs_unlocked'))document.documentElement.classList.add('docs-locked');})();</script>
+<script src="gate.js?v=2" defer></script>
+</head>
+<body>
+<header class="site-header">
+  <button class="menu-toggle" aria-label="Toggle navigation">☰ Menu</button>
+  <a class="brand" href="index.html">
+    <span class="brand-mark">R</span>
+    <span>ROKI Docs</span>
+    <span class="brand-tag">v3.0</span>
+  </a>
+  <div class="header-spacer"></div>
+  <a class="header-link desktop-only" href="../Roki.html">Home</a>
+  <a class="header-link desktop-only" href="part-1-project-overview-brand-identity.html">Get Started</a>
+</header>
+<div class="sidebar-overlay"></div>
+<div class="layout">
+  <aside class="sidebar"><div class="sidebar-section">Documentation</div>
+<a href="index.html"><span class="sidebar-num">—</span>Introduction</a>
+<div class="sidebar-section">Project Bible</div>
+<a href="part-1-project-overview-brand-identity.html"><span class="sidebar-num">P1</span>Project Overview &amp; Brand Identity</a>
+<a href="part-2-clan-system.html"><span class="sidebar-num">P2</span>Clan System</a>
+<a href="part-3-core-combat-mechanics-roki-clash.html"><span class="sidebar-num">P3</span>Core Combat Mechanics — ROKI Clash</a>
+<a href="part-4-fighting-styles.html"><span class="sidebar-num">P4</span>Fighting Styles</a>
+<a href="part-5-techniques-system.html"><span class="sidebar-num">P5</span>Techniques System</a>
+<a href="part-6-elite-tiers-copy-ninjas-mirror-fighters.html"><span class="sidebar-num">P6</span>Elite Tiers — Copy Ninjas &amp; Mirror Fighters</a>
+<a href="part-7-player-tier-structure.html" class="active"><span class="sidebar-num">P7</span>Player Tier Structure</a>
+<a href="part-8-roki-zen-reflex-training-game.html"><span class="sidebar-num">P8</span>ROKI Zen (Reflex Training Game)</a>
+<a href="part-9-roki-dojo-conditioning-training-sandbox.html"><span class="sidebar-num">P9</span>ROKI Dojo (Conditioning &amp; Training Sandbox)</a>
+<a href="part-9-5-roki-stare-willpower-no-blink-contest.html"><span class="sidebar-num">P9.5</span>ROKI Stare (Willpower / No-Blink Contest)</a>
+<a href="part-9-6-roki-dodge-defensive-reflex-game.html"><span class="sidebar-num">P9.6</span>ROKI Dodge (Defensive Reflex Game)</a>
+<a href="part-9-7-roki-breath-meditative-rhythm-game.html"><span class="sidebar-num">P9.7</span>ROKI Breath (Meditative Rhythm Game)</a>
+<a href="part-9-8-roki-train-irl-exercise-habit-tracker.html"><span class="sidebar-num">P9.8</span>ROKI Train (IRL Exercise Habit Tracker)</a>
+<a href="part-9-9-roki-ar-lite-photo-maker.html"><span class="sidebar-num">P9.9</span>ROKI AR-Lite Photo Maker</a>
+<a href="part-10-cross-game-reward-system.html"><span class="sidebar-num">P10</span>Cross-Game Reward System</a>
+<a href="part-11-fighter-legacy-metadata-architecture.html"><span class="sidebar-num">P11</span>Fighter Legacy &amp; Metadata Architecture</a>
+<a href="part-12-the-roki-verse-ai-generated-living-lore.html"><span class="sidebar-num">P12</span>The ROKI Verse — AI-Generated Living Lore</a>
+<a href="part-13-leaderboards-competitive-structure.html"><span class="sidebar-num">P13</span>Leaderboards &amp; Competitive Structure</a>
+<a href="part-14-tournament-system.html"><span class="sidebar-num">P14</span>Tournament System</a>
+<a href="part-15-tokenomics-roki-utility.html"><span class="sidebar-num">P15</span>Tokenomics &amp; $ROKI Utility</a>
+<a href="part-16-nft-value-proposition-ip-rights.html"><span class="sidebar-num">P16</span>NFT Value Proposition &amp; IP Rights</a>
+<a href="part-17-nft-launchpad.html"><span class="sidebar-num">P17</span>NFT Launchpad</a>
+<a href="part-18-ai-image-generator.html"><span class="sidebar-num">P18</span>AI Image Generator</a>
+<a href="part-18-5-roki-nft-generator-internal-tool.html"><span class="sidebar-num">P18.5</span>ROKI NFT Generator (Internal Tool)</a>
+<a href="part-19-launch-strategy.html"><span class="sidebar-num">P19</span>Launch Strategy</a>
+<a href="part-20-future-roadmap.html"><span class="sidebar-num">P20</span>Future Roadmap</a>
+<a href="part-21-technical-architecture-decisions.html"><span class="sidebar-num">P21</span>Technical Architecture Decisions</a>
+<a href="part-22-design-philosophy-core-principles.html"><span class="sidebar-num">P22</span>Design Philosophy &amp; Core Principles</a>
+<a href="part-23-changelog.html"><span class="sidebar-num">P23</span>Changelog</a></aside>
+  <main class="content"><div class="crumbs"><a href="index.html">Docs</a> / Part 7</div>
+<div class="eyebrow">PART 7</div>
+<h1 class="page-title">Player Tier Structure</h1>
+<p class="callout">This tier structure is a core part of the ROKI go-to-market strategy.</p>
+<h2 id="7-1-the-three-tiers-plus-token-staker-sub-tier"><a class="anchor" href="#7-1-the-three-tiers-plus-token-staker-sub-tier">#</a>7.1 The Three Tiers (Plus Token-Staker Sub-Tier)</h2>
+<p><strong>Free Tier</strong></p>
+<ul><li>Account-based (email/password), no wallet required initially</li><li>300 HP total (75 per zone)</li><li>3 technique slots</li><li>Common techniques only (no Rares, no Legendaries)</li><li>No permanent achievements</li><li>ELO uncapped — can climb as high as skill allows</li><li>Matchmakes by ELO range against anyone, regardless of tier</li><li>Can compete in Open Bracket tournaments only</li><li>Can receive crypto prizes (must connect a wallet at claim time)</li></ul>
+<p><strong>Paid Tier</strong></p>
+<ul><li>Account-based, one-time purchase ($20-50 range — to be finalized)</li><li>400 HP total (100 per zone) — matches NFT stats</li><li>5 technique slots — matches NFT slot count</li><li>Commons and Rares only (no Legendaries)</li><li>No permanent achievements</li><li>ELO uncapped</li><li>Free re-rolls of character</li><li>Can compete in Open Bracket only (unless they also stake tokens)</li></ul>
+<p><strong>Paid Tier + Token Stakers</strong></p>
+<ul><li>Paid tier character + stake a specified amount of $ROKI ($50-100 range being considered)</li><li>Minimum stake duration: 2 weeks</li><li>Unlocks access to the Challenger Cup</li><li>Tokens locked during tournament season; cannot be sold without forfeiting qualification</li></ul>
+<p><strong>NFT Tier</strong></p>
+<ul><li>Owns one or more ROKI NFTs</li><li>400 HP total (100 per zone)</li><li>5 technique slots (6 for Copy Ninjas)</li><li>Full access: Commons, Rares, Legendaries</li><li>All permanent achievements available</li><li>Full Fighter Legacy tracking</li><li>Canonical lore in the ROKI Verse</li><li>One-time Reforging option (see Part 15)</li><li>Can compete in NFT Grand Championship</li><li>Full commercial IP rights to their specific ROKI (see Part 16)</li><li>Priority access to airdrops, partnerships, and all future ecosystem benefits</li></ul>
+<h2 id="7-2-tournament-bracket-access-summary"><a class="anchor" href="#7-2-tournament-bracket-access-summary">#</a>7.2 Tournament Bracket Access Summary</h2>
+<div class="table-wrap"><table><thead><tr><th><strong>Tier</strong></th><th><strong>Open Bracket</strong></th><th><strong>Challenger Cup</strong></th><th><strong>NFT Grand Championship</strong></th></tr></thead><tbody><tr><td>Free</td><td>Yes</td><td>No</td><td>No</td></tr><tr><td>Paid</td><td>Yes</td><td>No</td><td>No</td></tr><tr><td>Paid + Token Staker</td><td>Yes</td><td>Yes</td><td>No</td></tr><tr><td>NFT</td><td>Yes</td><td>Yes</td><td>Yes</td></tr></tbody></table></div>
+<h2 id="7-3-philosophy-of-tiering"><a class="anchor" href="#7-3-philosophy-of-tiering">#</a>7.3 Philosophy of Tiering</h2>
+<p>The tier system honors three forms of commitment: time and skill (any tier can climb ELO), ecosystem investment (Paid + Token Staker shows financial commitment without NFT prices), and long-term stake (NFT holders are equity participants). No tier is humiliated. Every tier has meaningful recognition and meaningful upgrade paths.</p>
+<h2 id="7-4-rookie-league-onboarding"><a class="anchor" href="#7-4-rookie-league-onboarding">#</a>7.4 Rookie League Onboarding</h2>
+<p>When the Free tier opens (Phase 2 of launch), new free players start in a temporary Rookie League against other new players. After 20–30 matches, they graduate into the main ELO pool.</p>
+<h2 id="7-5-nft-vs-nft-matchmaking-priority"><a class="anchor" href="#7-5-nft-vs-nft-matchmaking-priority">#</a>7.5 NFT-vs-NFT Matchmaking Priority</h2>
+<p>When multiple player tiers share the same ELO range, the system prioritizes NFT-vs-NFT matchups.</p>
+<h2 id="7-6-visual-distinction-in-game"><a class="anchor" href="#7-6-visual-distinction-in-game">#</a>7.6 Visual Distinction in Game</h2>
+<p>NFT fighters display a visual marker in-game (border, badge, or similar) that differentiates them from paid and free fighters.</p>
+<nav class="pager"><a class="pager-prev" href="part-6-elite-tiers-copy-ninjas-mirror-fighters.html"><div class="pager-label">← Previous · Part 6</div><div class="pager-title">Elite Tiers — Copy Ninjas &amp; Mirror Fighters</div></a><a class="pager-next" href="part-8-roki-zen-reflex-training-game.html"><div class="pager-label">Next · Part 8 →</div><div class="pager-title">ROKI Zen (Reflex Training Game)</div></a></nav></main>
+  <aside class="toc"><div class="toc-title">On this page</div>
+<a class="toc-link" href="#7-1-the-three-tiers-plus-token-staker-sub-tier">7.1 The Three Tiers (Plus Token-Staker Sub-Tier)</a>
+<a class="toc-link" href="#7-2-tournament-bracket-access-summary">7.2 Tournament Bracket Access Summary</a>
+<a class="toc-link" href="#7-3-philosophy-of-tiering">7.3 Philosophy of Tiering</a>
+<a class="toc-link" href="#7-4-rookie-league-onboarding">7.4 Rookie League Onboarding</a>
+<a class="toc-link" href="#7-5-nft-vs-nft-matchmaking-priority">7.5 NFT-vs-NFT Matchmaking Priority</a>
+<a class="toc-link" href="#7-6-visual-distinction-in-game">7.6 Visual Distinction in Game</a></aside>
+</div>
+<script src="assets/main.js"></script>
+</body>
+</html>
