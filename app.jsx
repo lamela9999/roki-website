@@ -7,6 +7,8 @@ const PALETTE = {
   pink: '#FF5B94', orange: '#FFA73F', cream: '#F5EFE6'
 };
 
+const CA = 'J96hj2LiXw6UFPm7cpGQV99G5SJi4mpP7PQRZFC6brrr';
+
 // Crew gallery — each card uses an NFT image with its own bg color
 const CREW = [
   { src: 'assets/c4.png',     name: 'GRAPPLER',        line: 'Locks you down.' },
@@ -65,6 +67,39 @@ const Nav = () => (
   </nav>
 );
 
+
+const CAStrip = () => {
+  const [copied, setCopied] = useState(false);
+  const onCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(CA);
+    } catch (_) {
+      const ta = document.createElement('textarea');
+      ta.value = CA;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); } catch (_) {}
+      ta.remove();
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1400);
+  };
+  return (
+    <button className="ca-strip reveal" onClick={onCopy} aria-label="Copy contract address">
+      <span className="ca-label">CA</span>
+      <span className="ca-addr"><span className="ca-addr-full">{CA}</span><span className="ca-addr-short">{CA.slice(0,6)}…{CA.slice(-6)}</span></span>
+      <span className="ca-copy">
+        {copied ? (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        ) : (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="11" height="11" rx="1.5"/><path d="M5 15V5a1.5 1.5 0 0 1 1.5-1.5H15"/></svg>
+        )}
+        <span className="ca-copy-label">{copied ? 'COPIED' : 'COPY'}</span>
+      </span>
+    </button>
+  );
+};
+
 const Hero = ({ onMascotClick, mascotClicks }) => (
   <section className="hero" id="home">
     <div className="hero-text reveal">
@@ -93,6 +128,7 @@ const Hero = ({ onMascotClick, mascotClicks }) => (
           </a>
         </div>
       </div>
+      <CAStrip/>
     </div>
     <div className="hero-mascot bob reveal" onClick={onMascotClick} title={`(${mascotClicks}/5)`}>
       <img src="assets/satoshi.png" alt="ROKI"/>
