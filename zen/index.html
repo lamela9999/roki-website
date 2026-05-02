@@ -887,17 +887,23 @@
     border-radius: inherit;
     display: block;
   }
+
+  .quote-strip .rlogo img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    border-radius: inherit;
+    display: block;
+  }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js">
 // ===== Share to X =====
 (function setupShare() {
   const btn = document.getElementById('share-btn');
-  if (!btn) return;
-  const SITE_URL = 'https://roki.buzz/zen';
+  if (!btn) { console.warn('[share] no #share-btn'); return; }
   const TWITTER_INTENT = 'https://twitter.com/intent/tweet';
 
   function buildText() {
-    const score = (State && Number.isFinite(State.totalScore)) ? State.totalScore : 0;
+    const score = (typeof State !== 'undefined' && Number.isFinite(State.totalScore)) ? State.totalScore : 0;
     const tierEl = document.getElementById('final-rank');
     const tier = (tierEl && tierEl.textContent || '').trim() || 'Awaiting';
     if (score === 0 || tier === 'Awaiting') {
@@ -908,7 +914,11 @@
 
   async function captureCard() {
     const card = document.querySelector('.final-card');
-    if (!card || typeof html2canvas !== 'function') return null;
+    if (!card) return null;
+    if (typeof html2canvas !== 'function') {
+      console.warn('[share] html2canvas not loaded');
+      return null;
+    }
     try {
       const canvas = await html2canvas(card, {
         backgroundColor: '#FBF4E6',
@@ -918,7 +928,7 @@
       });
       return await new Promise((resolve) => canvas.toBlob(resolve, 'image/png', 0.95));
     } catch (e) {
-      console.warn('Share card capture failed:', e);
+      console.warn('[share] capture failed:', e);
       return null;
     }
   }
@@ -929,14 +939,9 @@
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
       return true;
     } catch (e) {
-      console.warn('Clipboard write failed:', e);
+      console.warn('[share] clipboard write failed:', e);
       return false;
     }
-  }
-
-  function openTwitterIntent(text) {
-    const url = `${TWITTER_INTENT}?text=${encodeURIComponent(text)}`;
-    window.open(url, '_blank', 'noopener,noreferrer');
   }
 
   function flashHint(msg) {
@@ -949,40 +954,65 @@
     }
     el.textContent = msg;
     requestAnimationFrame(() => { el.style.opacity = '1'; });
-    setTimeout(() => { el.style.opacity = '0'; }, 2600);
+    setTimeout(() => { el.style.opacity = '0'; }, 3000);
+  }
+
+  // Try Web Share API with files (mobile, some Chromium desktop). Returns true if used.
+  async function tryWebShareWithFiles(text) {
+    if (!navigator.canShare || !navigator.share) return false;
+    const blob = await captureCard();
+    if (!blob) {
+      // No image, but we can still text-share
+      try { await navigator.share({ text, title: 'ROKI ZEN' }); return true; } catch (e) {
+        if (e && e.name === 'AbortError') return true;
+        return false;
+      }
+    }
+    const file = new File([blob], 'roki-zen-score.png', { type: 'image/png' });
+    if (!navigator.canShare({ files: [file] })) return false;
+    try {
+      await navigator.share({ files: [file], text, title: 'ROKI ZEN' });
+      return true;
+    } catch (e) {
+      if (e && e.name === 'AbortError') return true;
+      return false;
+    }
   }
 
   btn.addEventListener('click', async () => {
     const text = buildText();
-    const blob = await captureCard();
+    console.log('[share] click — text:', text);
 
-    // 1. Try the native Web Share API with the image attached (mobile + some desktop)
-    if (blob && navigator.canShare && navigator.share) {
-      const file = new File([blob], 'roki-zen-score.png', { type: 'image/png' });
-      try {
-        if (navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            text: text,
-            title: 'ROKI ZEN',
-          });
-          return;
-        }
-      } catch (e) {
-        if (e && e.name === 'AbortError') return; // user cancelled
-        console.warn('Web Share with files failed:', e);
+    // 1) DESKTOP FALLBACK: open X intent IMMEDIATELY in the click's user gesture
+    //    so the popup blocker doesn't kill it. Capture/copy run after.
+    //    On mobile, this opens X and the Web Share API attempt below also runs;
+    //    on most mobile browsers window.open just navigates the same tab so the
+    //    Web Share dialog won't appear — that's fine, X handles the share.
+    const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    if (!isMobile) {
+      const url = `${TWITTER_INTENT}?text=${encodeURIComponent(text)}`;
+      const popup = window.open(url, '_blank', 'noopener,noreferrer');
+      if (!popup) {
+        console.warn('[share] popup blocked');
+        flashHint('Popup blocked — allow popups for roki.buzz');
       }
+      // Now try to capture + copy image so the user can paste it
+      const blob = await captureCard();
+      const ok = await copyToClipboard(blob);
+      flashHint(ok ? 'Image copied — Ctrl+V on the X compose' : 'Tweet opened — type your message');
+      return;
     }
 
-    // 2. Desktop fallback: copy image to clipboard, open X intent, tell user to paste.
-    const copied = await copyToClipboard(blob);
-    openTwitterIntent(text);
-    if (copied) {
-      flashHint('Image copied — press Ctrl+V on the X compose to attach');
-    } else {
-      flashHint('Tweet opened — image was too restricted to copy automatically');
-    }
+    // 2) MOBILE: prefer the native share sheet with the image attached
+    const used = await tryWebShareWithFiles(text);
+    if (used) return;
+
+    // 3) Last-resort fallback for mobile: open X intent
+    window.location.href = `${TWITTER_INTENT}?text=${encodeURIComponent(text)}`;
   });
+
+  console.log('[share] handler attached');
 })();
 </script>
 </head>
@@ -1291,10 +1321,7 @@
     </div>
     <div class="right">
       <div class="rlogo">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M8 4 L8 11"/><path d="M16 4 L16 11"/>
-          <ellipse cx="12" cy="15" rx="6" ry="5.5" fill="currentColor" stroke="none"/>
-        </svg>
+        <img src="../assets/logo.jpg" alt="ROKI"/>
       </div>
       <div class="rname">ROKI<span class="zen">ZEN</span></div>
     </div>
