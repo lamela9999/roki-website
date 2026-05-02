@@ -190,9 +190,10 @@
   .podium-avatar {
     width: 88px; height: 88px;
     margin: 0 auto 14px;
-    background: var(--red);
+    background: var(--cream-3);
     border: 2px solid var(--ink);
     border-radius: 50%;
+    overflow: hidden;
     display: grid; place-items: center;
     overflow: hidden;
     box-shadow: 0 4px 0 var(--ink);
@@ -288,9 +289,10 @@
   }
   .row-avatar {
     width: 44px; height: 44px;
-    background: var(--red);
+    background: var(--cream-3);
     border: 1.5px solid var(--ink);
     border-radius: 50%;
+    overflow: hidden;
     display: grid; place-items: center;
     overflow: hidden;
   }
@@ -469,6 +471,15 @@
     .quote-strip { flex-direction: column; align-items: flex-start; gap: 12px; padding: 14px 16px; }
     .quote-strip .qtxt { font-size: 12.5px; }
   }
+
+  .podium-avatar img.tier-pic,
+  .row-avatar img.tier-pic {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    object-position: center 30%;
+    display: block;
+    border-radius: 50%;
+  }
 </style>
 </head>
 <body>
@@ -544,7 +555,7 @@
   <div class="you-row" id="you-row">
     <span class="you-tag">Your Position</span>
     <div class="row-rank" id="you-rank">#847</div>
-    <div class="row-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4 L8 11"/><path d="M16 4 L16 11"/><ellipse cx="12" cy="15" rx="6" ry="5.5" fill="#fff" stroke="none"/><circle cx="9.6" cy="14.5" r="0.8" fill="#111"/><circle cx="14.4" cy="14.5" r="0.8" fill="#111"/></svg></div>
+    <div class="row-avatar" id="you-avatar"></div>
     <div class="row-name">YOU<span class="handle">@you</span></div>
     <div class="row-val score" id="you-score">68</div>
     <div class="row-val col-prec" id="you-prec">62<span class="u">%</span></div>
@@ -652,6 +663,20 @@ function rabbitSvg() {
   </svg>`;
 }
 
+// Returns an <img> for the tier mascot used as the player's avatar.
+// Tier names come from the data: Legendary, Elite, Warrior, Adept, Beginner.
+// We have 4 mascot files; Adept falls back to the warrior mascot.
+function tierImage(tier) {
+  const t = (tier || '').toLowerCase();
+  let file;
+  if (t === 'legendary')      file = 'tier-legendary.png';
+  else if (t === 'elite')     file = 'tier-elite.png';
+  else if (t === 'warrior')   file = 'tier-warrior.png';
+  else if (t === 'adept')     file = 'tier-warrior.png';
+  else                        file = 'tier-beginner.png';
+  return `<img class="tier-pic" src="../assets/${file}" alt="${tier} tier mascot" loading="lazy"/>`;
+}
+
 function inkBrushSvg() {
   return `<svg class="ink-brush" viewBox="0 0 200 90" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M10,55 C30,30 60,72 95,40 C125,12 155,68 190,38" stroke="#111" stroke-width="14" stroke-linecap="round" fill="none"/>
@@ -677,7 +702,7 @@ function renderPodium(rows) {
         ${isFirst ? inkBrushSvg() : ''}
         <span class="crown-icon">${isFirst ? '♛' : (r.rank === 2 ? '✦' : '✧')}</span>
         <div class="podium-rank">${pad2(r.rank)}</div>
-        <div class="podium-avatar">${rabbitSvg()}</div>
+        <div class="podium-avatar">${tierImage(r.tier)}</div>
         <div class="podium-name">${r.name}</div>
         <div class="podium-handle">${r.handle}</div>
         <div class="podium-score-lbl">Max Score</div>
@@ -694,7 +719,7 @@ function renderList(rows) {
   listBody.innerHTML = tail.map((r) => `
     <div class="list-row">
       <div class="row-rank">${pad2(r.rank)}</div>
-      <div class="row-avatar">${rabbitSvg()}</div>
+      <div class="row-avatar">${tierImage(r.tier)}</div>
       <div class="row-name">${r.name}<span class="handle">${r.handle}</span></div>
       <div class="row-val score">${r.score}</div>
       <div class="row-val col-prec">${r.prec.toFixed(1)}<span class="u">%</span></div>
@@ -709,32 +734,7 @@ function renderYou(period) {
   const y = youByPeriod[period];
   document.getElementById('you-rank').textContent = '#' + y.rank;
   document.getElementById('you-score').textContent = y.score;
+  document.getElementById('you-avatar').innerHTML = tierImage(y.tier);
   document.getElementById('you-prec').innerHTML = y.prec.toFixed(0) + '<span class="u">%</span>';
   document.getElementById('you-react').innerHTML = y.react + '<span class="u">ms</span>';
-  document.getElementById('you-streak').textContent = y.streak + '/3';
-  const youRow = document.getElementById('you-row');
-  const badge = youRow.querySelector('.badge');
-  badge.textContent = y.tier;
-  badge.className = 'badge ' + tierBadgeClass(y.tier);
-}
-
-function selectPeriod(period) {
-  document.querySelectorAll('.period-tab').forEach(b => {
-    b.classList.toggle('active', b.dataset.period === period);
-  });
-  const rows = datasets[period];
-  renderPodium(rows);
-  renderList(rows);
-  renderYou(period);
-}
-
-document.querySelectorAll('.period-tab').forEach(b => {
-  b.addEventListener('click', () => selectPeriod(b.dataset.period));
-});
-
-// initial render
-selectPeriod('alltime');
-</script>
-
-</body>
-</html>
+  doc
