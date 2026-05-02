@@ -903,10 +903,11 @@ a { color: inherit; text-decoration: none; }
   }
   .nav-cta-mobile span { color: #ffffff; }
   .nav-cta-mobile.nav-cta-mobile-secondary {
-    background: var(--paper);
-    color: var(--ink);
+    background: var(--ink) !important;
+    color: var(--cream) !important;
+    border: 1.5px solid var(--ink);
   }
-  .nav-cta-mobile.nav-cta-mobile-secondary span { color: var(--ink); }
+  .nav-cta-mobile.nav-cta-mobile-secondary span { color: var(--cream) !important; }
 }
 
 /* ============ CA STRIP ============ */

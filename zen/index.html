@@ -897,6 +897,11 @@
     .nav-cta-zen-x svg { display: inline-block; }
     nav.nav { gap: 6px; }
   }
+
+  /* Mobile (<=699px): hide the desktop nav-tabs entirely. Only the brand + Rankings + X-icon stay. */
+  @media (max-width: 699px) {
+    nav.nav .nav-tabs { display: none !important; }
+  }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
@@ -907,12 +912,12 @@
   <!-- ========== TOP NAV ========== -->
   <nav class="nav">
     <div class="nav-left">
-      <div class="brand">
+      <a class="brand" href="../Roki.html#home" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:10px">
         <div class="brand-logo">
           <img src="../assets/logo.jpg" alt="ROKI"/>
         </div>
         <div class="brand-name">ROKI<span class="zen">ZEN</span></div>
-      </div>
+      </a>
       <div class="nav-tabs">
         <a class="nav-tab active" href="../Roki.html#home">Home</a>
         <a class="nav-tab" href="../Roki.html#about">About</a>
