@@ -2254,6 +2254,31 @@ function endMatch() {
   statMax.textContent = State.maxScore;
   statTotal.textContent = State.totalCum;
 
+  // ===== Persist this match (local + backend) =====
+  try {
+    const _score  = State.totalScore;
+    const _tier   = (document.getElementById('final-rank') || {}).textContent || 'Beginner';
+    const _avgPrec  = avgPrec * 100;
+    const _avgReact = (reactN ? Math.round(reactSum / reactN) : 0);
+    if (typeof Player !== 'undefined' && Player.recordMatch) {
+      Player.recordMatch({ score: _score, avgPrec: _avgPrec, avgReact: _avgReact, bestStreak, tier: _tier });
+      Player.refreshHandleDisplay && Player.refreshHandleDisplay();
+      const _id = Player.getId && Player.getId();
+      const _name = Player.getName && Player.getName();
+      if (_id && _name && _score > 0 && Player.postScoreToServer) {
+        Player.postScoreToServer({
+          id: parseInt(_id, 10),
+          name: _name,
+          score: _score,
+          prec: _avgPrec,
+          react: _avgReact || 0,
+          streak: bestStreak,
+          tier: _tier,
+        });
+      }
+    }
+  } catch (e) { console.warn('[zen] match save failed:', e); }
+
   // Close the overlay after a delay
   setTimeout(() => {
     overlay.classList.add('hidden');
@@ -3373,44 +3398,7 @@ const Player = (function () {
   Player.refreshHandleDisplay();
 })();
 
-// Hook into endMatch — after it runs, persist this match and update display.
-// We wrap by overriding endMatch with a thin wrapper that calls original then records.
-(function wireScoreSave() {
-  if (typeof endMatch !== 'function') return;
-  const _origEndMatch = endMatch;
-  window.endMatch = function () {
-    const result = _origEndMatch.apply(this, arguments);
-    try {
-      const score = (typeof State !== 'undefined') ? State.totalScore : 0;
-      const tier = (document.getElementById('final-rank') || {}).textContent || 'Beginner';
-      // Aggregate from State.results since endMatch already computed but didn't expose
-      let precSum = 0, n = 0, reactSum = 0, reactN = 0, streak = 0, bestStreak = 0;
-      for (const r of (State && State.results) || []) {
-        if (!r) continue;
-        n++;
-        precSum += r.positionScore || 0;
-        if (Number.isFinite(r.reactionMs)) { reactSum += r.reactionMs; reactN++; }
-        if (!r.missed) { streak++; bestStreak = Math.max(bestStreak, streak); } else { streak = 0; }
-      }
-      const avgPrec = n ? (precSum / n) * 100 : 0;
-      const avgReact = reactN ? Math.round(reactSum / reactN) : null;
-      Player.recordMatch({ score, avgPrec, avgReact, bestStreak, tier });
-      Player.refreshHandleDisplay();
-      // Send to backend (best-effort; falls through silently if KV not configured)
-      const id = Player.getId();
-      const name = Player.getName();
-      if (id && name && score > 0) {
-        Player.postScoreToServer({
-          id: parseInt(id, 10), name, score,
-          prec: avgPrec, react: avgReact || 0,
-          streak: bestStreak, tier,
-        });
-      }
-    } catch (e) { console.warn('[player] save failed:', e); }
-    return result;
-  };
-  // Also redirect any new direct refs (the file calls endMatch() directly, so global var is fine)
-})();
+
 
 
 // Pre-warm the audio engine on first interaction (so START MATCH is instant)
