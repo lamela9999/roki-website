@@ -757,13 +757,19 @@ function realYou(period) {
   const handle = '@' + (name || 'you') + (id ? '#' + id : '');
   const bm = (data && data.bestMatch) || {};
 
-  // Compute MY rank — only if my id matches a leaderboard row exactly
+  // Prefer the server's authoritative entry for me (works even when I'm below the visible top-N)
+  const ys = window.__youServer || null;
   let myRank = '—';
-  const rows = window.__lastRows || [];
-  if (id) {
-    const idStr = String(id);
-    const mine = rows.find(r => String(r.id || '') === idStr);
-    if (mine) myRank = mine.rank;
+  if (ys && ys.rank) {
+    myRank = ys.rank;
+  } else {
+    // Fallback: am I in the visible rows?
+    const rows = window.__lastRows || [];
+    if (id) {
+      const idStr = String(id);
+      const mine = rows.find(r => String(r.id || '') === idStr);
+      if (mine) myRank = mine.rank;
+    }
   }
 
   // No local data + no name → blank YOU row
@@ -771,7 +777,19 @@ function realYou(period) {
     return { rank: '—', name: 'YOU', handle: '@you', score: 0, prec: 0, react: 0, streak: 0, tier: 'Beginner' };
   }
 
-  // Default: show local stats
+  // Server data (authoritative if available), else local stats
+  if (ys) {
+    return {
+      rank: myRank,
+      name: (ys.name || name || 'YOU').toUpperCase(),
+      handle: ys.fullHandle || handle,
+      score: ys.score || 0,
+      prec:   ys.prec   || 0,
+      react:  ys.react  || 0,
+      streak: ys.streak || 0,
+      tier:   ys.tier   || 'Beginner',
+    };
+  }
   const bestScore = (data && data.bestScore) || 0;
   return {
     rank: myRank,
@@ -809,11 +827,14 @@ async function selectPeriod(period) {
   let realRows = [];
   // Try the backend first
   try {
-    const r = await fetch('/api/leaderboard', { cache: 'no-store' });
+    const meId = (Player.getId && Player.getId()) || '';
+    const lbUrl = '/api/leaderboard' + (meId ? ('?me=' + encodeURIComponent(meId)) : '');
+    const r = await fetch(lbUrl, { cache: 'no-store' });
     console.log('[lb] /api/leaderboard status', r.status);
     if (r.ok) {
       const data = await r.json();
       console.log('[lb] entries from API:', data.entries ? data.entries.length : 0, data);
+      window.__youServer = data.you || null;
       if (Array.isArray(data.entries)) {
         realRows = data.entries.map(e => ({
           rank: e.rank,
