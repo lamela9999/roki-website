@@ -68,12 +68,23 @@ export async function onRequestGet({ request }) {
 <meta name="twitter:description" content="${escapeHtml(desc)}"/>
 <meta name="twitter:image"       content="${ogImage}"/>
 
-<meta http-equiv="refresh" content="0; url=/zen/"/>
 <link rel="canonical" href="https://roki.buzz/zen/"/>
-<script>location.replace('/zen/');</script>
+<style>
+  body{margin:0;font-family:'Inter Tight',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F5EFE6;color:#14110F;min-height:100vh;display:grid;place-items:center;padding:24px}
+  .card{max-width:520px;width:100%;background:#FBF6EC;border:2px solid #14110F;border-radius:14px;box-shadow:6px 6px 0 #14110F;padding:24px;text-align:center}
+  .card img{max-width:200px;width:100%;height:auto;border-radius:50%;border:2px solid #14110F;background:#E8534A;display:block;margin:0 auto 14px}
+  .card h1{font-family:'Archivo Black','Anton',sans-serif;font-size:20px;letter-spacing:2px;text-transform:uppercase;margin:0 0 8px}
+  .card p{color:#6B6258;font-size:14px;line-height:1.55;margin:0 0 18px}
+  .card a{display:inline-block;background:#E8534A;color:#fff;border:1.5px solid #14110F;border-radius:8px;padding:12px 20px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;text-decoration:none;box-shadow:0 3px 0 #14110F}
+</style>
 </head>
 <body>
-<p>${escapeHtml(title)} — redirecting to <a href="/zen/">ROKI Zen</a>…</p>
+<div class="card">
+  <img src="${ogImage}" alt=""/>
+  <h1>${escapeHtml(title)}</h1>
+  <p>${escapeHtml(desc)}</p>
+  <a href="/zen/">Play ROKI Zen →</a>
+</div>
 </body>
 </html>`;
 
