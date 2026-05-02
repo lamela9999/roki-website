@@ -1134,7 +1134,7 @@
         </div>
         <div class="mascot-wrap tier-elite" id="mascot-wrap">
           <div class="tier-bg"></div>
-          <img class="tier-img" id="tier-img" src="../assets/tier-elite.png" alt="Tier mascot"/>
+          <img class="tier-img" id="tier-img" src="../assets/tier-elite.webp" alt="Tier mascot"/>
         </div>
       </div>
 
@@ -1371,11 +1371,10 @@ const AudioFx = (() => {
   }
 
   // Build a dark dojo impulse response on the fly: filtered decaying noise with early reflections
-  function buildIR(seconds = 3.2) {
+  function buildIR(seconds = 1.0) {
     const sr = actx.sampleRate;
     const len = Math.floor(sr * seconds);
     const ir = actx.createBuffer(2, len, sr);
-    // Early reflections — discrete taps suggesting wooden floor + stone walls
     const earlyTaps = [
       { t: 0.011, g: 0.55 },
       { t: 0.023, g: 0.42 },
@@ -1386,23 +1385,15 @@ const AudioFx = (() => {
     ];
     for (let ch = 0; ch < 2; ch++) {
       const d = ir.getChannelData(ch);
-      // Stamp early reflections
       for (const tap of earlyTaps) {
         const idx = Math.floor(tap.t * sr) + (ch === 1 ? 80 : 0);
         if (idx < len) d[idx] += tap.g * (ch === 0 ? 1 : 0.85);
       }
-      // Diffuse tail — exponentially decaying noise, dark
+      // Diffuse tail — single noise pass, no extra low-pass loop (saves ~80% of build time)
       for (let i = 0; i < len; i++) {
         const t = i / sr;
-        // Long tail, dark; ch1 slightly delayed for stereo width
         const env = Math.pow(1 - t / seconds, 2.4);
-        d[i] += (Math.random() * 2 - 1) * env * 0.42;
-      }
-      // Crude lowpass over the tail — average with neighbors a few times
-      for (let pass = 0; pass < 3; pass++) {
-        for (let i = 1; i < len - 1; i++) {
-          d[i] = (d[i - 1] + d[i] * 2 + d[i + 1]) * 0.25;
-        }
+        d[i] += (Math.random() * 2 - 1) * env * 0.30;
       }
     }
     return ir;
@@ -2238,7 +2229,7 @@ function endMatch() {
     mascotWrap.classList.add('tier-' + tier);
     tierImg.classList.add('swap');
     setTimeout(() => {
-      tierImg.src = '../assets/tier-' + tier + '.png';
+      tierImg.src = '../assets/tier-' + tier + '.webp';
       tierImg.alt = rank + ' tier';
       requestAnimationFrame(() => tierImg.classList.remove('swap'));
     }, 200);
@@ -3396,6 +3387,21 @@ const Player = (function () {
     return result;
   };
   // Also redirect any new direct refs (the file calls endMatch() directly, so global var is fine)
+})();
+
+
+// Pre-warm the audio engine on first interaction (so START MATCH is instant)
+(function audioPrewarm() {
+  let warmed = false;
+  function warm() {
+    if (warmed) return;
+    warmed = true;
+    try { AudioFx.ensure(); } catch (e) { console.warn('[audio] prewarm failed:', e); }
+    document.removeEventListener('pointerdown', warm, true);
+    document.removeEventListener('keydown', warm, true);
+  }
+  document.addEventListener('pointerdown', warm, { capture: true, once: false });
+  document.addEventListener('keydown', warm, { capture: true, once: false });
 })();
 
 // ===== Share to X =====

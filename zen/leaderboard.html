@@ -650,11 +650,11 @@ function rabbitSvg() {
 function tierImage(tier) {
   const t = (tier || '').toLowerCase();
   let file;
-  if (t === 'legendary')   file = 'tier-legendary.png';
-  else if (t === 'elite')  file = 'tier-elite.png';
-  else if (t === 'warrior') file = 'tier-warrior.png';
-  else if (t === 'adept')  file = 'tier-warrior.png';
-  else                     file = 'tier-beginner.png';
+  if (t === 'legendary')   file = 'tier-legendary.webp';
+  else if (t === 'elite')  file = 'tier-elite.webp';
+  else if (t === 'warrior') file = 'tier-warrior.webp';
+  else if (t === 'adept')  file = 'tier-warrior.webp';
+  else                     file = 'tier-beginner.webp';
   return `<img class="tier-pic" src="../assets/${file}" alt="${tier} tier mascot" loading="lazy"/>`;
 }
 
