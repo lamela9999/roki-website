@@ -1,0 +1,3289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ROKI Zen — Slice the Drop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #F4EBDD;
+    --cream-2: #EFE3D0;
+    --cream-3: #FBF4E6;
+    --ink: #111111;
+    --ink-2: #2A2A2A;
+    --muted: #6B6258;
+    --line: #1A1A1A;
+    --line-soft: rgba(17,17,17,0.10);
+    --red: #E63946;
+    --red-deep: #C62B38;
+    --red-soft: #FBE3E1;
+    --purple: #7C5CFF;
+    --purple-soft: #EFE9FF;
+    --gold: #E8B23A;
+    --shadow: 0 1px 0 rgba(17,17,17,0.06), 0 8px 22px rgba(60,30,10,0.06);
+    --font-display: 'Archivo Black', 'Archivo', sans-serif;
+    --font-body: 'Archivo', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--cream); color: var(--ink); font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
+  body { min-height: 100vh; }
+
+  .page { max-width: 1280px; margin: 0 auto; padding: 18px 22px 28px; }
+
+  /* ========== TOP NAV ========== */
+  .nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px 10px 12px;
+    background: var(--cream-3);
+    border: 1.5px solid var(--ink);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+  }
+  .nav-left { display: flex; align-items: center; gap: 22px; }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand-logo {
+    width: 38px; height: 38px;
+    background: var(--red);
+    border: 1.5px solid var(--ink);
+    border-radius: 10px;
+    display: grid; place-items: center;
+    color: #fff;
+  }
+  .brand-name {
+    font-family: var(--font-display);
+    font-size: 22px; letter-spacing: 0.5px;
+    color: var(--ink);
+  }
+  .brand-name .zen { color: var(--red); margin-left: 6px; }
+  .nav-tabs { display: flex; align-items: center; gap: 6px; }
+  .nav-tab {
+    padding: 9px 16px;
+    font-family: var(--font-body);
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 1.4px;
+    color: var(--ink);
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    text-transform: uppercase;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .nav-tab.active {
+    background: var(--ink);
+    color: #fff;
+  }
+  .nav-tab:not(.active):hover { background: rgba(17,17,17,0.06); }
+  .join-crew {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 9px 16px;
+    background: var(--red);
+    color: #fff;
+    border: 1.5px solid var(--ink);
+    border-radius: 9px;
+    font-family: var(--font-body);
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow: 0 2px 0 var(--ink);
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+  }
+  .join-crew:hover { transform: translateY(-1px); box-shadow: 0 3px 0 var(--ink); }
+  .join-crew:active { transform: translateY(1px); box-shadow: 0 0 0 var(--ink); }
+  .join-crew svg { width: 14px; height: 14px; }
+
+  /* ========== HEADER (Title + Tagline) ========== */
+  .header {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    margin-top: 22px; gap: 24px; flex-wrap: wrap;
+  }
+  .title-block h1 {
+    font-family: var(--font-display);
+    font-size: clamp(48px, 8.4vw, 108px);
+    line-height: 0.92;
+    letter-spacing: -1.5px;
+    margin: 0;
+    color: var(--ink);
+  }
+  .title-underline {
+    width: 90px; height: 4px; background: var(--red);
+    margin: 14px 0 10px;
+  }
+  .title-tag {
+    font-family: var(--font-body); font-weight: 800;
+    font-size: 14px; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--ink);
+  }
+  .header-side {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--cream-3);
+    border: 1.5px solid var(--ink);
+    border-radius: 14px;
+    padding: 12px 18px;
+    box-shadow: var(--shadow);
+  }
+  .header-side .drop-icon { width: 28px; height: 36px; }
+  .header-side .heads { font-family: var(--font-body); font-weight: 900; font-size: 13px; letter-spacing: 2.2px; text-transform: uppercase; color: var(--ink); }
+  .header-side .subs { font-family: var(--font-body); font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+
+  /* ========== MAIN GRID ========== */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 22px;
+    margin-top: 22px;
+    align-items: stretch;
+  }
+
+  /* ========== ATTEMPTS ROW ========== */
+  .attempts {
+    display: grid;
+    grid-template-columns: 1fr 18px 1fr 18px 1fr;
+    gap: 0;
+    align-items: stretch;
+  }
+  .arrow-sep { display: grid; place-items: center; color: var(--ink); opacity: 0.55; }
+  .arrow-sep svg { width: 14px; height: 14px; }
+
+  .attempt {
+    background: var(--cream-3);
+    border: 1.5px solid var(--ink);
+    border-radius: 14px;
+    padding: 16px 18px 14px;
+    display: flex; flex-direction: column;
+    box-shadow: var(--shadow);
+    position: relative;
+    min-height: 460px;
+  }
+  .attempt.active { border-color: var(--red); }
+  .attempt.perfect { border-color: var(--purple); }
+
+  .att-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+  .att-head .num {
+    font-family: var(--font-display);
+    font-size: 22px; color: var(--ink);
+    line-height: 1;
+  }
+  .att-head .lbl {
+    font-family: var(--font-body); font-weight: 800;
+    font-size: 13px; letter-spacing: 1.6px; text-transform: uppercase;
+    color: var(--ink); margin-left: 8px;
+  }
+  .att-head .time {
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--muted); margin-top: 3px;
+  }
+  .att-head .left-col { display: flex; align-items: baseline; }
+  .att-head .left-col .stack { display: flex; flex-direction: column; }
+
+  /* The visual zone (timing) */
+  .zone-vis {
+    flex: 1;
+    position: relative;
+    margin: 6px 0 12px;
+    min-height: 170px;
+    background: linear-gradient(180deg, transparent 0%, transparent 38%, var(--red-soft) 38%, var(--red-soft) 62%, transparent 62%, transparent 100%);
+    border-radius: 6px;
+  }
+  .zone-vis .perfect-label {
+    position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+    font-family: var(--font-body); font-weight: 800; font-size: 10.5px;
+    letter-spacing: 1.6px; text-transform: uppercase; color: var(--ink);
+  }
+  .zone-vis .perfect-line {
+    position: absolute; top: 28px; bottom: 14px; left: 50%;
+    width: 0; border-left: 1.5px dashed var(--ink); opacity: 0.85;
+  }
+  .zone-vis .band-top, .zone-vis .band-bot {
+    position: absolute; left: 0; right: 0; height: 0;
+    border-top: 1.4px dashed var(--red);
+  }
+  .zone-vis .band-top { top: 38%; }
+  .zone-vis .band-bot { top: 62%; }
+  /* the drop slash */
+  .zone-vis .slash {
+    position: absolute; top: 50%; left: 50%;
+    width: 76px; height: 14px;
+    transform-origin: 50% 50%;
+    transform: translate(-50%, -50%) rotate(-12deg);
+    background: linear-gradient(90deg, transparent 0%, var(--purple) 35%, var(--purple) 65%, transparent 100%);
+    border-radius: 8px;
+    opacity: 0.95;
+    filter: blur(0.4px);
+  }
+  .zone-vis .drop {
+    position: absolute; top: 50%; left: 50%;
+    width: 22px; height: 28px;
+    transform: translate(-50%, -55%);
+    color: var(--purple);
+  }
+  .zone-vis .perfect-mark {
+    position: absolute; top: 50%; left: calc(50% + 1px);
+    width: 3px; height: 32px;
+    transform: translate(-50%, -50%);
+    background: var(--red);
+    border-radius: 2px;
+  }
+  .zone-vis.perfect .perfect-mark { display: none; }
+
+  /* offset readout (e.g. -24ms / EARLY) */
+  .offset {
+    text-align: center; margin-bottom: 10px;
+  }
+  .offset .ms {
+    font-family: var(--font-display);
+    font-size: 36px; line-height: 1; color: var(--red);
+  }
+  .offset.perfect .ms { color: var(--purple); }
+  .offset .verdict {
+    font-family: var(--font-body); font-weight: 800;
+    font-size: 12px; letter-spacing: 2.5px; text-transform: uppercase;
+    color: var(--ink); margin-top: 4px;
+  }
+
+  /* metric strip */
+  .metrics {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;
+    padding: 8px 0 4px;
+  }
+  .metric { display: flex; flex-direction: column; gap: 4px; }
+  .metric .lab {
+    font-family: var(--font-body); font-weight: 800;
+    font-size: 10.5px; letter-spacing: 1.6px; text-transform: uppercase;
+    color: var(--muted);
+  }
+  .metric .val {
+    font-family: var(--font-display);
+    font-size: 22px; line-height: 1; color: var(--red);
+  }
+  .metric.score .val { color: var(--red); }
+  .attempt.perfect .metric .val { color: var(--purple); }
+  .metric .bar {
+    height: 2.5px; background: var(--line-soft); border-radius: 2px; overflow: hidden;
+  }
+  .metric .bar > span {
+    display: block; height: 100%; background: var(--red); border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+  .attempt.perfect .metric .bar > span { background: var(--purple); }
+
+  .att-foot {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 12px; padding-top: 12px;
+    border-top: 1px dashed var(--line-soft);
+    font-family: var(--font-body); font-size: 13px; color: var(--ink);
+  }
+  .att-foot .arr {
+    width: 22px; height: 22px; display: grid; place-items: center;
+    color: var(--ink); opacity: 0.6;
+  }
+  .att-foot .arr svg { width: 14px; height: 14px; }
+  .att-foot .crown { color: var(--gold); font-size: 16px; }
+
+  /* Empty-state attempt (before played) */
+  .attempt.empty .zone-vis .slash,
+  .attempt.empty .zone-vis .drop,
+  .attempt.empty .zone-vis .perfect-mark { display: none; }
+  .attempt.empty .offset .ms { color: var(--muted); }
+  .attempt.empty .metric .val { color: var(--muted); }
+  .attempt.empty .metric .bar > span { background: var(--muted); width: 0% !important; }
+  .attempt.empty .att-foot { color: var(--muted); }
+
+  /* attempt LIVE (currently playing) — show pulse */
+  .attempt.live::after {
+    content: '';
+    position: absolute; top: 12px; right: 12px;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--red);
+    box-shadow: 0 0 0 4px rgba(230,57,70,0.18);
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(230,57,70,0.30); }
+    50% { box-shadow: 0 0 0 8px rgba(230,57,70,0.0); }
+  }
+
+  /* ========== FINAL ZEN CARD ========== */
+  .final-card {
+    background: var(--cream-3);
+    border: 1.5px solid var(--ink);
+    border-radius: 14px;
+    padding: 18px 18px 16px;
+    box-shadow: var(--shadow);
+    position: relative;
+    display: flex; flex-direction: column;
+  }
+  .final-card .crown-top {
+    position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+    color: var(--red); font-size: 18px;
+  }
+  .final-head {
+    font-family: var(--font-body); font-weight: 900;
+    font-size: 12px; letter-spacing: 2.4px; text-transform: uppercase;
+    color: var(--ink); margin-bottom: 14px;
+  }
+  .final-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    align-items: center;
+  }
+  .final-score-block .lbl {
+    font-family: var(--font-body); font-weight: 900;
+    font-size: 11px; letter-spacing: 2.2px; text-transform: uppercase;
+    color: var(--ink);
+  }
+  .final-score-block .num {
+    font-family: var(--font-display);
+    font-size: 78px; line-height: 0.95; color: var(--red);
+    margin: 6px 0 8px;
+  }
+  .badge {
+    display: inline-block;
+    background: var(--red); color: #fff;
+    border: 1.5px solid var(--ink);
+    padding: 6px 12px;
+    border-radius: 22px;
+    font-family: var(--font-body); font-weight: 900;
+    font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase;
+    box-shadow: 0 2px 0 var(--ink);
+  }
+  .top-pct {
+    font-family: var(--font-body); font-weight: 800;
+    font-size: 11px; letter-spacing: 1.8px; text-transform: uppercase;
+    color: var(--ink); margin-top: 8px;
+  }
+  .mascot-wrap {
+    position: relative;
+    display: grid; place-items: center;
+    aspect-ratio: 1 / 1;
+  }
+  .mascot-wrap .tier-bg {
+    position: absolute; inset: 6% 4% auto 4%;
+    aspect-ratio: 1/1;
+    background: var(--red);
+    border-radius: 50%;
+    z-index: 0;
+    box-shadow: 0 0 0 1.5px var(--ink) inset;
+    transition: background 0.35s ease, opacity 0.35s ease;
+  }
+  .mascot-wrap.tier-beginner .tier-bg { background: var(--red); }
+  .mascot-wrap.tier-warrior  .tier-bg { background: var(--red); }
+  .mascot-wrap.tier-elite    .tier-bg { background: var(--red); }
+  .mascot-wrap.tier-legendary .tier-bg { background: var(--red); }
+  .mascot-wrap img.tier-img {
+    position: relative; z-index: 1;
+    width: 100%; height: 100%;
+    object-fit: contain;
+    transition: opacity 0.25s ease, transform 0.35s ease;
+  }
+  .mascot-wrap img.tier-img.swap { opacity: 0; transform: scale(0.92); }
+
+  .stat-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px 18px;
+    margin: 16px 0 14px;
+  }
+  .stat-item { display: flex; align-items: center; gap: 10px; }
+  .stat-item .icn {
+    width: 22px; height: 22px; flex: 0 0 22px;
+    color: var(--ink); opacity: 0.85;
+  }
+  .stat-item .lbl {
+    font-family: var(--font-body); font-weight: 800;
+    font-size: 9.5px; letter-spacing: 1.4px; text-transform: uppercase;
+    color: var(--muted);
+  }
+  .stat-item .val {
+    font-family: var(--font-display);
+    font-size: 18px; color: var(--ink); line-height: 1;
+    margin-top: 2px;
+  }
+  .stat-item .val .u { font-family: var(--font-body); font-weight: 700; font-size: 12px; color: var(--ink); }
+
+  .share-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%;
+    padding: 14px 16px;
+    background: var(--red);
+    color: #fff;
+    border: 1.5px solid var(--ink);
+    border-radius: 10px;
+    font-family: var(--font-body);
+    font-weight: 900;
+    font-size: 13px; letter-spacing: 2px; text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 3px 0 var(--ink);
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+  }
+  .share-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 0 var(--ink); }
+  .share-btn:active { transform: translateY(2px); box-shadow: 0 0 0 var(--ink); }
+
+  /* ========== QUOTE STRIP ========== */
+  .quote-strip {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 22px;
+    background: var(--cream-3);
+    border: 1.5px solid var(--ink);
+    border-radius: 14px;
+    padding: 16px 22px;
+    box-shadow: var(--shadow);
+  }
+  .quote-strip .left { display: flex; align-items: center; gap: 14px; }
+  .quote-strip .qicn {
+    font-family: var(--font-display);
+    font-size: 28px; color: var(--red); line-height: 0.6;
+  }
+  .quote-strip .qtxt {
+    font-family: var(--font-body); font-size: 13.5px; color: var(--ink);
+    line-height: 1.45;
+  }
+  .quote-strip .right { display: flex; align-items: center; gap: 10px; }
+  .quote-strip .rlogo {
+    width: 28px; height: 28px;
+    background: var(--red);
+    border: 1.5px solid var(--ink);
+    border-radius: 8px;
+    display: grid; place-items: center;
+    color: #fff;
+  }
+  .quote-strip .rname { font-family: var(--font-display); font-size: 14px; color: var(--ink); letter-spacing: 0.5px; }
+  .quote-strip .rname .zen { color: var(--red); margin-left: 4px; }
+
+  /* ========== GAMEPLAY MODAL (when playing) ========== */
+  .play-overlay {
+    position: fixed; inset: 0; z-index: 50;
+    background: rgba(244, 235, 221, 0.92);
+    backdrop-filter: blur(6px);
+    display: grid; place-items: center;
+    padding: 24px;
+    transition: opacity 0.25s ease;
+  }
+  .play-overlay.hidden { opacity: 0; pointer-events: none; }
+  .play-card {
+    width: min(680px, 96%);
+    background: #1A1714;
+    border: 1.5px solid var(--ink);
+    border-radius: 16px;
+    padding: 14px 14px 16px;
+    box-shadow: 0 18px 50px rgba(50,20,10,0.25);
+    position: relative;
+  }
+  .play-card .play-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px; padding: 0 6px;
+  }
+  .play-card .play-head .lbl {
+    font-family: var(--font-body); font-weight: 900;
+    font-size: 12px; letter-spacing: 2.4px; text-transform: uppercase;
+    color: rgba(255,255,255,0.85);
+  }
+  .play-card .play-head .num {
+    font-family: var(--font-display);
+    font-size: 22px; color: #fff;
+  }
+  .play-card .play-head .score {
+    font-family: var(--font-display);
+    font-size: 22px; color: var(--purple);
+    transition: color 320ms cubic-bezier(0.22, 1, 0.36, 1);
+    transform-origin: center;
+    display: inline-block;
+  }
+  @keyframes zenSpring {
+    0%   { transform: scale(0.6); }
+    55%  { transform: scale(1.15); }
+    100% { transform: scale(1.0); }
+  }
+  @keyframes zenFlash {
+    0%   { color: #ef4444; }
+    50%  { color: #f97316; }
+    100% { color: var(--purple); }
+  }
+  .play-card .play-head .score.zen-spring {
+    animation: zenSpring 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .play-card .play-head .score-wrap {
+    position: relative;
+    display: inline-block;
+    line-height: 1;
+  }
+  .score-pop {
+    position: absolute;
+    right: 0;
+    top: -2px;
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 900;
+    color: #e94e3a;
+    pointer-events: none;
+    opacity: 0;
+    white-space: nowrap;
+    text-shadow: 0 1px 6px rgba(233,78,58,0.45);
+    will-change: transform, opacity;
+  }
+  .score-pop.fire {
+    animation: scorePop 760ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  @keyframes scorePop {
+    0%   { opacity: 0; transform: translate(0, 0) scale(0.85); }
+    18%  { opacity: 1; transform: translate(0, -6px) scale(1.08); }
+    100% { opacity: 0; transform: translate(0, -34px) scale(0.95); }
+  }
+  .play-card .play-head .score.zen-flash {
+    animation: zenSpring 320ms cubic-bezier(0.22, 1, 0.36, 1),
+               zenFlash 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .stage-wrap {
+    position: relative;
+    aspect-ratio: 16 / 11;
+    background: #0E0C0A;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  canvas#stage { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  .countdown {
+    position: absolute; left: 0; right: 0; top: 30%;
+    text-align: center;
+    font-family: var(--font-display);
+    font-size: 84px; letter-spacing: 4px;
+    color: rgba(255,255,255,0.95);
+    text-shadow: 0 0 24px rgba(124,92,255,0.5);
+    pointer-events: none; z-index: 3;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  .countdown.hidden { opacity: 0; transform: scale(0.85); }
+
+  /* ---- CUT overlay: only restyles the final 'CUT' frame, not the 3/2/1 numerals ---- */
+  .countdown.cut-frame.var-sumi {
+    color: #fff;
+    text-shadow:
+      0 0 24px rgba(124,92,255,0.55),
+      0 0 60px rgba(124,92,255,0.32),
+      0 2px 0 rgba(0,0,0,0.35);
+    animation: cutPopSumi 380ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @keyframes cutPopSumi {
+    0%   { opacity: 0; transform: scale(0.7); letter-spacing: 18px; }
+    60%  { opacity: 1; transform: scale(1.06); letter-spacing: 4px; }
+    100% { opacity: 1; transform: scale(1); letter-spacing: 4px; }
+  }
+
+  .countdown.cut-frame.var-slash {
+    color: #fff;
+    letter-spacing: 6px;
+    text-shadow: 0 2px 0 rgba(0,0,0,0.4);
+    animation: cutPopSlash 380ms cubic-bezier(0.22, 1, 0.36, 1);
+    --slash-color: #e94e3a;
+  }
+  .countdown.cut-frame.var-slash::before {
+    content: '';
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 0; height: 6px;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      var(--slash-color) 12%,
+      #ffd9d3 50%,
+      var(--slash-color) 88%,
+      transparent 100%);
+    transform: translate(-50%, -50%) rotate(-8deg);
+    border-radius: 4px;
+    box-shadow: 0 0 18px rgba(233,78,58,0.55);
+    animation: slashDraw 520ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    pointer-events: none;
+  }
+  @keyframes cutPopSlash {
+    0%   { opacity: 0; transform: scale(0.92); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes slashDraw {
+    0%   { width: 0; opacity: 0; }
+    20%  { opacity: 1; }
+    70%  { width: 90%; opacity: 1; }
+    100% { width: 110%; opacity: 0; }
+  }
+
+  .countdown.cut-frame.var-stamp {
+    color: #fff;
+    font-family: var(--font-display);
+    font-size: 64px;
+    letter-spacing: 8px;
+    padding: 14px 32px 12px;
+    border: 4px solid #e94e3a;
+    background: rgba(233,78,58,0.10);
+    box-shadow:
+      inset 0 0 0 2px rgba(233,78,58,0.35),
+      0 0 32px rgba(233,78,58,0.45);
+    text-shadow: 0 0 10px rgba(233,78,58,0.6), 0 2px 0 rgba(0,0,0,0.4);
+    width: max-content; left: 50%; right: auto;
+    transform: translateX(-50%) rotate(-4deg);
+    animation: cutPopStamp 460ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @keyframes cutPopStamp {
+    0%   { opacity: 0; transform: translateX(-50%) rotate(-4deg) scale(1.6); }
+    55%  { opacity: 1; transform: translateX(-50%) rotate(-4deg) scale(0.94); }
+    100% { opacity: 1; transform: translateX(-50%) rotate(-4deg) scale(1); }
+  }
+
+  /* Variant picker chips below the play card */
+  .cut-style-picker {
+    position: absolute; left: 50%; bottom: 6px;
+    transform: translateX(-50%);
+    display: flex; gap: 6px;
+    z-index: 4;
+  }
+  .cut-style-picker .chip {
+    font-family: var(--font-body); font-weight: 800;
+    font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase;
+    padding: 5px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(0,0,0,0.35);
+    color: rgba(255,255,255,0.62);
+    cursor: pointer;
+    transition: color 120ms, border-color 120ms, background 120ms;
+  }
+  .cut-style-picker .chip:hover { color: #fff; border-color: rgba(255,255,255,0.35); }
+  .cut-style-picker .chip.active {
+    color: #fff;
+    border-color: rgba(124,92,255,0.85);
+    background: rgba(124,92,255,0.18);
+    box-shadow: 0 0 0 1px rgba(124,92,255,0.5) inset;
+  }
+  .play-hint {
+    position: absolute; left: 0; right: 0; bottom: 18px;
+    text-align: center;
+    font-family: var(--font-body); font-weight: 800;
+    font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+    color: rgba(255,255,255,0.6);
+    pointer-events: none;
+  }
+  .first-tip {
+    position: absolute; left: 0; right: 0; bottom: -22px;
+    text-align: center;
+    font-family: var(--font-body); font-weight: 700;
+    font-size: 10px; letter-spacing: 2.4px; text-transform: uppercase;
+    color: rgba(230,57,70,0.85);
+    pointer-events: none;
+    transition: opacity 320ms cubic-bezier(0.22,1,0.36,1);
+    opacity: 0;
+  }
+  .first-tip.show { opacity: 1; }
+  .play-actions {
+    margin-top: 12px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 6px;
+  }
+  .dots { display: flex; gap: 8px; }
+  .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: rgba(255,255,255,0.16);
+    border: 1px solid rgba(255,255,255,0.25);
+  }
+  .dot.active { background: var(--red); box-shadow: 0 0 0 3px rgba(230,57,70,0.18); }
+  .dot.done { background: var(--purple); border-color: var(--purple); }
+  .dot.missed { background: var(--red); border-color: var(--red); }
+  .play-actions .lbl-set {
+    font-family: var(--font-body); font-weight: 900;
+    font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+    color: rgba(255,255,255,0.7);
+  }
+  .play-quit {
+    background: transparent;
+    color: rgba(255,255,255,0.7);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-family: var(--font-body); font-weight: 800;
+    font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+    cursor: pointer;
+  }
+  .play-quit:hover { background: rgba(255,255,255,0.06); color: #fff; }
+
+  /* ========== INTRO PROMPT ON FINAL CARD WHEN NOT PLAYED ========== */
+  .play-cta {
+    position: fixed; right: 22px; bottom: 22px; z-index: 30;
+    padding: 14px 22px;
+    background: var(--ink);
+    color: var(--cream-3);
+    border: 1.5px solid var(--ink);
+    border-radius: 12px;
+    box-shadow: 0 4px 0 var(--red);
+    font-family: var(--font-display);
+    font-size: 16px; letter-spacing: 1px;
+    cursor: pointer;
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+  }
+  .play-cta:hover { transform: translateY(-1px); box-shadow: 0 5px 0 var(--red); }
+  .play-cta:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--red); }
+
+  @media (max-width: 980px) and (min-width: 700px) {
+    .main-grid { grid-template-columns: 1fr; gap: 16px; }
+    .attempts { grid-template-columns: 1fr; gap: 12px; }
+    .attempts .arrow-sep {
+      display: grid;
+      transform: rotate(90deg);
+      padding: 2px 0;
+    }
+    .nav-tabs { display: none; }
+    .title-block h1 { font-size: clamp(48px, 14vw, 80px); }
+  }
+
+  /* ===== MOBILE (< 700px): Final Zen Card ABOVE attempts; attempts horizontal carousel ===== */
+  @media (max-width: 699px) {
+    .main-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    /* Final card first */
+    .main-grid > .final-card { order: 1; }
+    /* Attempts second, as a horizontal carousel */
+    .main-grid > .attempts { order: 2; }
+
+    /* Carousel container */
+    .attempts {
+      display: flex;
+      flex-direction: row;
+      gap: 12px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      padding: 4px 0 8px;
+      margin: 0 -12px; /* bleed to page edges */
+      padding-left: 12px;
+      padding-right: 24px; /* extra so last card snaps cleanly with peek */
+      scrollbar-width: none;
+    }
+    .attempts::-webkit-scrollbar { display: none; }
+    .attempts .arrow-sep { display: none; }
+    .attempt {
+      flex: 0 0 calc(100% - 36px); /* ~12px peek of next card on the right */
+      scroll-snap-align: center;
+      scroll-snap-stop: always;
+    }
+
+    /* Carousel dots */
+    .carousel-dots {
+      order: 3;
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: -6px;
+    }
+    .carousel-dots .cdot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: transparent;
+      border: 1.5px solid var(--ink);
+      opacity: 0.4;
+      transition: all 0.18s ease;
+    }
+    .carousel-dots .cdot.active {
+      background: var(--red);
+      border-color: var(--red);
+      opacity: 1;
+      transform: scale(1.15);
+    }
+  }
+  /* Hide carousel dots on desktop */
+  @media (min-width: 700px) {
+    .carousel-dots { display: none; }
+  }
+
+  @media (max-width: 640px) {
+    .page { padding: 12px 12px 20px; }
+
+    /* Nav: tighter, hide tabs */
+    .nav { padding: 8px 10px; border-radius: 12px; }
+    .brand-logo { width: 32px; height: 32px; border-radius: 8px; }
+    .brand-logo svg { width: 18px; height: 18px; }
+    .brand-name { font-size: 16px; }
+    .join-crew { padding: 7px 11px; font-size: 10.5px; letter-spacing: 1px; }
+    .join-crew svg { width: 12px; height: 12px; }
+
+    /* Header */
+    .header { margin-top: 16px; gap: 14px; }
+    .title-block h1 { font-size: clamp(44px, 13vw, 64px); letter-spacing: -0.5px; }
+    .title-underline { width: 60px; height: 3px; margin: 10px 0 6px; }
+    .title-tag { font-size: 11px; letter-spacing: 1.4px; }
+    .header-side { width: 100%; padding: 10px 14px; border-radius: 12px; }
+    .header-side .drop-icon { width: 22px; height: 28px; }
+    .header-side .heads { font-size: 11px; letter-spacing: 1.6px; }
+    .header-side .subs { font-size: 11px; }
+
+    /* Attempts */
+    .main-grid { margin-top: 16px; gap: 14px; }
+    .attempt {
+      min-height: auto;
+      padding: 14px 14px 12px;
+      border-radius: 12px;
+    }
+    .att-head .num { font-size: 18px; }
+    .att-head .lbl { font-size: 11.5px; letter-spacing: 1.2px; margin-left: 6px; }
+    .att-head .time { font-size: 10px; }
+    .zone-vis { min-height: 130px; margin: 4px 0 10px; }
+    .offset .ms { font-size: 30px; }
+    .offset .verdict { font-size: 11px; letter-spacing: 1.8px; }
+    .metrics { gap: 8px; }
+    .metric .lab { font-size: 9.5px; letter-spacing: 1.2px; }
+    .metric .val { font-size: 18px; }
+    .att-foot { font-size: 12px; padding-top: 10px; margin-top: 10px; }
+
+    /* Final card */
+    .final-card { padding: 16px 14px 14px; border-radius: 12px; }
+    .final-row { grid-template-columns: 1fr 130px; gap: 10px; }
+    .final-score-block .num { font-size: 60px; }
+    .badge { font-size: 10px; padding: 5px 10px; letter-spacing: 1.2px; }
+    .top-pct { font-size: 10px; letter-spacing: 1.4px; }
+    .stat-grid { grid-template-columns: 1fr 1fr; gap: 10px 14px; margin: 14px 0 12px; }
+    .stat-item .icn { width: 18px; height: 18px; flex-basis: 18px; }
+    .stat-item .lbl { font-size: 9px; letter-spacing: 1.1px; }
+    .stat-item .val { font-size: 15px; }
+    .stat-item .val .u { font-size: 10px; }
+    .share-btn { padding: 13px 14px; font-size: 12px; letter-spacing: 1.6px; }
+
+    /* Quote strip — stack */
+    .quote-strip {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px 16px;
+      margin-top: 16px;
+    }
+    .quote-strip .qtxt { font-size: 12.5px; }
+
+    /* Floating CTA */
+    .play-cta {
+      right: 12px; bottom: 12px;
+      padding: 12px 18px;
+      font-size: 14px;
+    }
+
+    /* Play overlay */
+    .play-overlay { padding: 10px; }
+    .play-card { padding: 10px 10px 12px; border-radius: 12px; }
+    .play-card .play-head { padding: 0 4px; margin-bottom: 8px; }
+    .play-card .play-head .lbl { font-size: 10.5px; letter-spacing: 1.6px; }
+    .play-card .play-head .num,
+    .play-card .play-head .score { font-size: 18px; }
+    .stage-wrap { aspect-ratio: 9 / 13; }
+    .countdown { font-size: 60px; top: 32%; }
+    .play-actions { padding: 0 4px; flex-wrap: wrap; gap: 8px; }
+    .play-actions .lbl-set { font-size: 9.5px; letter-spacing: 1.4px; flex: 1; text-align: center; }
+    .play-quit { padding: 5px 10px; font-size: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ========== TOP NAV ========== -->
+  <nav class="nav">
+    <div class="nav-left">
+      <div class="brand">
+        <div class="brand-logo">
+          <!-- bunny mark -->
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 4 L8 11" />
+            <path d="M16 4 L16 11" />
+            <ellipse cx="12" cy="15" rx="6" ry="5.5" fill="currentColor" stroke="none"/>
+            <circle cx="9.6" cy="14.5" r="0.8" fill="#111"/>
+            <circle cx="14.4" cy="14.5" r="0.8" fill="#111"/>
+            <path d="M11 17 Q12 17.6 13 17" stroke="#111" stroke-width="1" fill="none"/>
+          </svg>
+        </div>
+        <div class="brand-name">ROKI<span class="zen">ZEN</span></div>
+      </div>
+      <div class="nav-tabs">
+        <a class="nav-tab active" href="../Roki.html#home">Home</a>
+        <a class="nav-tab" href="../Roki.html#about">About</a>
+        <a class="nav-tab" href="../docs/index.html#lock">Docs</a>
+        <a class="nav-tab" href="../Roki.html#roadmap">Roadmap</a>
+      </div>
+    </div>
+    <a class="join-crew" href="https://x.com/rokitherabbit" target="_blank" rel="noopener noreferrer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8 5 L8 10"/><path d="M16 5 L16 10"/>
+        <ellipse cx="12" cy="14" rx="5" ry="4.5" fill="currentColor" stroke="none"/>
+      </svg>
+      Join Crew
+    </a>
+  </nav>
+
+  <!-- ========== HEADER ========== -->
+  <div class="header">
+    <div class="title-block">
+      <h1>ROKI ZEN</h1>
+      <div class="title-underline"></div>
+      <div class="title-tag">3 Cuts. One Focus.</div>
+    </div>
+    <div class="header-side">
+      <svg class="drop-icon" viewBox="0 0 24 32" fill="none">
+        <path d="M12 2 C12 2 4 13 4 20 a8 8 0 0 0 16 0 C20 13 12 2 12 2Z" fill="#7C5CFF" stroke="#111" stroke-width="1.4" stroke-linejoin="round"/>
+      </svg>
+      <div>
+        <div class="heads">Slice the Drop</div>
+        <div class="subs">Time it. Place it. Be precise.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== MAIN GRID ========== -->
+  <div class="main-grid">
+    <div class="attempts" id="attempts">
+      <!-- Attempt 1 -->
+      <article class="attempt empty" id="att-1">
+        <div class="att-head">
+          <div class="left-col">
+            <div class="num">01</div>
+            <div class="stack">
+              <div class="lbl">Attempt 1</div>
+              <div class="time" id="att-1-time">— : — : —</div>
+            </div>
+          </div>
+        </div>
+        <div class="zone-vis">
+          <div class="perfect-label">Perfect</div>
+          <div class="perfect-line"></div>
+          <div class="band-top"></div>
+          <div class="band-bot"></div>
+          <div class="slash" id="att-1-slash"></div>
+          <svg class="drop" id="att-1-drop" viewBox="0 0 24 32" fill="currentColor">
+            <path d="M12 2 C12 2 4 13 4 20 a8 8 0 0 0 16 0 C20 13 12 2 12 2Z"/>
+          </svg>
+          <div class="perfect-mark" id="att-1-mark"></div>
+        </div>
+        <div class="offset" id="att-1-offset">
+          <div class="ms" id="att-1-ms">— ms</div>
+          <div class="verdict" id="att-1-verdict">WAITING</div>
+        </div>
+        <div class="metrics">
+          <div class="metric">
+            <div class="lab">Precision</div>
+            <div class="val" id="att-1-prec">—</div>
+            <div class="bar"><span id="att-1-prec-bar" style="width:0%"></span></div>
+          </div>
+          <div class="metric">
+            <div class="lab">Timing</div>
+            <div class="val" id="att-1-time-pct">—</div>
+            <div class="bar"><span id="att-1-time-bar" style="width:0%"></span></div>
+          </div>
+          <div class="metric score">
+            <div class="lab">Score</div>
+            <div class="val" id="att-1-score">—</div>
+            <div class="bar"><span id="att-1-score-bar" style="width:0%"></span></div>
+          </div>
+        </div>
+        <div class="att-foot">
+          <span id="att-1-flavor">Awaiting your blade.</span>
+          <span class="arr" id="att-1-arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
+        </div>
+      </article>
+
+      <div class="arrow-sep">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+      </div>
+
+      <!-- Attempt 2 -->
+      <article class="attempt empty" id="att-2">
+        <div class="att-head">
+          <div class="left-col">
+            <div class="num">02</div>
+            <div class="stack">
+              <div class="lbl">Attempt 2</div>
+              <div class="time" id="att-2-time">— : — : —</div>
+            </div>
+          </div>
+        </div>
+        <div class="zone-vis">
+          <div class="perfect-label">Perfect</div>
+          <div class="perfect-line"></div>
+          <div class="band-top"></div>
+          <div class="band-bot"></div>
+          <div class="slash" id="att-2-slash"></div>
+          <svg class="drop" id="att-2-drop" viewBox="0 0 24 32" fill="currentColor">
+            <path d="M12 2 C12 2 4 13 4 20 a8 8 0 0 0 16 0 C20 13 12 2 12 2Z"/>
+          </svg>
+          <div class="perfect-mark" id="att-2-mark"></div>
+        </div>
+        <div class="offset" id="att-2-offset">
+          <div class="ms" id="att-2-ms">— ms</div>
+          <div class="verdict" id="att-2-verdict">WAITING</div>
+        </div>
+        <div class="metrics">
+          <div class="metric">
+            <div class="lab">Precision</div>
+            <div class="val" id="att-2-prec">—</div>
+            <div class="bar"><span id="att-2-prec-bar" style="width:0%"></span></div>
+          </div>
+          <div class="metric">
+            <div class="lab">Timing</div>
+            <div class="val" id="att-2-time-pct">—</div>
+            <div class="bar"><span id="att-2-time-bar" style="width:0%"></span></div>
+          </div>
+          <div class="metric score">
+            <div class="lab">Score</div>
+            <div class="val" id="att-2-score">—</div>
+            <div class="bar"><span id="att-2-score-bar" style="width:0%"></span></div>
+          </div>
+        </div>
+        <div class="att-foot">
+          <span id="att-2-flavor">Awaiting your blade.</span>
+          <span class="arr" id="att-2-arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
+        </div>
+      </article>
+
+      <div class="arrow-sep">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+      </div>
+
+      <!-- Attempt 3 -->
+      <article class="attempt empty" id="att-3">
+        <div class="att-head">
+          <div class="left-col">
+            <div class="num">03</div>
+            <div class="stack">
+              <div class="lbl">Attempt 3</div>
+              <div class="time" id="att-3-time">— : — : —</div>
+            </div>
+          </div>
+        </div>
+        <div class="zone-vis">
+          <div class="perfect-label">Perfect</div>
+          <div class="perfect-line"></div>
+          <div class="band-top"></div>
+          <div class="band-bot"></div>
+          <div class="slash" id="att-3-slash"></div>
+          <svg class="drop" id="att-3-drop" viewBox="0 0 24 32" fill="currentColor">
+            <path d="M12 2 C12 2 4 13 4 20 a8 8 0 0 0 16 0 C20 13 12 2 12 2Z"/>
+          </svg>
+          <div class="perfect-mark" id="att-3-mark"></div>
+        </div>
+        <div class="offset" id="att-3-offset">
+          <div class="ms" id="att-3-ms">— ms</div>
+          <div class="verdict" id="att-3-verdict">WAITING</div>
+        </div>
+        <div class="metrics">
+          <div class="metric">
+            <div class="lab">Precision</div>
+            <div class="val" id="att-3-prec">—</div>
+            <div class="bar"><span id="att-3-prec-bar" style="width:0%"></span></div>
+          </div>
+          <div class="metric">
+            <div class="lab">Timing</div>
+            <div class="val" id="att-3-time-pct">—</div>
+            <div class="bar"><span id="att-3-time-bar" style="width:0%"></span></div>
+          </div>
+          <div class="metric score">
+            <div class="lab">Score</div>
+            <div class="val" id="att-3-score">—</div>
+            <div class="bar"><span id="att-3-score-bar" style="width:0%"></span></div>
+          </div>
+        </div>
+        <div class="att-foot">
+          <span id="att-3-flavor">Awaiting your blade.</span>
+          <span class="arr" id="att-3-arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
+        </div>
+      </article>
+    </div>
+
+    <!-- ========== FINAL ZEN CARD ========== -->
+    <aside class="final-card">
+      <span class="crown-top">♛</span>
+      <div class="final-head">Final Zen Card</div>
+      <div class="final-row">
+        <div class="final-score-block">
+          <div class="lbl">Final Score</div>
+          <div class="num" id="final-score">—</div>
+          <span class="badge" id="final-rank">Awaiting</span>
+          <div class="top-pct" id="final-top">— —</div>
+        </div>
+        <div class="mascot-wrap tier-elite" id="mascot-wrap">
+          <div class="tier-bg"></div>
+          <img class="tier-img" id="tier-img" src="../assets/tier-elite.png" alt="Tier mascot"/>
+        </div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-item">
+          <svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>
+          </svg>
+          <div>
+            <div class="lbl">Avg Reaction Time</div>
+            <div class="val" id="stat-reaction">— <span class="u">ms</span></div>
+          </div>
+        </div>
+        <div class="stat-item">
+          <svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12 L7 12 L9 7 L12 17 L14 10 L17 12 L21 12"/>
+          </svg>
+          <div>
+            <div class="lbl">Consistency</div>
+            <div class="val" id="stat-consistency">—<span class="u">%</span></div>
+          </div>
+        </div>
+        <div class="stat-item">
+          <svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+          </svg>
+          <div>
+            <div class="lbl">Avg Precision</div>
+            <div class="val" id="stat-precision">—<span class="u">%</span></div>
+          </div>
+        </div>
+        <div class="stat-item">
+          <svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M13 2 L4 14 L11 14 L10 22 L20 9 L13 9 Z" fill="currentColor" stroke="none"/>
+          </svg>
+          <div>
+            <div class="lbl">Best Streak</div>
+            <div class="val" id="stat-streak">— / 3</div>
+          </div>
+        </div>
+        <div class="stat-item">
+          <svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3 L14.5 9 L21 9.7 L16 14 L17.5 20.5 L12 17 L6.5 20.5 L8 14 L3 9.7 L9.5 9 Z"/>
+          </svg>
+          <div>
+            <div class="lbl">Max Score</div>
+            <div class="val" id="stat-max">—</div>
+          </div>
+        </div>
+        <div class="stat-item">
+          <svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 9h14M5 15h14M9 4l-2 16M17 4l-2 16"/>
+          </svg>
+          <div>
+            <div class="lbl">Total Score</div>
+            <div class="val" id="stat-total">—</div>
+          </div>
+        </div>
+      </div>
+
+      <button class="share-btn" id="share-btn">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3v12"/><path d="M7 8l5-5 5 5"/><path d="M5 21h14"/>
+        </svg>
+        Share Your Zen
+      </button>
+    </aside>
+
+    <!-- Mobile-only carousel dots (positioned via flex order on mobile) -->
+    <div class="carousel-dots" id="carousel-dots" aria-hidden="true">
+      <div class="cdot active" data-idx="0"></div>
+      <div class="cdot" data-idx="1"></div>
+      <div class="cdot" data-idx="2"></div>
+    </div>
+  </div>
+
+  <!-- ========== QUOTE STRIP ========== -->
+  <div class="quote-strip">
+    <div class="left">
+      <div class="qicn">”</div>
+      <div class="qtxt">Zen is not about being the fastest.<br/>It's about being in the moment.</div>
+    </div>
+    <div class="right">
+      <div class="rlogo">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 4 L8 11"/><path d="M16 4 L16 11"/>
+          <ellipse cx="12" cy="15" rx="6" ry="5.5" fill="currentColor" stroke="none"/>
+        </svg>
+      </div>
+      <div class="rname">ROKI<span class="zen">ZEN</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== PLAY OVERLAY (gameplay) ========== -->
+<div class="play-overlay hidden" id="play-overlay">
+  <div class="play-card">
+    <div class="play-head">
+      <div class="lbl"><span id="play-phase-label">Focus</span></div>
+      <div class="num" id="play-attempt-num">01 / 03</div>
+      <div class="score-wrap">
+        <div class="score" id="play-score">0</div>
+        <div class="score-pop" id="play-score-pop"></div>
+      </div>
+    </div>
+    <div class="stage-wrap">
+      <canvas id="stage"></canvas>
+      <div class="countdown hidden" id="countdown">3</div>
+      <div class="play-hint" id="play-hint">Wait for it…</div>
+      <div class="first-tip" id="first-tip">Slice across the drop when it enters the red zone</div>
+      <div class="cut-style-picker" id="cut-style-picker">
+        <button class="chip" data-variant="sumi">Sumi</button>
+        <button class="chip" data-variant="slash">Slash</button>
+        <button class="chip" data-variant="stamp">Stamp</button>
+      </div>
+    </div>
+    <div class="play-actions">
+      <div class="dots">
+        <div class="dot" id="dot-0"></div>
+        <div class="dot" id="dot-1"></div>
+        <div class="dot" id="dot-2"></div>
+      </div>
+      <div class="lbl-set">Slice the Drop at the Perfect Moment</div>
+      <button class="play-quit" id="play-quit">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Floating CTA -->
+<button class="play-cta" id="play-cta">▶ START MATCH</button>
+
+<script>
+"use strict";
+
+// ===== Util =====
+const TAU = Math.PI * 2;
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const fmt2 = (n) => (Math.round(n * 100) / 100).toFixed(2);
+const fmt0 = (n) => Math.round(n).toString();
+
+// ===== DOM =====
+const overlay = document.getElementById('play-overlay');
+const canvas = document.getElementById('stage');
+const ctx = canvas.getContext('2d');
+const countdownEl = document.getElementById('countdown');
+const hintEl = document.getElementById('play-hint');
+const playScore = document.getElementById('play-score');
+const playAttemptNum = document.getElementById('play-attempt-num');
+const playPhaseLabel = document.getElementById('play-phase-label');
+const firstTipEl = document.getElementById('first-tip');
+const dots = [0,1,2].map(i => document.getElementById('dot-' + i));
+
+// final card
+const finalScore = document.getElementById('final-score');
+const finalRank = document.getElementById('final-rank');
+const finalTop = document.getElementById('final-top');
+const statReaction = document.getElementById('stat-reaction');
+const statConsistency = document.getElementById('stat-consistency');
+const statPrecision = document.getElementById('stat-precision');
+const statStreak = document.getElementById('stat-streak');
+const statMax = document.getElementById('stat-max');
+const statTotal = document.getElementById('stat-total');
+
+// ===== State =====
+const State = {
+  phase: 'idle',
+  dropIndex: 0,
+  drop: null,
+  stroke: null,
+  trail: [],
+  results: [null, null, null],
+  totalScore: 0,
+  best: 0,
+  bestStreak: 0,
+  maxScore: 0,
+  totalCum: 0,
+  countdownTimer: 0,
+  countdownValue: 0,
+  resolvedTimer: 0,
+  cutLineFx: null,
+  frozenStroke: null,
+  // ---- Game-feel FX (slice-phase only) ----
+  fx: {
+    timeScale: 1,
+    slowMoT: 0,            // ms remaining of slow-mo (eased back over decay)
+    slowMoDecay: 0,        // ms total slowMo duration
+    slowMoActive: false,
+    shakeT: 0,             // ms remaining
+    shakeDur: 0,
+    flashT: 0, flashDur: 0,                     // white radial flash (ms)
+    ring: null,            // { mx, my, t, life }
+    droplets: [],          // [{x,y,vx,vy,r,t,life,color}]
+    inkStreaks: [],        // [{x,y,vx,vy,t,life,len,angle}]
+    followThrough: null,   // { pts:[{x,y,t}], vx, vy, head:{x,y}, t, life }
+    bladeHead: null,       // smoothed pointer head {x,y}
+    missPulseT: 0,         // ms; fades miss border pulse
+    missPulseDur: 0,
+    sliceFade: 1,          // 1 → 0 fade for missed slice line
+    bandGlow: 0,           // 0..1 → red glow strength on the strike band when drop is approaching
+  },
+};
+
+// ===== Audio — noise-based cinematic synthesis =====
+// Philosophy: 90% stillness, 10% violence. No clean oscillators driving impacts.
+// Everything is filtered noise + resonant bandpass + waveshaper grit + convolution tail.
+const AudioFx = (() => {
+  let actx = null, master = null, busDry = null, busWet = null, convolver = null;
+
+  // Soft-clip waveshaper for "dirt" — adds odd harmonics, breaks digital cleanness
+  function makeShaper(amount = 0.6) {
+    const c = actx.createWaveShaper();
+    const n = 2048;
+    const curve = new Float32Array(n);
+    const k = amount * 80;
+    for (let i = 0; i < n; i++) {
+      const x = (i / (n - 1)) * 2 - 1;
+      // tanh-style soft clip with a touch of asymmetry
+      curve[i] = ((1 + k) * x) / (1 + k * Math.abs(x));
+    }
+    c.curve = curve;
+    c.oversample = '4x';
+    return c;
+  }
+
+  // Bitcrusher via ScriptProcessor-free trick: use a small WaveShaper quantizer
+  function makeBitcrush(bits = 10) {
+    const c = actx.createWaveShaper();
+    const n = 2048;
+    const curve = new Float32Array(n);
+    const steps = Math.pow(2, bits);
+    for (let i = 0; i < n; i++) {
+      const x = (i / (n - 1)) * 2 - 1;
+      curve[i] = Math.round(x * steps) / steps;
+    }
+    c.curve = curve;
+    return c;
+  }
+
+  // Build a dark dojo impulse response on the fly: filtered decaying noise with early reflections
+  function buildIR(seconds = 3.2) {
+    const sr = actx.sampleRate;
+    const len = Math.floor(sr * seconds);
+    const ir = actx.createBuffer(2, len, sr);
+    // Early reflections — discrete taps suggesting wooden floor + stone walls
+    const earlyTaps = [
+      { t: 0.011, g: 0.55 },
+      { t: 0.023, g: 0.42 },
+      { t: 0.038, g: 0.36 },
+      { t: 0.061, g: 0.28 },
+      { t: 0.094, g: 0.22 },
+      { t: 0.142, g: 0.16 },
+    ];
+    for (let ch = 0; ch < 2; ch++) {
+      const d = ir.getChannelData(ch);
+      // Stamp early reflections
+      for (const tap of earlyTaps) {
+        const idx = Math.floor(tap.t * sr) + (ch === 1 ? 80 : 0);
+        if (idx < len) d[idx] += tap.g * (ch === 0 ? 1 : 0.85);
+      }
+      // Diffuse tail — exponentially decaying noise, dark
+      for (let i = 0; i < len; i++) {
+        const t = i / sr;
+        // Long tail, dark; ch1 slightly delayed for stereo width
+        const env = Math.pow(1 - t / seconds, 2.4);
+        d[i] += (Math.random() * 2 - 1) * env * 0.42;
+      }
+      // Crude lowpass over the tail — average with neighbors a few times
+      for (let pass = 0; pass < 3; pass++) {
+        for (let i = 1; i < len - 1; i++) {
+          d[i] = (d[i - 1] + d[i] * 2 + d[i + 1]) * 0.25;
+        }
+      }
+    }
+    return ir;
+  }
+
+  // Post-countdown safety bus: master → compressor → cap (0.6) → destination.
+  // The countdown woodBlock keeps a separate untouched path via countdownBus.
+  let postComp = null, postMaster = null, countdownBus = null;
+  function ensure() {
+    if (actx) return actx;
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+
+    // Post-countdown safety chain
+    postComp = actx.createDynamicsCompressor();
+    postComp.threshold.value = -18;
+    postComp.knee.value = 12;
+    postComp.ratio.value = 6;
+    postComp.attack.value = 0.003;
+    postComp.release.value = 0.120;
+    postMaster = actx.createGain(); postMaster.gain.value = 0.6; // hard cap
+    postComp.connect(postMaster);
+    postMaster.connect(actx.destination);
+
+    // master = post-countdown bus entry. Everything except countdown routes here.
+    master = actx.createGain(); master.gain.value = 0.85;
+    master.connect(postComp);
+
+    // Dry / Wet busses
+    busDry = actx.createGain(); busDry.gain.value = 0.80;
+    busWet = actx.createGain(); busWet.gain.value = 0.50;
+    convolver = actx.createConvolver();
+    convolver.normalize = true;
+    convolver.buffer = buildIR(3.2);
+    const wetTone = actx.createBiquadFilter(); wetTone.type = 'lowpass'; wetTone.frequency.value = 2400;
+    const wetPost = actx.createBiquadFilter(); wetPost.type = 'lowpass'; wetPost.frequency.value = 1800;
+    busWet.connect(wetTone); wetTone.connect(convolver);
+    convolver.connect(wetPost); wetPost.connect(master);
+    busDry.connect(master);
+
+    // Countdown bus — UNTOUCHED. No compressor, no cap.
+    countdownBus = actx.createGain(); countdownBus.gain.value = 0.55;
+    countdownBus.connect(actx.destination);
+
+    return actx;
+  }
+  // === Helper: noise burst → bandpass → shaper → dry+wet busses ===
+  // No oscillators. Pitch comes entirely from filter resonance.
+  function noiseBurst({
+    dur = 0.18,
+    centerStart = 800, centerEnd = null, // bandpass sweep (Hz)
+    Q = 6,
+    hp = 60, lp = 12000,
+    attack = 0.002, holdGain = 0.6,
+    shape = 0.5,        // waveshaper amount (dirt)
+    crushBits = 12,     // 16 = clean, 8 = crunchy
+    wet = 0.45,
+    pitchJitter = 0,    // ±cents random per call (inharmonic feel)
+    delay = 0,
+  } = {}) {
+    const a = actx; const t = a.currentTime + delay;
+    const sr = a.sampleRate;
+    const len = Math.max(64, Math.floor(sr * dur));
+    const buf = a.createBuffer(1, len, sr);
+    const d = buf.getChannelData(0);
+    // Pink-ish noise (cheap): running average of white
+    let prev = 0;
+    for (let i = 0; i < len; i++) {
+      const w = Math.random()*2 - 1;
+      prev = prev * 0.86 + w * 0.14;
+      d[i] = (w * 0.6 + prev * 1.6);
+    }
+    const src = a.createBufferSource(); src.buffer = buf;
+    const jitter = pitchJitter ? Math.pow(2, ((Math.random()*2 - 1) * pitchJitter) / 1200) : 1;
+    const bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = Q;
+    bp.frequency.setValueAtTime(centerStart * jitter, t);
+    if (centerEnd !== null) {
+      bp.frequency.exponentialRampToValueAtTime(Math.max(20, centerEnd * jitter), t + dur);
+    }
+    const hpf = a.createBiquadFilter(); hpf.type = 'highpass'; hpf.frequency.value = hp;
+    const lpf = a.createBiquadFilter(); lpf.type = 'lowpass'; lpf.frequency.value = lp;
+    const shaper = makeShaper(shape);
+    const crush = makeBitcrush(crushBits);
+    const env = a.createGain();
+    env.gain.setValueAtTime(0, t);
+    env.gain.linearRampToValueAtTime(holdGain, t + attack);
+    env.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    // Split to dry + wet
+    const dryAmt = a.createGain(); dryAmt.gain.value = 1 - wet;
+    const wetAmt = a.createGain(); wetAmt.gain.value = wet;
+    src.connect(bp); bp.connect(hpf); hpf.connect(lpf);
+    lpf.connect(shaper); shaper.connect(crush); crush.connect(env);
+    env.connect(dryAmt); dryAmt.connect(busDry);
+    env.connect(wetAmt); wetAmt.connect(busWet);
+    src.start(t); src.stop(t + dur + 0.04);
+  }
+  // Subsonic body — also noise-driven, just heavily lowpassed. NO clean sine.
+  function subBody({
+    dur = 0.6, hp = 25, lp = 95, peak = 0.5, attack = 0.01,
+    wet = 0.25, delay = 0,
+  } = {}) {
+    const a = actx; const t = a.currentTime + delay;
+    const sr = a.sampleRate;
+    const len = Math.floor(sr * dur);
+    const buf = a.createBuffer(1, len, sr);
+    const d = buf.getChannelData(0);
+    // Heavy red noise — integrated white
+    let v = 0;
+    for (let i = 0; i < len; i++) {
+      v = v * 0.985 + (Math.random()*2 - 1) * 0.015;
+      d[i] = v * 12;
+    }
+    const src = a.createBufferSource(); src.buffer = buf;
+    const hpf = a.createBiquadFilter(); hpf.type='highpass'; hpf.frequency.value = hp;
+    const lpf = a.createBiquadFilter(); lpf.type='lowpass'; lpf.frequency.value = lp;
+    const shaper = makeShaper(0.3);
+    const env = a.createGain();
+    env.gain.setValueAtTime(0, t);
+    env.gain.linearRampToValueAtTime(peak, t + attack);
+    env.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    const dryAmt = a.createGain(); dryAmt.gain.value = 1 - wet;
+    const wetAmt = a.createGain(); wetAmt.gain.value = wet;
+    src.connect(hpf); hpf.connect(lpf); lpf.connect(shaper); shaper.connect(env);
+    env.connect(dryAmt); dryAmt.connect(busDry);
+    env.connect(wetAmt); wetAmt.connect(busWet);
+    src.start(t); src.stop(t + dur + 0.04);
+  }
+  // Backward-compat shim: old `tone()` calls now route to a noise burst with similar perceived center.
+  function tone({ freq=440, dur=0.18, vol=0.18 }) {
+    ensure();
+    noiseBurst({
+      dur, centerStart: freq * 0.5, Q: 8,
+      hp: Math.max(40, freq * 0.25), lp: freq * 4,
+      holdGain: vol * 1.4, shape: 0.55, crushBits: 10,
+      wet: 0.5, pitchJitter: 25,
+    });
+  }
+  // === Hyoshigi (wood block) — UNTOUCHED. Routes to countdownBus, bypasses post-countdown chain. ===
+  function woodBlock(pitch = 1) {
+    ensure();
+    const a = actx;
+    const j = (Math.random()*2 - 1) * 80;
+    const center1 = (1100 + j) * pitch;
+    const center2 = (2300 + j*0.6) * pitch * (1 + (Math.random()*0.06 - 0.03));
+    function cBurst({ dur, centerStart, Q, hp, lp, attack, holdGain, shape, crushBits, pitchJitter, delay = 0 }) {
+      const t = a.currentTime + delay;
+      const sr = a.sampleRate;
+      const len = Math.max(64, Math.floor(sr * dur));
+      const buf = a.createBuffer(1, len, sr);
+      const d = buf.getChannelData(0);
+      let prev = 0;
+      for (let i = 0; i < len; i++) {
+        const w = Math.random()*2 - 1;
+        prev = prev * 0.86 + w * 0.14;
+        d[i] = (w * 0.6 + prev * 1.6);
+      }
+      const src = a.createBufferSource(); src.buffer = buf;
+      const jit = pitchJitter ? Math.pow(2, ((Math.random()*2 - 1) * pitchJitter) / 1200) : 1;
+      const bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = Q;
+      bp.frequency.setValueAtTime(centerStart * jit, t);
+      const hpf = a.createBiquadFilter(); hpf.type = 'highpass'; hpf.frequency.value = hp;
+      const lpf = a.createBiquadFilter(); lpf.type = 'lowpass'; lpf.frequency.value = lp;
+      const shaper = makeShaper(shape);
+      const crush = makeBitcrush(crushBits);
+      const env = a.createGain();
+      env.gain.setValueAtTime(0, t);
+      env.gain.linearRampToValueAtTime(holdGain, t + attack);
+      env.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(bp); bp.connect(hpf); hpf.connect(lpf);
+      lpf.connect(shaper); shaper.connect(crush); crush.connect(env);
+      env.connect(countdownBus);
+      src.start(t); src.stop(t + dur + 0.04);
+    }
+    cBurst({ dur: 0.085, centerStart: center1, Q: 14, hp: 500, lp: 6000, attack: 0.0015, holdGain: 0.55, shape: 0.7, crushBits: 9, pitchJitter: 40 });
+    cBurst({ dur: 0.06,  centerStart: center2, Q: 10, hp: 800, lp: 7500, attack: 0.001,  holdGain: 0.32, shape: 0.5, crushBits: 10, pitchJitter: 60, delay: 0.001 });
+  }
+  // === Bonshō — clean sine partials, NO waveshaper. Bell bus lowpassed at 3 kHz. ===
+  function templeBell(pitch = 1) {
+    ensure();
+    const a = actx; const t = a.currentTime;
+    // Dedicated bell bus → 3 kHz lowpass → master
+    const bellBus = a.createGain(); bellBus.gain.value = 1.0;
+    const bellLP = a.createBiquadFilter(); bellLP.type = 'lowpass'; bellLP.frequency.value = 3000;
+    bellBus.connect(bellLP); bellLP.connect(master);
+    const bellWet = a.createGain(); bellWet.gain.value = 0.25;
+    bellLP.connect(bellWet); bellWet.connect(busWet);
+    // Soft padded mallet — bandpassed noise, no shaper
+    {
+      const sr = a.sampleRate;
+      const dur = 0.10;
+      const len = Math.floor(sr * dur);
+      const buf = a.createBuffer(1, len, sr);
+      const d = buf.getChannelData(0);
+      let prev = 0;
+      for (let i = 0; i < len; i++) {
+        const w = Math.random()*2 - 1;
+        prev = prev * 0.9 + w * 0.1;
+        d[i] = prev;
+      }
+      const src = a.createBufferSource(); src.buffer = buf;
+      const bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 0.9;
+      bp.frequency.value = 380;
+      const hpf = a.createBiquadFilter(); hpf.type = 'highpass'; hpf.frequency.value = 80;
+      const lpf = a.createBiquadFilter(); lpf.type = 'lowpass'; lpf.frequency.value = 1200;
+      const env = a.createGain();
+      env.gain.setValueAtTime(0, t);
+      env.gain.linearRampToValueAtTime(0.18, t + 0.030);
+      env.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(bp); bp.connect(hpf); hpf.connect(lpf); lpf.connect(env);
+      env.connect(bellBus);
+      src.start(t); src.stop(t + dur + 0.04);
+    }
+    // Clean sine partials, NO waveshaper. Inharmonic 55, 82, 138, 207 Hz. Summed peak ≤ 0.25.
+    const partials = [
+      { f: 55,  gain: 0.10, jit: 8  },
+      { f: 82,  gain: 0.07, jit: 12 },
+      { f: 138, gain: 0.05, jit: 18 },
+      { f: 207, gain: 0.03, jit: 25 },
+    ];
+    const dur = 5.0;
+    for (const p of partials) {
+      const jitter = Math.pow(2, ((Math.random()*2 - 1) * p.jit) / 1200);
+      const osc = a.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(p.f * pitch * jitter, t);
+      const env = a.createGain();
+      env.gain.setValueAtTime(0, t);
+      env.gain.linearRampToValueAtTime(p.gain, t + 0.030);
+      env.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      osc.connect(env); env.connect(bellBus);
+      osc.start(t); osc.stop(t + dur + 0.04);
+    }
+  }
+  function noise({ dur=0.12, vol=0.22, hp=400, lp=8000 }) {
+    ensure();
+    noiseBurst({
+      dur, centerStart: (hp+lp)/2, Q: 1.2,
+      hp, lp, attack: 0.003, holdGain: vol,
+      shape: 0.4, crushBits: 11, wet: 0.4,
+    });
+  }
+  // === Drop fall — bandpass sweep 800→120 Hz + sub-rumble + breath. 30 ms fade-in. ===
+  function rainFall() {
+    ensure();
+    noiseBurst({
+      dur: 0.95, centerStart: 800, centerEnd: 120, Q: 1.0,
+      hp: 60, lp: 1200,
+      attack: 0.030, holdGain: 0.14,
+      shape: 0.20, crushBits: 12,
+      wet: 0.35,
+    });
+    subBody({ dur: 0.95, hp: 22, lp: 80, peak: 0.16, attack: 0.030, wet: 0.30 });
+    noiseBurst({
+      dur: 0.95, centerStart: 350, Q: 0.9,
+      hp: 200, lp: 500,
+      attack: 0.030, holdGain: 0.05,
+      shape: 0.15, crushBits: 12,
+      wet: 0.40,
+    });
+  }
+  // === Iaijutsu whoosh — sweep 2.2 kHz → 600 Hz, low Q ===
+  function whoosh() {
+    ensure();
+    noiseBurst({
+      dur: 0.080, centerStart: 2200, centerEnd: 600, Q: 1.0,
+      hp: 400, lp: 4000,
+      attack: 0.002, holdGain: 0.40,
+      shape: 0.30, crushBits: 11,
+      wet: 0.35, pitchJitter: 12,
+    });
+  }
+  // === Miss exhale — gain halved, lp 180 Hz ===
+  function missExhale() {
+    ensure();
+    noiseBurst({
+      dur: 1.2, centerStart: 130, centerEnd: 80, Q: 1.0,
+      hp: 60, lp: 180,
+      attack: 0.030, holdGain: 0.11,
+      shape: 0.15, crushBits: 12,
+      wet: 0.35,
+    });
+  }
+  // === Dull thud — short low bandpass burst for invalid-state input feedback ===
+  function dullThud() {
+    ensure();
+    noiseBurst({
+      dur: 0.12, centerStart: 180, centerEnd: 90, Q: 1.0,
+      hp: 80, lp: 300,
+      attack: 0.004, holdGain: 0.10,
+      shape: 0.10, crushBits: 12,
+      wet: 0.20,
+    });
+  }
+  // === The cut — three layers, all Q ≤ 1.0, slice bus lowpassed at 4 kHz, 30 ms fade-in. ===
+  function slice(quality = 1) {
+    ensure();
+    const a = actx;
+    const q = Math.max(0.4, Math.min(1.2, quality));
+    const sliceBus = a.createGain(); sliceBus.gain.value = 1.0;
+    const sliceLP = a.createBiquadFilter(); sliceLP.type = 'lowpass'; sliceLP.frequency.value = 4000;
+    sliceBus.connect(sliceLP); sliceLP.connect(master);
+    const sliceWet = a.createGain(); sliceWet.gain.value = 0.35;
+    sliceLP.connect(sliceWet); sliceWet.connect(busWet);
+    function sBurst({ dur, centerStart, centerEnd = null, Q, hp, lp, holdGain, shape, crushBits, pitchJitter = 0, delay = 0 }) {
+      const t = a.currentTime + delay;
+      const sr = a.sampleRate;
+      const len = Math.max(64, Math.floor(sr * dur));
+      const buf = a.createBuffer(1, len, sr);
+      const d = buf.getChannelData(0);
+      let prev = 0;
+      for (let i = 0; i < len; i++) {
+        const w = Math.random()*2 - 1;
+        prev = prev * 0.86 + w * 0.14;
+        d[i] = (w * 0.6 + prev * 1.6);
+      }
+      const src = a.createBufferSource(); src.buffer = buf;
+      const jit = pitchJitter ? Math.pow(2, ((Math.random()*2 - 1) * pitchJitter) / 1200) : 1;
+      const bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = Math.min(1.0, Q);
+      bp.frequency.setValueAtTime(centerStart * jit, t);
+      if (centerEnd !== null) bp.frequency.exponentialRampToValueAtTime(Math.max(20, centerEnd * jit), t + dur);
+      const hpf = a.createBiquadFilter(); hpf.type = 'highpass'; hpf.frequency.value = hp;
+      const lpf = a.createBiquadFilter(); lpf.type = 'lowpass'; lpf.frequency.value = lp;
+      const shaper = makeShaper(shape);
+      const crush = makeBitcrush(crushBits);
+      const env = a.createGain();
+      env.gain.setValueAtTime(0, t);
+      env.gain.linearRampToValueAtTime(holdGain, t + 0.030);
+      env.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(bp); bp.connect(hpf); hpf.connect(lpf);
+      lpf.connect(shaper); shaper.connect(crush); crush.connect(env);
+      env.connect(sliceBus);
+      src.start(t); src.stop(t + dur + 0.04);
+    }
+    // (a) whoosh layer
+    sBurst({ dur: 0.080, centerStart: 2200, centerEnd: 600, Q: 1.0, hp: 400, lp: 4000, holdGain: 0.32 * q, shape: 0.30, crushBits: 11, pitchJitter: 12 });
+    // (b) impact — shaper halved (0.375)
+    sBurst({ dur: 0.40, centerStart: 600, Q: 0.8, hp: 50, lp: 1200, holdGain: 0.42 * q, shape: 0.375, crushBits: 10, delay: 0.06 });
+    // (c) tail
+    sBurst({ dur: 1.8, centerStart: 220, centerEnd: 90, Q: 1.0, hp: 60, lp: 700, holdGain: 0.07 * q, shape: 0.20, crushBits: 12, delay: 0.10 });
+  }
+  // Add a silence helper so callers can build "negative space" easily
+  function silence(ms) {
+    return new Promise(r => setTimeout(r, ms));
+  }
+  return { ensure, tone, noise, rainFall, whoosh, slice, missExhale, dullThud, woodBlock, templeBell, silence };
+})();
+
+// ===== Canvas sizing =====
+let W = 0, H = 0, DPR = Math.max(1, window.devicePixelRatio || 1);
+function resize() {
+  const r = canvas.getBoundingClientRect();
+  W = Math.floor(r.width); H = Math.floor(r.height);
+  canvas.width = Math.floor(W * DPR);
+  canvas.height = Math.floor(H * DPR);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+window.addEventListener('resize', resize);
+
+// ===== Drop =====
+const DROP_RADIUS = 28;
+// Strike window: ~14% of play area height, with an inner PERFECT zone (~30% of band).
+const zoneCenterY = () => Math.floor(H * 0.62);
+const zoneHalf = () => Math.max(36, Math.floor(H * 0.07));        // half of full band
+const ZONE_HEIGHT_NOW = () => zoneHalf() * 2;
+const perfectHalf = () => Math.max(10, Math.floor(zoneHalf() * 0.30)); // half of inner perfect zone
+
+function spawnDrop() {
+  const jitter = (Math.random() - 0.5) * 30;
+  const x = W / 2 + jitter;
+  const baseSpeed = 600 + State.dropIndex * 80;
+  State.drop = {
+    x, y: -DROP_RADIUS - 10,
+    vy: baseSpeed,
+    r: DROP_RADIUS,
+    spawned: performance.now(),
+    cut: false,
+  };
+  AudioFx.rainFall();
+}
+
+// ===== Geometry =====
+function bestFitLine(points) {
+  let sx=0, sy=0; const n = points.length;
+  for (const p of points) { sx += p.x; sy += p.y; }
+  const mx = sx/n, my = sy/n;
+  let sxx=0, syy=0, sxy=0;
+  for (const p of points) {
+    const dx = p.x - mx, dy = p.y - my;
+    sxx += dx*dx; syy += dy*dy; sxy += dx*dy;
+  }
+  const angle = 0.5 * Math.atan2(2*sxy, sxx - syy);
+  return { angle, mx, my };
+}
+function pointToLineDistance(px, py, mx, my, angle) {
+  const dx = px - mx, dy = py - my;
+  return Math.abs(-dx * Math.sin(angle) + dy * Math.cos(angle));
+}
+function segmentIntersectsCircle(p1, p2, cx, cy, r) {
+  const dx = p2.x - p1.x, dy = p2.y - p1.y;
+  const len2 = dx*dx + dy*dy || 1;
+  let t = ((cx - p1.x)*dx + (cy - p1.y)*dy) / len2;
+  t = clamp(t, 0, 1);
+  const x = p1.x + t*dx, y = p1.y + t*dy;
+  const dd = (x - cx)*(x - cx) + (y - cy)*(y - cy);
+  return dd <= r*r ? { x, y, t, dist: Math.sqrt(dd) } : null;
+}
+function strokeIntersectsDrop(stroke, drop) {
+  for (let i = 1; i < stroke.length; i++) {
+    const hp = segmentIntersectsCircle(stroke[i-1], stroke[i], drop.x, drop.y, drop.r);
+    if (hp) return Object.assign(hp, { i });
+  }
+  return null;
+}
+
+// ===== Pointer =====
+let activePointerId = null;
+function pointerPos(ev) {
+  const rect = canvas.getBoundingClientRect();
+  return { x: ev.clientX - rect.left, y: ev.clientY - rect.top, t: performance.now() };
+}
+function onDown(ev) {
+  // Only respond to input after the GO bell — never during countdown.
+  if (State.phase === 'countdown' || State.phase === 'idle') return;
+  ev.preventDefault();
+  AudioFx.ensure();
+  // Invalid-state slice (resolved / done / between drops) → dull thud feedback.
+  if (State.phase !== 'falling') {
+    AudioFx.dullThud();
+    return;
+  }
+  activePointerId = ev.pointerId;
+  try { canvas.setPointerCapture(ev.pointerId); } catch(e) {}
+  firstTipEl.classList.remove('show');
+  const p = pointerPos(ev);
+  State.stroke = [p];
+  State.trail.push(p);
+  // reset smoothed blade head & follow-through residue
+  State.fx.bladeHead = { x: p.x, y: p.y };
+  State.fx.followThrough = null;
+}
+function onMove(ev) {
+  if (!State.stroke || ev.pointerId !== activePointerId) return;
+  ev.preventDefault();
+  const p = pointerPos(ev);
+  const last = State.stroke[State.stroke.length - 1];
+  if (Math.hypot(p.x - last.x, p.y - last.y) > 1.4) {
+    State.stroke.push(p);
+    State.trail.push(p);
+    if (State.trail.length > 120) State.trail.shift();
+  }
+}
+function onUp(ev) {
+  if (!State.stroke) return;
+  if (activePointerId !== null && ev.pointerId !== activePointerId) return;
+  ev.preventDefault && ev.preventDefault();
+  try { canvas.releasePointerCapture(activePointerId); } catch(e) {}
+  activePointerId = null;
+  finalizeStroke(State.stroke);
+  State.stroke = null;
+}
+canvas.addEventListener('pointerdown', onDown);
+canvas.addEventListener('pointermove', onMove);
+canvas.addEventListener('pointerup', onUp);
+canvas.addEventListener('pointercancel', onUp);
+window.addEventListener('pointerup', onUp);
+
+function finalizeStroke(stroke) {
+  if (State.phase !== 'falling') return;
+  if (!State.drop || State.drop.cut) return;
+  if (stroke.length < 2) return;
+
+  const drop = State.drop;
+  const hit = strokeIntersectsDrop(stroke, drop);
+  const fit = bestFitLine(stroke);
+  // Cut angle: prefer the actual stroke segment direction at the moment of
+  // intersection (so a curved/diagonal slice produces a matching split FX).
+  // Falls back to best-fit when there's no hit.
+  let cutAngle = fit.angle;
+  if (hit && stroke[hit.i] && stroke[hit.i - 1]) {
+    const a = stroke[hit.i - 1], b = stroke[hit.i];
+    cutAngle = Math.atan2(b.y - a.y, b.x - a.x);
+  }
+  // Distance from drop center to the (extended) cut line, for the
+  // position-precision score. Use a line through the intersection point at the
+  // segment's actual angle when we have a hit, otherwise the best-fit line.
+  let dist;
+  if (hit) {
+    dist = pointToLineDistance(drop.x, drop.y, hit.x, hit.y, cutAngle);
+  } else {
+    dist = pointToLineDistance(drop.x, drop.y, fit.mx, fit.my, fit.angle);
+  }
+  const cy = zoneCenterY();
+  const cutT = hit ? stroke[hit.i].t : stroke[stroke.length - 1].t;
+  const reactionMs = cutT - drop.spawned;
+  const dy = drop.y - cy;
+  const timingOffsetMs = (dy / Math.max(1, drop.vy)) * 1000;
+
+  let result;
+  if (!hit) {
+    result = { score: 0, dist: dist, grade: 'MISS', missed: true,
+      cutAngle: fit.angle, mx: fit.mx, my: fit.my, dropX: drop.x, dropY: drop.y,
+      timingScore: 0, positionScore: 0, inZone: false,
+      timingOffsetMs, positionPx: NaN, reactionMs };
+    // Stroke didn't intersect drop → dry whoosh of blade through air.
+    AudioFx.whoosh();
+    AudioFx.missExhale();
+  } else {
+    const posNorm = clamp(dist / drop.r, 0, 1);
+    const positionScore = 1 - posNorm;
+    // Signed offset so we can treat below-the-strike-line as "too late" → miss.
+    const dySigned = hit.y - cy;            // + means below center, - above
+    const dyToSweet = Math.abs(dySigned);
+    // ABOVE the strike line you have a band of grace; BELOW the line you do not —
+    // once the drop has visually passed the line, it counts as a late miss.
+    const lateBelowLine = dySigned > zoneHalf(); // band edge is the late cutoff
+    const inZone = !lateBelowLine && dyToSweet <= zoneHalf();
+    const timingScore = inZone ? (1 - dyToSweet / zoneHalf()) : 0;
+    // Floor in-band hits so a glancing edge cut still registers as a hit, not a miss.
+    let points = inZone ? Math.round(50 * timingScore + 50 * positionScore) : 0;
+    if (inZone && points < 8) points = 8;
+
+    // Inner-zone gating uses the new perfect band size.
+    const inPerfect = !lateBelowLine && dyToSweet <= perfectHalf();
+
+    let grade;
+    if (!inZone) grade = (dySigned < 0) ? 'EARLY' : 'LATE';
+    else if (inPerfect && positionScore > 0.85) grade = 'PERFECT';
+    else if (timingScore > 0.6 && positionScore > 0.6) grade = 'GREAT';
+    else if (timingScore > 0.35 && positionScore > 0.35) grade = 'GOOD';
+    else grade = 'CLOSE';
+
+    result = { score: points, dist, grade, missed: points === 0,
+      cutAngle, mx: hit.x, my: hit.y, dropX: drop.x, dropY: drop.y,
+      timingScore, positionScore, inZone,
+      timingOffsetMs, positionPx: dist, reactionMs };
+    if (inZone) {
+      AudioFx.slice(0.6 + 0.4 * (points / 100));
+    } else {
+      // Sliced the drop, but at the wrong height (outside band, or below the
+      // strike line) → dull thud, distinct from the dry-whoosh of a stroke
+      // that never touched the drop.
+      AudioFx.dullThud();
+    }
+  }
+
+  // On miss: leave the drop falling naturally past the band.
+  // On hit: freeze rendering of the drop so the cut-fx halves can take over.
+  if (!result.missed) drop.cut = true;
+  State.frozenStroke = stroke.slice();
+  resolveDrop(result);
+}
+
+function resolveDrop(result) {
+  State.results[State.dropIndex] = result;
+  const prevTotal = State.totalScore;
+  State.totalScore += result.score;
+
+  // Spring-counter the score (visual only — actual State.totalScore is set above)
+  startScoreSpring(prevTotal, State.totalScore, result.missed);
+
+  // +N pop near score (hits only)
+  if (!result.missed && result.score > 0) {
+    const pop = document.getElementById('play-score-pop');
+    if (pop) {
+      pop.textContent = '+' + result.score;
+      pop.classList.remove('fire');
+      void pop.offsetWidth;
+      pop.classList.add('fire');
+    }
+  }
+
+  // dot update
+  const dot = dots[State.dropIndex];
+  dot.classList.remove('active');
+  dot.classList.add(result.missed ? 'missed' : 'done');
+
+  // Update the attempt card on the page
+  fillAttemptCard(State.dropIndex, result);
+
+  // Cut FX (the long line that was already there)
+  State.cutLineFx = {
+    angle: result.cutAngle, mx: result.mx, my: result.my,
+    dx: result.dropX, dy: result.dropY,
+    dist: result.dist,
+    r: DROP_RADIUS,
+    missed: result.missed,           // gates the split-halves animation
+    age: 0, life: 1300,
+  };
+
+  // ---------- GAME-FEEL DISPATCH ----------
+  if (!result.missed) {
+    // Impact burst at the slice/drop intersection
+    spawnImpactBurst(result.mx, result.my, result.cutAngle, result.grade);
+    // Shake (subtle, only on hit)
+    triggerShake(result.grade === 'PERFECT' ? 4 : (result.grade === 'GREAT' ? 3.2 : 2.4), 180);
+    // Slow-mo only on PERFECT or GREAT
+    if (result.grade === 'PERFECT' || result.grade === 'GREAT') {
+      triggerSlowMo();
+    }
+    // Follow-through arc from current blade velocity (if we have one)
+    spawnFollowThrough();
+    // Haptics
+    if (navigator.vibrate) {
+      try {
+        if (result.grade === 'PERFECT') navigator.vibrate([8, 40, 8]);
+        else navigator.vibrate(18);
+      } catch (e) {}
+    }
+    State.fx.sliceFade = 1; // hit slice stays bright
+  } else {
+    // Miss: subtle red border pulse + slice line drifts down & fades
+    State.fx.missPulseT = 240;
+    State.fx.missPulseDur = 240;
+    State.fx.sliceFade = 1; // will be ramped down each frame in update()
+    // No shake. No flash. No vibration.
+  }
+  // ----------------------------------------
+
+  State.phase = 'resolved';
+  State.resolvedTimer = 1300;
+  firstTipEl.classList.remove('show');
+  hintEl.textContent = result.missed ? 'MISSED!' : (result.grade === 'PERFECT' ? 'PERFECT!' : 'CUT!');
+  playPhaseLabel.textContent = State.dropIndex === 0 ? 'Focus' : (State.dropIndex === 1 ? 'Slice' : 'Flow');
+}
+
+// ===== Attempt card filler =====
+function flavorFor(grade, ms) {
+  if (grade === 'PERFECT') return 'Perfect. You are the Zen.';
+  if (grade === 'GREAT') return 'Almost flawless.';
+  if (grade === 'GOOD') return 'Nice cut.';
+  if (grade === 'EARLY') return Math.abs(ms) < 30 ? 'Nice! A little early.' : 'Too eager — breathe.';
+  if (grade === 'LATE') return Math.abs(ms) < 30 ? 'Just a touch late.' : 'You hesitated.';
+  if (grade === 'CLOSE') return 'Steady the wrist.';
+  return 'The drop slipped past.';
+}
+
+function fillAttemptCard(idx, r) {
+  const card = document.getElementById('att-' + (idx+1));
+  card.classList.remove('empty', 'live');
+  if (r.grade === 'PERFECT') card.classList.add('perfect');
+  else card.classList.add('active');
+
+  // timestamp
+  const now = new Date();
+  const hh = (now.getHours() % 12 || 12).toString().padStart(2, '0');
+  const mm = now.getMinutes().toString().padStart(2, '0');
+  const ss = now.getSeconds().toString().padStart(2, '0');
+  const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
+  document.getElementById(`att-${idx+1}-time`).textContent = `${hh}:${mm}:${ss} ${ampm}`;
+
+  // ms readout
+  const offsetEl = document.getElementById(`att-${idx+1}-offset`);
+  const msEl = document.getElementById(`att-${idx+1}-ms`);
+  const verdictEl = document.getElementById(`att-${idx+1}-verdict`);
+  if (r.grade === 'PERFECT') offsetEl.classList.add('perfect');
+  else offsetEl.classList.remove('perfect');
+
+  if (r.missed && r.grade === 'MISS') {
+    msEl.textContent = 'MISS';
+    verdictEl.textContent = 'NO CUT';
+  } else {
+    const ms = r.timingOffsetMs;
+    const sign = r.grade === 'PERFECT' ? '±' : (ms < 0 ? '-' : '+');
+    msEl.textContent = `${sign}${Math.abs(Math.round(ms))}ms`;
+    verdictEl.textContent = r.grade;
+  }
+
+  // metrics
+  const precPct = Math.round(r.positionScore * 100);
+  const timePct = Math.round(r.timingScore * 100);
+  document.getElementById(`att-${idx+1}-prec`).textContent = isNaN(precPct) ? '—' : precPct + '%';
+  document.getElementById(`att-${idx+1}-time-pct`).textContent = isNaN(timePct) ? '—' : timePct + '%';
+  document.getElementById(`att-${idx+1}-score`).textContent = r.score;
+  document.getElementById(`att-${idx+1}-prec-bar`).style.width = (precPct || 0) + '%';
+  document.getElementById(`att-${idx+1}-time-bar`).style.width = (timePct || 0) + '%';
+  document.getElementById(`att-${idx+1}-score-bar`).style.width = (r.score / 2) + '%';
+
+  // visual: position the slash and drop in the zone
+  const slash = document.getElementById(`att-${idx+1}-slash`);
+  const drop = document.getElementById(`att-${idx+1}-drop`);
+  const mark = document.getElementById(`att-${idx+1}-mark`);
+
+  // X-offset based on position score (higher = closer to perfect line)
+  const xOff = (1 - r.positionScore) * 30 * (Math.random() < 0.5 ? -1 : 1);
+  // Y-offset based on timing — early = above center, late = below
+  const ms = r.timingOffsetMs;
+  const yOff = clamp((ms / 60) * 30, -36, 36); // px
+  drop.style.transform = `translate(calc(-50% + ${xOff}px), calc(-55% + ${yOff}px))`;
+  slash.style.transform = `translate(calc(-50% + ${xOff*0.4}px), calc(-50% + ${yOff*0.6}px)) rotate(${-12 + (Math.random() - 0.5)*8}deg)`;
+  if (r.grade === 'PERFECT') {
+    mark.style.display = 'none';
+  } else {
+    mark.style.display = 'block';
+    mark.style.left = `calc(50% + ${xOff*0.6}px)`;
+  }
+
+  // arrow / crown
+  const arr = document.getElementById(`att-${idx+1}-arr`);
+  if (r.grade === 'PERFECT') {
+    arr.innerHTML = '<span class="crown">♛</span>';
+    arr.querySelector('.crown').style.color = 'var(--gold)';
+    arr.querySelector('.crown').style.fontSize = '16px';
+  }
+
+  document.getElementById(`att-${idx+1}-flavor`).textContent = flavorFor(r.grade, ms);
+}
+
+// ===== Phase flow =====
+function startMatch() {
+  AudioFx.ensure();
+  resetAttemptCards();
+  State.phase = 'countdown';
+  State.dropIndex = 0;
+  State.totalScore = 0;
+  State.results = [null, null, null];
+  State.drop = null;
+  State.cutLineFx = null;
+  State.frozenStroke = null;
+  State.countdownTimer = 0;
+  State.countdownValue = 3;
+  playScore.textContent = '0';
+  playAttemptNum.textContent = '01 / 03';
+  playPhaseLabel.textContent = 'Focus';
+  hintEl.textContent = 'Wait for it…';
+  for (const d of dots) { d.classList.remove('done', 'missed', 'active'); }
+  dots[0].classList.add('active');
+  document.getElementById('att-1').classList.add('live');
+  document.getElementById('att-1').classList.remove('empty');
+  overlay.classList.remove('hidden');
+  resize();
+  showCountdown(3);
+  lastT = 0; // reset frame timer so first dt after overlay open is sane
+  AudioFx.woodBlock(1);
+}
+
+function resetAttemptCards() {
+  for (let i = 1; i <= 3; i++) {
+    const card = document.getElementById('att-' + i);
+    card.classList.add('empty');
+    card.classList.remove('live', 'active', 'perfect');
+    document.getElementById(`att-${i}-time`).textContent = '— : — : —';
+    document.getElementById(`att-${i}-ms`).textContent = '— ms';
+    document.getElementById(`att-${i}-verdict`).textContent = 'WAITING';
+    document.getElementById(`att-${i}-prec`).textContent = '—';
+    document.getElementById(`att-${i}-time-pct`).textContent = '—';
+    document.getElementById(`att-${i}-score`).textContent = '—';
+    document.getElementById(`att-${i}-prec-bar`).style.width = '0%';
+    document.getElementById(`att-${i}-time-bar`).style.width = '0%';
+    document.getElementById(`att-${i}-score-bar`).style.width = '0%';
+    document.getElementById(`att-${i}-flavor`).textContent = 'Awaiting your blade.';
+  }
+}
+
+function showCountdown(n) {
+  countdownEl.textContent = n > 0 ? n.toString() : 'CUT';
+  // Apply variant styling only on the final 'CUT' frame
+  countdownEl.classList.remove('cut-frame', 'var-sumi', 'var-slash', 'var-stamp');
+  if (n <= 0) {
+    countdownEl.classList.add('cut-frame', 'var-' + (window.__cutStyle || 'sumi'));
+  }
+  countdownEl.classList.remove('hidden');
+}
+function hideCountdown() { countdownEl.classList.add('hidden'); }
+
+function nextDrop() {
+  State.cutLineFx = null;
+  State.frozenStroke = null;
+  // remove live from prior card
+  document.getElementById('att-' + (State.dropIndex+1)).classList.remove('live');
+  State.dropIndex += 1;
+  if (State.dropIndex >= 3) { endMatch(); return; }
+  for (let i = 0; i < 3; i++) {
+    if (State.results[i]) continue;
+    dots[i].classList.toggle('active', i === State.dropIndex);
+  }
+  document.getElementById('att-' + (State.dropIndex+1)).classList.add('live');
+  document.getElementById('att-' + (State.dropIndex+1)).classList.remove('empty');
+  playAttemptNum.textContent = `0${State.dropIndex+1} / 03`;
+  playPhaseLabel.textContent = State.dropIndex === 1 ? 'Slice' : 'Flow';
+  State.phase = 'countdown';
+  State.countdownTimer = 0;
+  State.countdownValue = 1;
+  hintEl.textContent = 'Wait for it…';
+  showCountdown(1);
+  AudioFx.woodBlock(1.1);
+}
+
+function endMatch() {
+  State.phase = 'done';
+  // Aggregates
+  let precSum = 0, timeSum = 0, n = 0;
+  let reactSum = 0, reactN = 0;
+  let streak = 0, bestStreak = 0;
+  let max = 0;
+  for (const r of State.results) {
+    if (!r) continue;
+    precSum += r.positionScore || 0;
+    timeSum += r.timingScore || 0;
+    n++;
+    if (Number.isFinite(r.reactionMs)) { reactSum += r.reactionMs; reactN++; }
+    if (!r.missed) { streak++; bestStreak = Math.max(bestStreak, streak); }
+    else { streak = 0; }
+    if (r.score > max) max = r.score;
+  }
+  const avgPrec = n ? precSum / n : 0;
+  const avgTime = n ? timeSum / n : 0;
+  // Consistency: 1 - stddev of scores / 100, clamped
+  const scores = State.results.map(r => r ? r.score : 0);
+  const meanS = scores.reduce((a,b) => a+b, 0) / scores.length;
+  const variance = scores.reduce((a,b) => a + (b-meanS)*(b-meanS), 0) / scores.length;
+  const stddev = Math.sqrt(variance);
+  const consistency = clamp(1 - stddev / 80, 0, 1);
+
+  // Persist running totals
+  State.totalCum += State.totalScore;
+  if (State.totalScore > State.maxScore) State.maxScore = State.totalScore;
+  if (bestStreak > State.bestStreak) State.bestStreak = bestStreak;
+
+  // Final card update
+  finalScore.textContent = State.totalScore;
+  let rank = 'Beginner';
+  let tier = 'beginner';
+  let topPct = 'Top 80% of Players';
+  if (State.totalScore >= 270) { rank = 'Legendary'; tier = 'legendary'; topPct = 'Top 1% of Players'; }
+  else if (State.totalScore >= 200) { rank = 'Elite'; tier = 'elite'; topPct = 'Top 10% of Players'; }
+  else if (State.totalScore >= 100) { rank = 'Warrior'; tier = 'warrior'; topPct = 'Top 35% of Players'; }
+  finalRank.textContent = rank;
+  finalTop.textContent = topPct;
+  // Swap tier mascot
+  const mascotWrap = document.getElementById('mascot-wrap');
+  const tierImg = document.getElementById('tier-img');
+  if (mascotWrap && tierImg) {
+    mascotWrap.classList.remove('tier-beginner','tier-warrior','tier-elite','tier-legendary');
+    mascotWrap.classList.add('tier-' + tier);
+    tierImg.classList.add('swap');
+    setTimeout(() => {
+      tierImg.src = '../assets/tier-' + tier + '.png';
+      tierImg.alt = rank + ' tier';
+      requestAnimationFrame(() => tierImg.classList.remove('swap'));
+    }, 200);
+  }
+  // Badge color tint per tier
+  if (finalRank) {
+    const tierColors = {
+      beginner: { bg: '#E63946', fg: '#FFF' },
+      warrior:  { bg: '#E63946', fg: '#FFF' },
+      elite:    { bg: '#E63946', fg: '#FFF' },
+      legendary:{ bg: '#E63946', fg: '#FFF' },
+    };
+    const c = tierColors[tier];
+    finalRank.style.background = c.bg;
+    finalRank.style.color = c.fg;
+  }
+
+  statReaction.innerHTML = (reactN ? Math.round(reactSum / reactN) : '—') + '<span class="u">ms</span>';
+  statConsistency.innerHTML = Math.round(consistency * 100) + '<span class="u">%</span>';
+  statPrecision.innerHTML = (avgPrec * 100).toFixed(1) + '<span class="u">%</span>';
+  statStreak.textContent = bestStreak + ' / 3';
+  statMax.textContent = State.maxScore;
+  statTotal.textContent = State.totalCum;
+
+  // Close the overlay after a delay
+  setTimeout(() => {
+    overlay.classList.add('hidden');
+    document.getElementById('play-cta').textContent = '▶ PLAY AGAIN';
+  }, 1500);
+}
+
+// ===== Tick =====
+// Hybrid loop: use requestAnimationFrame when visible (smooth), fall back to setTimeout
+// when the tab/iframe is hidden so the countdown + drop physics keep running.
+let lastT = 0;
+let _rafId = null;
+let _timerId = null;
+function tick(now) {
+  if (!lastT) lastT = now;
+  const dt = Math.min(64, now - lastT) / 1000;
+  lastT = now;
+  try { update(dt); } catch (e) { console.error('update threw', e); }
+  try { render(); } catch (e) { console.error('render threw', e); }
+}
+function rafLoop(now) {
+  tick(now);
+  _rafId = requestAnimationFrame(rafLoop);
+}
+function timerLoop() {
+  tick(performance.now());
+  _timerId = setTimeout(timerLoop, 16);
+}
+function startLoop() {
+  // Cancel both, then pick one based on visibility
+  if (_rafId) { cancelAnimationFrame(_rafId); _rafId = null; }
+  if (_timerId) { clearTimeout(_timerId); _timerId = null; }
+  if (document.hidden) {
+    _timerId = setTimeout(timerLoop, 16);
+  } else {
+    _rafId = requestAnimationFrame(rafLoop);
+  }
+}
+document.addEventListener('visibilitychange', () => {
+  lastT = 0; // reset so dt doesn't jump after a long hidden period
+  startLoop();
+});
+
+function update(dt) {
+  if (State.phase === 'countdown') {
+    State.countdownTimer += dt * 1000;
+    if (State.countdownTimer >= 700) {
+      State.countdownTimer = 0;
+      State.countdownValue -= 1;
+      if (State.countdownValue > 0) {
+        showCountdown(State.countdownValue);
+        AudioFx.woodBlock(1 + (3 - State.countdownValue) * 0.08);
+      } else if (State.countdownValue === 0) {
+        showCountdown(0);
+        AudioFx.templeBell(1);
+      } else {
+        hideCountdown();
+        State.phase = 'falling';
+        hintEl.textContent = State.dropIndex === 1 ? 'SLICE!' : (State.dropIndex === 2 ? 'KEEP THE FLOW' : 'WAIT FOR IT…');
+        if (State.dropIndex === 0) firstTipEl.classList.add('show');
+        spawnDrop();
+      }
+    }
+  }
+  else if (State.phase === 'falling') {
+    const d = State.drop;
+    if (d && !d.cut) {
+      const ts = State.fx.timeScale;
+      d.y += d.vy * dt * ts;
+      d.vy += 200 * dt * ts;
+      if (d.y - d.r > H + 4) {
+        d.cut = true;
+        AudioFx.tone({ freq: 60, dur: 0.5, type: 'sine', vol: 0.22 });
+        const dyMiss = (H + d.r) - zoneCenterY();
+        resolveDrop({
+          score: 0, dist: 9999, grade: 'MISS', missed: true,
+          cutAngle: 0, mx: W/2, my: H/2, dropX: d.x, dropY: H + d.r,
+          timingScore: 0, positionScore: 0, inZone: false,
+          timingOffsetMs: (dyMiss / Math.max(1, d.vy)) * 1000,
+          positionPx: NaN,
+          reactionMs: performance.now() - d.spawned,
+        });
+      }
+    }
+  }
+  else if (State.phase === 'resolved') {
+    State.resolvedTimer -= dt * 1000;
+    if (State.cutLineFx) State.cutLineFx.age += dt * 1000;
+    // On miss: keep the drop falling visually past the band so it looks like
+    // it was missed, not magically cut.
+    const d = State.drop;
+    if (d && !d.cut) {
+      d.y += d.vy * dt;
+      d.vy += 200 * dt;
+    }
+    if (State.resolvedTimer <= 0) nextDrop();
+  }
+
+  // trail decay
+  const cutoff = performance.now() - 280;
+  while (State.trail.length && State.trail[0].t < cutoff) State.trail.shift();
+
+  // ---------- FX TICK ----------
+  const fx = State.fx;
+  const dtMs = dt * 1000;
+
+  // Slow-mo: hold at slowMoT for the dip duration, then ease back over decay
+  if (fx.slowMoActive) {
+    fx.slowMoT -= dtMs;
+    if (fx.slowMoT <= 0) {
+      fx.slowMoActive = false;
+      // start the ease-back phase
+      fx.slowMoDecay = 220;
+    }
+    fx.timeScale = 0.35;
+  } else if (fx.slowMoDecay > 0) {
+    fx.slowMoDecay -= dtMs;
+    const k = clamp(1 - fx.slowMoDecay / 220, 0, 1);
+    fx.timeScale = lerp(0.35, 1, easeOutQuint(k));
+    if (fx.slowMoDecay <= 0) fx.timeScale = 1;
+  } else {
+    fx.timeScale = 1;
+  }
+
+  // Shake decay
+  if (fx.shakeT > 0) {
+    fx.shakeT = Math.max(0, fx.shakeT - dtMs);
+  }
+
+  // Flash decay
+  if (fx.flashT > 0) {
+    fx.flashT = Math.max(0, fx.flashT - dtMs);
+  }
+
+  // Ring expand
+  if (fx.ring) {
+    fx.ring.t += dtMs;
+    if (fx.ring.t >= fx.ring.life) fx.ring = null;
+  }
+
+  // Droplets — physics
+  for (const d of fx.droplets) {
+    d.t += dtMs;
+    d.x += d.vx * dt;
+    d.y += d.vy * dt;
+    d.vy += 720 * dt; // gravity for splatter
+  }
+  fx.droplets = fx.droplets.filter(d => d.t < d.life);
+
+  // Ink streaks — short fast life
+  for (const s of fx.inkStreaks) { s.t += dtMs; }
+  fx.inkStreaks = fx.inkStreaks.filter(s => s.t < s.life);
+
+  // Follow-through trail decay
+  if (fx.followThrough) {
+    fx.followThrough.t += dtMs;
+    if (fx.followThrough.t >= fx.followThrough.life) fx.followThrough = null;
+  }
+
+  // Miss border pulse
+  if (fx.missPulseT > 0) {
+    fx.missPulseT = Math.max(0, fx.missPulseT - dtMs);
+  }
+
+  // Strike-band approach glow — pulses up as the drop nears the band,
+  // settles back to 0 once it's left.
+  let targetGlow = 0;
+  if (State.phase === 'falling' && State.drop && !State.drop.cut) {
+    const cy = zoneCenterY();
+    const half = zoneHalf();
+    const d = State.drop;
+    if (d.vy > 0) {
+      const distToBandTop = (cy - half) - d.y;
+      // Convert distance to ms-until-entry using current vy
+      const msToEntry = distToBandTop > 0 ? (distToBandTop / d.vy) * 1000 : 0;
+      if (d.y > cy - half && d.y < cy + half) {
+        targetGlow = 1; // inside band
+      } else if (msToEntry > 0 && msToEntry < 250) {
+        targetGlow = 1 - msToEntry / 250;
+      } else if (d.y > cy + half) {
+        targetGlow = Math.max(0, 1 - (d.y - (cy + half)) / 60);
+      }
+    }
+  }
+  // Smooth toward target so it pulses softly, not snaps
+  fx.bandGlow += (targetGlow - fx.bandGlow) * Math.min(1, dt * 8);
+
+  // Missed-slice line fade (only when phase is resolved & we hit a miss)
+  if (State.phase === 'resolved' && State.results[State.dropIndex] && State.results[State.dropIndex].missed) {
+    fx.sliceFade = Math.max(0, fx.sliceFade - dt * 1.6);
+  }
+
+  // Score spring tick
+  tickScoreSpring(dtMs);
+  // -----------------------------
+}
+
+// =================== Game-feel helpers ===================
+const easeOutQuint = (t) => 1 - Math.pow(1 - t, 5);
+const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+const easeOutBack = (t) => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(t-1,3) + c1 * Math.pow(t-1,2); };
+
+function triggerShake(amplitude, durMs) {
+  State.fx.shakeT = durMs;
+  State.fx.shakeDur = durMs;
+  State.fx.shakeAmp = Math.min(4, amplitude);
+}
+function triggerSlowMo() {
+  State.fx.slowMoActive = true;
+  State.fx.slowMoT = 90;
+  State.fx.slowMoDecay = 0;
+}
+function spawnImpactBurst(mx, my, angle, grade) {
+  const fx = State.fx;
+  // White radial flash
+  fx.flashT = 120; fx.flashDur = 120;
+  fx.flashX = mx; fx.flashY = my;
+  // Expanding ring
+  fx.ring = { mx, my, t: 0, life: 360 };
+  // 8–12 water droplets
+  const n = 9 + ((Math.random() * 4) | 0);
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * TAU;
+    const sp = 160 + Math.random() * 220;
+    fx.droplets.push({
+      x: mx, y: my,
+      vx: Math.cos(a) * sp,
+      vy: Math.sin(a) * sp - 80, // slight upward bias
+      r: 2.0 + Math.random() * 2.6,
+      t: 0, life: 600,
+      color: 'rgba(196,181,253,1)',
+    });
+  }
+  // 4–6 ink streaks (very short, fast, fade in 220ms)
+  const ns = 4 + ((Math.random() * 3) | 0);
+  for (let i = 0; i < ns; i++) {
+    // streak roughly aligned with cut angle ± random spread
+    const a = angle + (Math.random() - 0.5) * 0.6;
+    const sp = 320 + Math.random() * 260;
+    fx.inkStreaks.push({
+      x: mx, y: my,
+      vx: Math.cos(a) * sp * (Math.random() < 0.5 ? 1 : -1),
+      vy: Math.sin(a) * sp * (Math.random() < 0.5 ? 1 : -1),
+      t: 0, life: 220,
+      len: 18 + Math.random() * 22,
+      angle: a,
+    });
+  }
+}
+function spawnFollowThrough() {
+  // Use the last few stroke points to compute a head + velocity vector
+  if (!State.stroke || State.stroke.length < 2) return;
+  const stroke = State.stroke;
+  const a = stroke[Math.max(0, stroke.length - 4)];
+  const b = stroke[stroke.length - 1];
+  const dt = Math.max(8, b.t - a.t) / 1000;
+  const vx = (b.x - a.x) / dt;
+  const vy = (b.y - a.y) / dt;
+  const mag = Math.hypot(vx, vy);
+  if (mag < 40) return; // too slow for a meaningful follow-through
+  // Cap velocity for visual stability
+  const max = 1400;
+  const k = mag > max ? max / mag : 1;
+  State.fx.followThrough = {
+    head: { x: b.x, y: b.y },
+    vx: vx * k, vy: vy * k,
+    t: 0, life: 140,
+    pts: [{ x: b.x, y: b.y, t: 0 }],
+  };
+}
+
+// ---------- Score spring count-up ----------
+const lerp = (a, b, t) => a + (b - a) * t;
+let _scoreSpring = null;
+function startScoreSpring(from, to, missed) {
+  _scoreSpring = {
+    from, to, t: 0, life: 320, count: 160,  // 160ms count-up
+    missed,
+  };
+  // arm CSS animation classes
+  playScore.classList.remove('zen-spring', 'zen-flash');
+  // force reflow for restart
+  void playScore.offsetWidth;
+  if (!missed) {
+    playScore.classList.add('zen-spring');
+    playScore.classList.add('zen-flash');
+  } else {
+    // miss: just snap to (unchanged) value, no spring
+    playScore.textContent = to;
+  }
+}
+function tickScoreSpring(dtMs) {
+  if (!_scoreSpring) return;
+  _scoreSpring.t += dtMs;
+  const k = clamp(_scoreSpring.t / _scoreSpring.count, 0, 1);
+  // Eased count-up
+  const v = Math.round(lerp(_scoreSpring.from, _scoreSpring.to, easeOutQuint(k)));
+  if (!_scoreSpring.missed) playScore.textContent = v;
+  if (_scoreSpring.t >= _scoreSpring.life) {
+    playScore.textContent = _scoreSpring.to;
+    _scoreSpring = null;
+  }
+}
+// =========================================
+
+
+// ===== Render =====
+function render() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Canvas-level shake (only on hit)
+  let shakeX = 0, shakeY = 0;
+  if (State.fx.shakeT > 0) {
+    const k = State.fx.shakeT / State.fx.shakeDur;          // 1 → 0
+    const amp = (State.fx.shakeAmp || 3) * easeOutCubic(k); // ease-out decay
+    shakeX = (Math.random() - 0.5) * amp * 2;
+    shakeY = (Math.random() - 0.5) * amp * 2;
+  }
+  ctx.save();
+  ctx.translate(shakeX, shakeY);
+
+  drawBackground();
+  drawCenterAxis();
+  drawZone();
+  drawAimGuide();
+  if (State.drop && !State.drop.cut) drawDrop(State.drop);
+  if (State.cutLineFx) drawCutFx(State.cutLineFx);
+
+  // Frozen slice line — fades fully on miss, normal on hit
+  if (State.phase === 'resolved' && State.frozenStroke && State.cutLineFx) {
+    const fade = clamp(1 - (State.cutLineFx.age / State.cutLineFx.life), 0, 1);
+    const result = State.results[State.dropIndex];
+    const a = result && result.missed
+      ? 0.5 * fade * State.fx.sliceFade
+      : 0.4 + 0.6 * fade;
+    drawFrozenStroke(State.frozenStroke, a);
+  }
+
+  // Live blade trail (during slice phase only, while user is dragging)
+  drawBladeTrail();
+  // Follow-through arc (after pointerup on hit)
+  drawFollowThrough();
+  // Impact FX layers
+  drawImpactRing();
+  drawImpactDroplets();
+  drawInkStreaks();
+  drawImpactFlash();
+
+  ctx.restore();
+
+  // Miss border pulse (drawn on top, no shake)
+  drawMissBorderPulse();
+}
+
+function drawBackground() {
+  // subtle grid
+  ctx.save();
+  const grid = 40;
+  ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += grid) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for (let y = 0; y < H; y += grid) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawCenterAxis() {
+  ctx.save();
+  const x = W / 2;
+  ctx.strokeStyle = 'rgba(124,92,255,0.16)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([2, 6]);
+  ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+function drawZone() {
+  const cy = zoneCenterY();
+  const half = zoneHalf();
+  const pHalf = perfectHalf();
+  const glow = State.fx.bandGlow || 0;
+
+  // Outer band fill (GREAT zone, faint red wash)
+  const grad = ctx.createLinearGradient(0, cy - half, 0, cy + half);
+  grad.addColorStop(0,   'rgba(230,57,70,0.00)');
+  grad.addColorStop(0.5, `rgba(230,57,70,${0.10 + 0.18 * glow})`);
+  grad.addColorStop(1,   'rgba(230,57,70,0.00)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, cy - half, W, half * 2);
+
+  // Inner PERFECT zone (stronger red tint)
+  ctx.fillStyle = `rgba(230,57,70,${0.16 + 0.20 * glow})`;
+  ctx.fillRect(0, cy - pHalf, W, pHalf * 2);
+
+  // Top + bottom dashed red borders of the strike window
+  ctx.save();
+  ctx.strokeStyle = `rgba(230,57,70,${0.55 + 0.40 * glow})`;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([5, 5]);
+  ctx.beginPath();
+  ctx.moveTo(0, cy - half + 0.5); ctx.lineTo(W, cy - half + 0.5);
+  ctx.moveTo(0, cy + half - 0.5); ctx.lineTo(W, cy + half - 0.5);
+  ctx.stroke();
+
+  // Inner perfect borders (solid, fainter)
+  ctx.setLineDash([]);
+  ctx.strokeStyle = `rgba(230,57,70,${0.30 + 0.35 * glow})`;
+  ctx.lineWidth = 0.75;
+  ctx.beginPath();
+  ctx.moveTo(0, cy - pHalf + 0.5); ctx.lineTo(W, cy - pHalf + 0.5);
+  ctx.moveTo(0, cy + pHalf - 0.5); ctx.lineTo(W, cy + pHalf - 0.5);
+  ctx.stroke();
+  ctx.restore();
+
+  // Outer red glow when drop is approaching
+  if (glow > 0.02) {
+    ctx.save();
+    ctx.shadowColor = 'rgba(230,57,70,1)';
+    ctx.shadowBlur = 18 * glow;
+    ctx.strokeStyle = `rgba(230,57,70,${0.30 * glow})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, cy - half); ctx.lineTo(W, cy - half);
+    ctx.moveTo(0, cy + half); ctx.lineTo(W, cy + half);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Right-edge labels (tiny, tracked-out uppercase)
+  ctx.save();
+  ctx.font = '600 9px ui-monospace, "SF Mono", Menlo, monospace';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = 'rgba(230,57,70,0.85)';
+  ctx.fillText('PERFECT', W - 10, cy);
+  ctx.fillStyle = 'rgba(230,57,70,0.55)';
+  ctx.fillText('GREAT', W - 10, cy - half + 9);
+  ctx.fillText('GREAT', W - 10, cy + half - 9);
+  ctx.restore();
+}
+
+// Faint vertical dotted line from drop's x down to the strike band — fades in
+// when the drop is in the upper half of the play area, so the player can see
+// where it's heading.
+function drawAimGuide() {
+  const d = State.drop;
+  if (!d || d.cut) return;
+  const cy = zoneCenterY();
+  const half = zoneHalf();
+  const bandTop = cy - half;
+  if (d.y >= bandTop) return; // already inside/past the band
+  // Fade in starts when drop crosses upper half of play area, full alpha right above band
+  const upperHalf = H * 0.5;
+  const k = clamp((d.y - upperHalf) / Math.max(1, bandTop - upperHalf), 0, 1);
+  const a = 0.18 + 0.32 * k;
+  ctx.save();
+  ctx.strokeStyle = `rgba(230,57,70,${a})`;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([2, 5]);
+  ctx.beginPath();
+  ctx.moveTo(d.x + 0.5, d.y + d.r);
+  ctx.lineTo(d.x + 0.5, bandTop);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  // tiny chevron tick on the band surface
+  ctx.fillStyle = `rgba(230,57,70,${a + 0.2})`;
+  ctx.beginPath();
+  ctx.moveTo(d.x - 4, bandTop - 0.5);
+  ctx.lineTo(d.x + 4, bandTop - 0.5);
+  ctx.lineTo(d.x,     bandTop + 3);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+// Sumi-ink obsidian drop with internal swirl + vermillion approach glow.
+function ensureDropFx(d) {
+  if (!d._fx) {
+    d._fx = {
+      seed: Math.random() * TAU,
+      // 3 internal swirl layers at different freq/phase — looks like ink in water
+      swirls: [
+        { f: 1.4, a: 0.55, p: Math.random() * TAU, scale: 0.62 },
+        { f: 2.1, a: 0.40, p: Math.random() * TAU, scale: 0.42 },
+        { f: 3.3, a: 0.28, p: Math.random() * TAU, scale: 0.26 },
+      ],
+    };
+  }
+  return d._fx;
+}
+
+function drawDrop(d) {
+  const fx = ensureDropFx(d);
+  const r = d.r;
+  const t = (performance.now() - d.spawned) / 1000;
+
+  // Approach intensity: 0 high above the band → 1 inside it.
+  // Drives the vermillion glow and a subtle scale-pulse — anticipation telegraph.
+  const cy = zoneCenterY();
+  const half = zoneHalf();
+  const distToBand = Math.max(0, (cy - half) - d.y);
+  const approach = clamp(1 - distToBand / 220, 0, 1);
+  const pulse = 1 + approach * 0.04 * Math.sin(t * 8);
+
+  ctx.save();
+  ctx.translate(d.x, d.y);
+
+  // ---- Cool blue water-halo (telegraph: brightens as drop nears the band) ----
+  if (approach > 0.02) {
+    const haloR = r * (1.9 + approach * 0.6) * pulse;
+    const halo = ctx.createRadialGradient(0, 0, r * 0.7, 0, 0, haloR);
+    halo.addColorStop(0,   `rgba(125,211,252,${0.36 * approach})`);
+    halo.addColorStop(0.45,`rgba(56,189,248,${0.18 * approach})`);
+    halo.addColorStop(1,   'rgba(56,189,248,0)');
+    ctx.fillStyle = halo;
+    ctx.beginPath(); ctx.arc(0, 0, haloR, 0, TAU); ctx.fill();
+  }
+
+  // ---- Faint outer halo (always on, gives the drop "presence") ----
+  const ambR = r * 1.45 * pulse;
+  const amb = ctx.createRadialGradient(0, 0, r * 0.6, 0, 0, ambR);
+  amb.addColorStop(0,   'rgba(186,230,253,0.22)');
+  amb.addColorStop(1,   'rgba(56,189,248,0)');
+  ctx.fillStyle = amb;
+  ctx.beginPath(); ctx.arc(0, 0, ambR, 0, TAU); ctx.fill();
+
+  // ---- Body shape: classic teardrop, pointed top, rounded bottom ----
+  ctx.scale(pulse, pulse);
+  ctx.beginPath();
+  ctx.moveTo(0, -r * 1.05);
+  ctx.bezierCurveTo( r * 0.55, -r * 0.55,  r * 1.02,  r * 0.10, 0, r);
+  ctx.bezierCurveTo(-r * 1.02,  r * 0.10, -r * 0.55, -r * 0.55, 0, -r * 1.05);
+  ctx.closePath();
+
+  // Pure water gradient — bright cyan rim, deep blue core
+  const body = ctx.createRadialGradient(-r * 0.30, -r * 0.35, r * 0.10,  0, 0, r * 1.15);
+  body.addColorStop(0,    '#BAE6FD');
+  body.addColorStop(0.30, '#38BDF8');
+  body.addColorStop(0.70, '#1D4ED8');
+  body.addColorStop(1,    '#0B1F4D');
+  ctx.fillStyle = body;
+  ctx.fill();
+
+  // ---- Internal water ripple (clipped to body) ----
+  ctx.save();
+  ctx.clip();
+  // Bright cyan caustic at the bottom-front, hinting at refracted light
+  const bleed = ctx.createRadialGradient(0, r * 0.45, 0, 0, r * 0.45, r * 0.9);
+  bleed.addColorStop(0,   `rgba(186,230,253,${0.26 + 0.28 * approach})`);
+  bleed.addColorStop(1,   'rgba(186,230,253,0)');
+  ctx.fillStyle = bleed;
+  ctx.fillRect(-r * 1.1, -r * 0.1, r * 2.2, r * 1.2);
+
+  // Three drifting cyan wisps — water moving inside the drop
+  for (const s of fx.swirls) {
+    const ang = t * s.f + s.p;
+    const cx = Math.cos(ang) * r * 0.32;
+    const cyy = Math.sin(ang * 1.13 + fx.seed) * r * 0.28;
+    const rr = r * s.scale;
+    const g = ctx.createRadialGradient(cx, cyy, 0, cx, cyy, rr);
+    g.addColorStop(0,   `rgba(224,242,254,${s.a * 0.30})`);
+    g.addColorStop(1,   'rgba(224,242,254,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(cx, cyy, rr, 0, TAU); ctx.fill();
+  }
+  ctx.restore();
+
+  // ---- Glassy edge: cyan rim that intensifies on approach ----
+  ctx.lineWidth = 1.1;
+  ctx.strokeStyle = `rgba(186,230,253,${0.45 + 0.45 * approach})`;
+  ctx.stroke();
+
+  // Specular highlight (upper-left)
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx.beginPath();
+  ctx.ellipse(-r * 0.30, -r * 0.30, r * 0.18, r * 0.42, -0.28, 0, TAU);
+  ctx.fill();
+  // Tiny twinkle near the tip
+  const twinkle = 0.7 + Math.sin(t * 5) * 0.3;
+  ctx.fillStyle = `rgba(255,255,255,${0.95 * twinkle})`;
+  ctx.beginPath();
+  ctx.ellipse(-r * 0.30, -r * 0.55, r * 0.06, r * 0.12, -0.32, 0, TAU);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawCutFx(fx) {
+  const ageMs = fx.age;
+  const life = fx.life;
+
+  // On miss: render only the long horizontal slice flash, no split halves,
+  // no ink tail, no anticipation freeze. Anchor at the real cut position
+  // (stroke midpoint), not the drop's position.
+  if (fx.missed) {
+    const t = ageMs / life;
+    const lateFade = clamp(1 - t, 0, 1);
+    ctx.save();
+    ctx.translate(fx.mx, fx.my);
+    ctx.rotate(fx.angle);
+    const lineLen = Math.max(W, H) * 1.5;
+    const lineGrd = ctx.createLinearGradient(-lineLen/2, 0, lineLen/2, 0);
+    lineGrd.addColorStop(0,   'rgba(255,255,255,0)');
+    lineGrd.addColorStop(0.5, `rgba(255,255,255,${0.30 * lateFade * lateFade})`);
+    lineGrd.addColorStop(1,   'rgba(255,255,255,0)');
+    ctx.strokeStyle = lineGrd;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(-lineLen/2, 0); ctx.lineTo(lineLen/2, 0); ctx.stroke();
+    ctx.restore();
+    return;
+  }
+
+  // Phases (total ~700ms):
+  //   0–80ms   : anticipation freeze (bright cut line, halves still together)
+  //   80–300ms : explosive separation (halves recoil perpendicular to slice)
+  //   300–700ms: long fluid tail — halves continue, fade, ink droplets fall
+  // Beyond 700ms, the long horizontal flash gradient fades out (compat with old life=1300).
+  const t = ageMs / life;
+  const fade = clamp(1 - t, 0, 1);
+
+  // Local helpers
+  const easeOutQuint = (x) => 1 - Math.pow(1 - x, 5);
+
+  ctx.save();
+  ctx.translate(fx.dx, fx.dy);
+  ctx.rotate(fx.angle);
+
+  const r = fx.r || DROP_RADIUS;
+
+  // ---- Anticipation flash (bright thin line through the cut, perpendicular = along x in rotated frame) ----
+  if (ageMs < 130) {
+    const k = ageMs / 130; // 0 → 1
+    const flashFade = 1 - k;
+    const len = r * 4.2;
+    const grd = ctx.createLinearGradient(-len, 0, len, 0);
+    grd.addColorStop(0,    'rgba(255,240,220,0)');
+    grd.addColorStop(0.5,  `rgba(255,250,235,${0.95 * flashFade})`);
+    grd.addColorStop(1,    'rgba(255,240,220,0)');
+    ctx.strokeStyle = grd;
+    ctx.lineWidth = 2 + 2 * flashFade;
+    ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-len, 0); ctx.lineTo(len, 0); ctx.stroke();
+  }
+
+  // ---- The two halves: top half (negative y in rotated frame) and bottom half (positive y) ----
+  // Recoil = perpendicular to slice (= y-axis in rotated frame). Anticipation freeze: 0..80ms,
+  // separation accelerates 80..300ms, then halves drift outward with falling gravity.
+  let recoil = 0;
+  let halfFade = 1;
+  if (ageMs < 80) {
+    recoil = 0;
+  } else if (ageMs < 300) {
+    const k = (ageMs - 80) / 220; // 0 → 1
+    recoil = easeOutQuint(k) * (r * 1.1);
+  } else {
+    const k = (ageMs - 80) / 220;
+    recoil = easeOutQuint(Math.min(1, k)) * (r * 1.1) + (ageMs - 300) * 0.05;
+    halfFade = clamp(1 - (ageMs - 300) / 400, 0, 1);
+  }
+
+  // Drop body draw (in rotated local frame, bisected by x-axis)
+  const drawHalf = (sign) => {
+    // sign = -1 for top half (above cut), +1 for bottom half (below cut)
+    ctx.save();
+    ctx.translate(0, sign * recoil);
+    // Slight rotation as halves spin out
+    const rot = sign * Math.min(0.32, ageMs * 0.0008);
+    ctx.rotate(rot);
+
+    // Clip to upper or lower half-plane
+    ctx.beginPath();
+    if (sign < 0) ctx.rect(-r * 2, -r * 2.5, r * 4, r * 2.5);
+    else          ctx.rect(-r * 2,  0,        r * 4, r * 2.5);
+    ctx.clip();
+
+    // Body path (teardrop centered at origin, pointing up)
+    // We rotate the original drop's "up" to align with -slice angle… but the drop was simply
+    // translated/rotated into the slice's frame, so we draw the teardrop in *world* orientation
+    // by counter-rotating before drawing.
+    ctx.save();
+    ctx.rotate(-fx.angle);
+    ctx.beginPath();
+    ctx.moveTo(0, -r * 1.05);
+    ctx.bezierCurveTo( r * 0.55, -r * 0.55,  r * 1.02,  r * 0.10, 0, r);
+    ctx.bezierCurveTo(-r * 1.02,  r * 0.10, -r * 0.55, -r * 0.55, 0, -r * 1.05);
+    ctx.closePath();
+    const body = ctx.createRadialGradient(-r * 0.30, -r * 0.35, r * 0.10,  0, 0, r * 1.15);
+    body.addColorStop(0,    `rgba(186,230,253,${halfFade})`);
+    body.addColorStop(0.30, `rgba(56,189,248,${halfFade})`);
+    body.addColorStop(0.70, `rgba(29,78,216,${halfFade})`);
+    body.addColorStop(1,    `rgba(11,31,77,${halfFade})`);
+    ctx.fillStyle = body;
+    ctx.fill();
+    ctx.restore();
+
+    // Bright cyan splash along the cut edge
+    const edgeY = -sign * recoil;
+    const bleedGrad = ctx.createLinearGradient(0, edgeY - sign * 6, 0, edgeY + sign * r * 0.8);
+    bleedGrad.addColorStop(0,   `rgba(255,255,255,${0.85 * halfFade})`);
+    bleedGrad.addColorStop(0.20,`rgba(186,230,253,${0.80 * halfFade})`);
+    bleedGrad.addColorStop(1,   'rgba(56,189,248,0)');
+    ctx.fillStyle = bleedGrad;
+    ctx.fillRect(-r * 1.6, edgeY - (sign < 0 ? r * 0.8 : 0), r * 3.2, r * 0.8);
+
+    ctx.restore();
+  };
+
+  drawHalf(-1);
+  drawHalf(+1);
+
+  // ---- Long horizontal flash (existing, dialed back) — fades over full life ----
+  const lateFade = clamp(1 - t, 0, 1);
+  const lineLen = Math.max(W, H) * 1.5;
+  const lineGrd = ctx.createLinearGradient(-lineLen/2, 0, lineLen/2, 0);
+  lineGrd.addColorStop(0,   'rgba(255,255,255,0)');
+  lineGrd.addColorStop(0.5, `rgba(255,255,255,${0.55 * lateFade * lateFade})`);
+  lineGrd.addColorStop(1,   'rgba(255,255,255,0)');
+  ctx.strokeStyle = lineGrd;
+  ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.moveTo(-lineLen/2, 0); ctx.lineTo(lineLen/2, 0); ctx.stroke();
+
+  ctx.restore();
+
+  // ---- Ink droplet tail (world space, gravity) ----
+  // Spawn once on the first frame of the cut, then animate via age.
+  if (!fx._tail) {
+    fx._tail = [];
+    const n = 14;
+    for (let i = 0; i < n; i++) {
+      const side = i < n / 2 ? -1 : 1;
+      const along = (Math.random() - 0.5) * r * 1.4;
+      const speed = 90 + Math.random() * 180;
+      const spread = (Math.random() - 0.5) * 0.6;
+      const a = fx.angle + Math.PI / 2 * side + spread;
+      fx._tail.push({
+        x: fx.dx + Math.cos(fx.angle) * along,
+        y: fx.dy + Math.sin(fx.angle) * along,
+        vx: Math.cos(a) * speed,
+        vy: Math.sin(a) * speed - 40,
+        r: 1 + Math.random() * 2.4,
+        born: ageMs,
+        life: 600 + Math.random() * 220,
+      });
+    }
+  }
+  for (const p of fx._tail) {
+    const localT = (ageMs - p.born) / p.life;
+    if (localT < 0 || localT > 1) continue;
+    const dt = (ageMs - p.born) / 1000;
+    const x = p.x + p.vx * dt;
+    const y = p.y + p.vy * dt + 0.5 * 760 * dt * dt;
+    const a = (1 - localT) * 0.85;
+    ctx.fillStyle = `rgba(29,78,216,${a})`;
+    ctx.beginPath();
+    ctx.arc(x, y, p.r * (1 - localT * 0.4), 0, TAU);
+    ctx.fill();
+    // bright cyan core on a few of them
+    if (p.r > 2) {
+      ctx.fillStyle = `rgba(186,230,253,${a * 0.85})`;
+      ctx.beginPath();
+      ctx.arc(x, y, p.r * 0.45 * (1 - localT * 0.5), 0, TAU);
+      ctx.fill();
+    }
+  }
+}
+
+function drawFrozenStroke(stroke, alpha) {
+  if (!stroke || stroke.length < 2) return;
+  const passes = [
+    { w: 12, c: `rgba(255,255,255,${0.10 * alpha})` },
+    { w: 6,  c: `rgba(255,255,255,${0.34 * alpha})` },
+    { w: 2.5, c: `rgba(255,255,255,${0.95 * alpha})` },
+  ];
+  for (const p of passes) {
+    ctx.beginPath();
+    ctx.moveTo(stroke[0].x, stroke[0].y);
+    for (let i = 1; i < stroke.length; i++) ctx.lineTo(stroke[i].x, stroke[i].y);
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.lineWidth = p.w; ctx.strokeStyle = p.c;
+    ctx.stroke();
+  }
+}
+
+function drawBladeTrail() {
+  // Only render while the user is actively slicing (or just finalized → grace ends quickly)
+  if (State.phase === 'idle' || State.phase === 'countdown' || State.phase === 'done') return;
+  const trail = State.trail;
+  if (trail.length < 2) return;
+
+  // Smoothed head (lerped toward latest pointer point) — feels weighty
+  const latest = trail[trail.length - 1];
+  if (!State.fx.bladeHead) State.fx.bladeHead = { x: latest.x, y: latest.y };
+  const head = State.fx.bladeHead;
+  head.x = lerp(head.x, latest.x, 0.35);
+  head.y = lerp(head.y, latest.y, 0.35);
+
+  // Build the segment list to draw: 12–16 points ending at the smoothed head.
+  // Sample the trail so we have at most 14 segs, evenly across recent age.
+  const now = performance.now();
+  const lifeMs = 240;
+  const visible = [];
+  for (let i = trail.length - 1; i >= 0; i--) {
+    const pt = trail[i];
+    const age = (now - pt.t) / lifeMs;
+    if (age > 1) break;
+    visible.push(pt);
+    if (visible.length >= 16) break;
+  }
+  if (visible.length < 2) return;
+  visible.reverse(); // tail → head (oldest first)
+
+  // Replace last point with smoothed head so the tip is steady
+  const segments = visible.slice();
+  segments[segments.length - 1] = { x: head.x, y: head.y, t: now };
+
+  // Compute per-segment widths with eased taper (0 at tail → ~9 at head)
+  // Multi-pass: outer warm glow, then white core
+  const passes = [
+    { mul: 3.4, color: 'rgba(255, 90, 80, 0.18)',  blur: 14 },  // warm-orange/red outer glow
+    { mul: 2.0, color: 'rgba(255, 150, 110, 0.32)', blur: 6  }, // mid warm
+    { mul: 1.0, color: 'rgba(255, 255, 255, 0.95)', blur: 0  }, // crisp white core
+  ];
+  for (const pass of passes) {
+    if (pass.blur) { ctx.shadowBlur = pass.blur; ctx.shadowColor = pass.color; }
+    else { ctx.shadowBlur = 0; }
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    for (let i = 1; i < segments.length; i++) {
+      const a = segments[i-1], b = segments[i];
+      const t = i / (segments.length - 1); // 0 (tail) → 1 (head)
+      const widthBase = 9 * easeOutCubic(t);   // taper 0 → ~9
+      const ageA = clamp((now - a.t) / lifeMs, 0, 1);
+      const alpha = 1 - ageA;
+      ctx.strokeStyle = pass.color.replace(/[\d.]+\)$/, (m) => {
+        const baseAlpha = parseFloat(m); // current alpha in the rgba string
+        return (baseAlpha * alpha).toFixed(3) + ')';
+      });
+      ctx.lineWidth = Math.max(0.4, widthBase * pass.mul);
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    }
+  }
+  ctx.shadowBlur = 0;
+
+  // Bright tip dot
+  ctx.fillStyle = 'rgba(255,255,255,0.95)';
+  ctx.beginPath();
+  ctx.arc(head.x, head.y, 3.4, 0, TAU);
+  ctx.fill();
+}
+
+function drawFollowThrough() {
+  const ft = State.fx.followThrough;
+  if (!ft) return;
+  const k = clamp(ft.t / ft.life, 0, 1);
+  const fade = 1 - easeOutQuint(k);
+  // Extrapolate forward along velocity vector from the head
+  const headX = ft.head.x + ft.vx * (ft.t / 1000);
+  const headY = ft.head.y + ft.vy * (ft.t / 1000);
+  // Draw a tapered streak from original head → extrapolated head
+  ctx.save();
+  ctx.lineCap = 'round';
+  const passes = [
+    { w: 14, c: `rgba(255,90,80,${0.20 * fade})`, blur: 16 },
+    { w: 6,  c: `rgba(255,180,140,${0.40 * fade})`, blur: 4 },
+    { w: 2,  c: `rgba(255,255,255,${0.90 * fade})`, blur: 0 },
+  ];
+  for (const p of passes) {
+    if (p.blur) { ctx.shadowBlur = p.blur; ctx.shadowColor = p.c; } else ctx.shadowBlur = 0;
+    ctx.strokeStyle = p.c;
+    ctx.lineWidth = p.w;
+    ctx.beginPath();
+    ctx.moveTo(ft.head.x, ft.head.y);
+    ctx.lineTo(headX, headY);
+    ctx.stroke();
+  }
+  ctx.shadowBlur = 0;
+  ctx.restore();
+}
+
+function drawImpactFlash() {
+  if (State.fx.flashT <= 0) return;
+  const k = State.fx.flashT / State.fx.flashDur; // 1 → 0
+  const a = 0.6 * easeOutQuint(k);
+  const x = State.fx.flashX, y = State.fx.flashY;
+  const r = 90;
+  const grd = ctx.createRadialGradient(x, y, 0, x, y, r);
+  grd.addColorStop(0, `rgba(255,255,255,${a})`);
+  grd.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = grd;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
+}
+
+function drawImpactRing() {
+  const r = State.fx.ring;
+  if (!r) return;
+  const k = clamp(r.t / r.life, 0, 1);
+  const radius = lerp(0, 240, easeOutQuint(k));
+  const alpha = (1 - k) * 0.85;
+  ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(r.mx, r.my, radius, 0, TAU);
+  ctx.stroke();
+}
+
+function drawImpactDroplets() {
+  for (const d of State.fx.droplets) {
+    const k = clamp(d.t / d.life, 0, 1);
+    const fade = 1 - easeOutCubic(k);
+    ctx.fillStyle = `rgba(196,181,253,${0.85 * fade})`;
+    ctx.beginPath();
+    ctx.arc(d.x, d.y, d.r * (1 - k * 0.4), 0, TAU);
+    ctx.fill();
+  }
+}
+
+function drawInkStreaks() {
+  for (const s of State.fx.inkStreaks) {
+    const k = clamp(s.t / s.life, 0, 1);
+    const fade = 1 - easeOutQuint(k);
+    const x = s.x + s.vx * (s.t / 1000);
+    const y = s.y + s.vy * (s.t / 1000);
+    const len = s.len * (1 - k * 0.5);
+    const tx = x - Math.cos(s.angle) * len;
+    const ty = y - Math.sin(s.angle) * len;
+    ctx.strokeStyle = `rgba(255,235,210,${0.85 * fade})`;
+    ctx.lineWidth = 1.6;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(tx, ty);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  }
+}
+
+function drawMissBorderPulse() {
+  if (State.fx.missPulseT <= 0) return;
+  const k = 1 - State.fx.missPulseT / State.fx.missPulseDur; // 0 → 1
+  // Single cycle of sin → peak at k=0.5
+  const env = Math.sin(k * Math.PI);
+  const a = env * 0.4;
+  ctx.strokeStyle = `rgba(248, 113, 113, ${a})`;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(0.5, 0.5, W - 1, H - 1);
+}
+
+// Legacy stub — kept so older calls (if any) don't crash. Real trail is drawBladeTrail.
+function drawTrail() { /* no-op: replaced by drawBladeTrail */ }
+
+// ===== Wire UI =====
+document.getElementById('play-cta').addEventListener('click', startMatch);
+document.getElementById('play-quit').addEventListener('click', () => {
+  overlay.classList.add('hidden');
+  State.phase = 'idle';
+});
+document.getElementById('share-btn').addEventListener('click', () => {
+  // naive share copy
+  const txt = `I scored ${State.totalScore || '—'} on ROKI ZEN. Slice the drop. Find your zen.`;
+  if (navigator.clipboard) navigator.clipboard.writeText(txt).catch(() => {});
+});
+
+// ===== Cut-style picker =====
+(function () {
+  window.__cutStyle = localStorage.getItem('roki-cut-style') || 'sumi';
+  const picker = document.getElementById('cut-style-picker');
+  if (!picker) return;
+  const chips = picker.querySelectorAll('.chip');
+  const sync = () => {
+    chips.forEach(c => c.classList.toggle('active', c.dataset.variant === window.__cutStyle));
+  };
+  sync();
+  chips.forEach(c => c.addEventListener('click', () => {
+    window.__cutStyle = c.dataset.variant;
+    localStorage.setItem('roki-cut-style', window.__cutStyle);
+    sync();
+    // Preview-flash the variant immediately so users see what they picked
+    countdownEl.textContent = 'CUT';
+    countdownEl.classList.remove('hidden', 'cut-frame', 'var-sumi', 'var-slash', 'var-stamp');
+    void countdownEl.offsetWidth;
+    countdownEl.classList.add('cut-frame', 'var-' + window.__cutStyle);
+    clearTimeout(window.__cutPreviewT);
+    window.__cutPreviewT = setTimeout(() => {
+      if (State.phase !== 'countdown') {
+        countdownEl.classList.add('hidden');
+      }
+    }, 700);
+  }));
+})();
+
+// ===== Boot =====
+resize();
+startLoop();
+
+// ===== Mobile carousel dot tracking =====
+(function () {
+  const carousel = document.getElementById('attempts');
+  const dotsEls = document.querySelectorAll('#carousel-dots .cdot');
+  if (!carousel || !dotsEls.length) return;
+  const cards = [
+    document.getElementById('att-1'),
+    document.getElementById('att-2'),
+    document.getElementById('att-3'),
+  ];
+  function setActive(i) {
+    dotsEls.forEach((d, k) => d.classList.toggle('active', k === i));
+  }
+  // Click a dot to scroll to that card
+  dotsEls.forEach((d) => {
+    d.addEventListener('click', () => {
+      const idx = parseInt(d.dataset.idx, 10);
+      const card = cards[idx];
+      if (!card) return;
+      card.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    });
+  });
+  // Track scroll position to update active dot
+  let raf = null;
+  carousel.addEventListener('scroll', () => {
+    if (raf) return;
+    raf = requestAnimationFrame(() => {
+      raf = null;
+      const cRect = carousel.getBoundingClientRect();
+      const cCenter = cRect.left + cRect.width / 2;
+      let bestIdx = 0, bestDist = Infinity;
+      cards.forEach((card, i) => {
+        if (!card) return;
+        const r = card.getBoundingClientRect();
+        const center = r.left + r.width / 2;
+        const dist = Math.abs(center - cCenter);
+        if (dist < bestDist) { bestDist = dist; bestIdx = i; }
+      });
+      setActive(bestIdx);
+    });
+  }, { passive: true });
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,740 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ROKI ZEN — Rankings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #F4EBDD;
+    --cream-2: #EFE3D0;
+    --cream-3: #FBF4E6;
+    --ink: #111111;
+    --ink-2: #2A2A2A;
+    --muted: #6B6258;
+    --line-soft: rgba(17,17,17,0.10);
+    --red: #E63946;
+    --red-deep: #C62B38;
+    --red-soft: #FBE3E1;
+    --gold: #E8B23A;
+    --shadow: 0 1px 0 rgba(17,17,17,0.06), 0 8px 22px rgba(60,30,10,0.06);
+    --font-display: 'Archivo Black', 'Archivo', sans-serif;
+    --font-body: 'Archivo', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--cream); color: var(--ink); font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
+  body { min-height: 100vh; }
+  .page { max-width: 1280px; margin: 0 auto; padding: 18px 22px 28px; }
+
+  /* ========== NAV ========== */
+  .nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px 10px 12px;
+    background: var(--cream-3);
+    border: 1.5px solid var(--ink);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+  }
+  .nav-left { display: flex; align-items: center; gap: 22px; }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+  .brand-logo {
+    width: 38px; height: 38px;
+    background: var(--red);
+    border: 1.5px solid var(--ink);
+    border-radius: 10px;
+    display: grid; place-items: center;
+    color: #fff;
+  }
+  .brand-name {
+    font-family: var(--font-display);
+    font-size: 22px; letter-spacing: 0.5px;
+    color: var(--ink);
+  }
+  .brand-name .zen { color: var(--red); margin-left: 6px; }
+  .nav-tabs { display: flex; align-items: center; gap: 6px; }
+  .nav-tab {
+    padding: 9px 16px;
+    font-family: var(--font-body);
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 1.4px;
+    color: var(--ink);
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    text-transform: uppercase;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .nav-tab.active {
+    background: var(--ink);
+    color: #fff;
+  }
+  .nav-tab:not(.active):hover { background: rgba(17,17,17,0.06); }
+  .join-crew {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 9px 16px;
+    background: var(--red);
+    color: #fff;
+    border: 1.5px solid var(--ink);
+    border-radius: 9px;
+    font-family: var(--font-body);
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 2px 0 var(--ink);
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+    text-decoration: none;
+  }
+  .join-crew:hover { transform: translateY(-1px); box-shadow: 0 3px 0 var(--ink); }
+  .join-crew:active { transform: translateY(1px); box-shadow: 0 0 0 var(--ink); }
+  .join-crew svg { width: 14px; height: 14px; }
+
+  /* ========== HEADER ========== */
+  .header {
+    margin-top: 22px;
+    text-align: left;
+  }
+  .header h1 {
+    font-family: var(--font-display);
+    font-size: clamp(48px, 9.4vw, 124px);
+    line-height: 0.92;
+    letter-spacing: -1.5px;
+    margin: 0;
+    color: var(--ink);
+  }
+  .title-underline {
+    width: 90px; height: 4px; background: var(--red);
+    margin: 14px 0 10px;
+  }
+  .title-tag {
+    font-family: var(--font-body); font-weight: 800;
+    font-size: 14px; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--ink);
+  }
+
+  /* ========== PERIOD TABS ========== */
+  .period-tabs {
+    display: flex; justify-content: center; gap: 8px;
+    margin: 26px 0 22px;
+  }
+  .period-tab {
+    padding: 12px 28px;
+    font-family: var(--font-body);
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: var(--ink);
+    background: transparent;
+    border: 1.5px solid transparent;
+    border-radius: 999px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.15s ease;
+  }
+  .period-tab:hover { background: rgba(17,17,17,0.04); }
+  .period-tab.active {
+    background: var(--ink);
+    color: #fff;
+    border-color: var(--ink);
+    box-shadow: 0 2px 0 var(--red);
+  }
+
+  /* ========== PODIUM ========== */
+  .podium {
+    display: grid;
+    grid-template-columns: 1fr 1.15fr 1fr;
+    gap: 16px;
+    margin-bottom: 28px;
+    align-items: end;
+  }
+  .podium-card {
+    background: var(--cream-3);
+    border: 1.5px solid var(--ink);
+    border-radius: 14px;
+    padding: 22px 20px 20px;
+    box-shadow: var(--shadow);
+    position: relative;
+    text-align: center;
+    overflow: hidden;
+  }
+  .podium-card.first {
+    transform: translateY(-12px);
+    border-color: var(--red);
+    border-width: 2px;
+    box-shadow: 0 1px 0 rgba(17,17,17,0.06), 0 14px 32px rgba(230,57,70,0.18);
+  }
+  .podium-card.first .ink-brush {
+    position: absolute; top: -10px; right: -20px;
+    width: 180px; height: 90px; opacity: 0.10; pointer-events: none;
+  }
+  .podium-card .crown-icon {
+    position: absolute; top: 14px; right: 16px;
+    color: var(--red); font-size: 22px;
+  }
+  .podium-card.first .crown-icon { color: var(--red); font-size: 26px; }
+  .podium-rank {
+    font-family: var(--font-display);
+    font-size: 38px; line-height: 1;
+    color: var(--ink);
+    margin-bottom: 14px;
+  }
+  .podium-card.first .podium-rank { color: var(--red); font-size: 46px; }
+  .podium-avatar {
+    width: 88px; height: 88px;
+    margin: 0 auto 14px;
+    background: var(--red);
+    border: 2px solid var(--ink);
+    border-radius: 50%;
+    display: grid; place-items: center;
+    overflow: hidden;
+    box-shadow: 0 4px 0 var(--ink);
+  }
+  .podium-card.first .podium-avatar {
+    width: 102px; height: 102px;
+    box-shadow: 0 5px 0 var(--ink), 0 0 0 4px rgba(230,57,70,0.18);
+  }
+  .podium-avatar svg { width: 70%; height: 70%; }
+  .podium-name {
+    font-family: var(--font-display);
+    font-size: 20px;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+    color: var(--ink);
+  }
+  .podium-card.first .podium-name { font-size: 24px; }
+  .podium-handle {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 14px;
+    letter-spacing: 0.5px;
+  }
+  .podium-score-lbl {
+    font-family: var(--font-body); font-weight: 900;
+    font-size: 10px; letter-spacing: 1.8px; text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .podium-score {
+    font-family: var(--font-display);
+    font-size: 64px; line-height: 0.95;
+    color: var(--red);
+    margin-bottom: 10px;
+  }
+  .podium-card.first .podium-score { font-size: 84px; }
+  .podium-card:not(.first) .podium-score { color: var(--ink); }
+  .podium-divider {
+    height: 1px; background: var(--line-soft);
+    margin: 12px 0;
+  }
+  .badge {
+    display: inline-block;
+    background: var(--red); color: #fff;
+    border: 1.5px solid var(--ink);
+    padding: 6px 14px;
+    border-radius: 22px;
+    font-family: var(--font-body); font-weight: 900;
+    font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase;
+    box-shadow: 0 2px 0 var(--ink);
+  }
+  .badge.quiet {
+    background: var(--cream-2); color: var(--ink);
+  }
+
+  /* ========== RANKED LIST ========== */
+  .list-card {
+    background: var(--cream-3);
+    border: 1.5px solid var(--ink);
+    border-radius: 14px;
+    padding: 8px 0 0;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .list-head {
+    display: grid;
+    grid-template-columns: 56px 64px 1.4fr 1fr 1fr 1fr 0.8fr 1.1fr;
+    gap: 14px;
+    padding: 14px 22px 12px;
+    border-bottom: 1.5px solid var(--ink);
+    background: var(--cream-2);
+  }
+  .list-head .lbl {
+    font-family: var(--font-body); font-weight: 900;
+    font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase;
+    color: var(--ink);
+  }
+  .list-row {
+    display: grid;
+    grid-template-columns: 56px 64px 1.4fr 1fr 1fr 1fr 0.8fr 1.1fr;
+    gap: 14px;
+    padding: 14px 22px;
+    align-items: center;
+    border-bottom: 1px dashed var(--line-soft);
+    transition: background 0.12s ease;
+  }
+  .list-row:last-of-type { border-bottom: none; }
+  .list-row:hover { background: rgba(230,57,70,0.04); }
+  .row-rank {
+    font-family: var(--font-display);
+    font-size: 22px; color: var(--ink);
+  }
+  .row-avatar {
+    width: 44px; height: 44px;
+    background: var(--red);
+    border: 1.5px solid var(--ink);
+    border-radius: 50%;
+    display: grid; place-items: center;
+    overflow: hidden;
+  }
+  .row-avatar svg { width: 70%; height: 70%; }
+  .row-name {
+    font-family: var(--font-display);
+    font-size: 16px;
+    color: var(--ink);
+    letter-spacing: 0.3px;
+  }
+  .row-name .handle {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+  }
+  .row-val {
+    font-family: var(--font-display);
+    font-size: 18px;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .row-val.score { color: var(--red); }
+  .row-val .u {
+    font-family: var(--font-body); font-weight: 700;
+    font-size: 11px; color: var(--muted);
+    margin-left: 2px;
+  }
+
+  /* ========== YOUR POSITION ========== */
+  .you-row {
+    display: grid;
+    grid-template-columns: 56px 64px 1.4fr 1fr 1fr 1fr 0.8fr 1.1fr 140px;
+    gap: 14px;
+    align-items: center;
+    margin-top: 18px;
+    padding: 18px 22px;
+    background: var(--red-soft);
+    border: 2px solid var(--red);
+    border-radius: 14px;
+    box-shadow: 0 1px 0 rgba(17,17,17,0.06), 0 8px 22px rgba(230,57,70,0.12);
+    position: relative;
+  }
+  .you-row .you-tag {
+    position: absolute;
+    top: -10px; left: 18px;
+    background: var(--red); color: #fff;
+    border: 1.5px solid var(--ink);
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-family: var(--font-body); font-weight: 900;
+    font-size: 10px; letter-spacing: 1.8px; text-transform: uppercase;
+    box-shadow: 0 2px 0 var(--ink);
+  }
+  .you-row .row-rank { color: var(--red); }
+  .you-row .row-avatar { box-shadow: 0 0 0 3px rgba(230,57,70,0.25); }
+  .climb-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 12px 14px;
+    background: var(--ink);
+    color: var(--cream-3);
+    border: 1.5px solid var(--ink);
+    border-radius: 10px;
+    font-family: var(--font-body);
+    font-weight: 900;
+    font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+    cursor: pointer;
+    text-decoration: none;
+    box-shadow: 0 3px 0 var(--red);
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+    white-space: nowrap;
+  }
+  .climb-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 0 var(--red); }
+  .climb-btn:active { transform: translateY(2px); box-shadow: 0 0 0 var(--red); }
+  .climb-btn svg { width: 12px; height: 12px; }
+
+  /* ========== QUOTE STRIP ========== */
+  .quote-strip {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 32px;
+    background: var(--cream-3);
+    border: 1.5px solid var(--ink);
+    border-radius: 14px;
+    padding: 16px 22px;
+    box-shadow: var(--shadow);
+  }
+  .quote-strip .left { display: flex; align-items: center; gap: 14px; }
+  .quote-strip .qicn {
+    font-family: var(--font-display);
+    font-size: 28px; color: var(--red); line-height: 0.6;
+  }
+  .quote-strip .qtxt {
+    font-family: var(--font-body); font-size: 13.5px; color: var(--ink);
+    line-height: 1.45;
+  }
+  .quote-strip .right { display: flex; align-items: center; gap: 10px; }
+  .quote-strip .rlogo {
+    width: 28px; height: 28px;
+    background: var(--red);
+    border: 1.5px solid var(--ink);
+    border-radius: 8px;
+    display: grid; place-items: center;
+    color: #fff;
+  }
+  .quote-strip .rname { font-family: var(--font-display); font-size: 14px; color: var(--ink); letter-spacing: 0.5px; }
+  .quote-strip .rname .zen { color: var(--red); margin-left: 4px; }
+
+  /* hide on mobile */
+  .col-react, .col-streak {}
+
+  @media (max-width: 980px) {
+    .nav-tabs { display: none; }
+  }
+
+  @media (max-width: 700px) {
+    .page { padding: 12px 12px 20px; }
+    .nav { padding: 8px 10px; }
+    .brand-name { font-size: 16px; }
+    .brand-logo { width: 32px; height: 32px; }
+    .join-crew { padding: 7px 11px; font-size: 10.5px; letter-spacing: 1px; }
+
+    .header h1 { font-size: clamp(44px, 13vw, 72px); letter-spacing: -0.5px; }
+    .title-underline { width: 60px; height: 3px; }
+    .title-tag { font-size: 11px; letter-spacing: 1.4px; }
+
+    .period-tab { padding: 10px 16px; font-size: 11.5px; letter-spacing: 1.4px; }
+
+    .podium {
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+    .podium-card.first { transform: none; order: -1; }
+    .podium-score { font-size: 54px !important; }
+    .podium-card.first .podium-score { font-size: 64px !important; }
+
+    .list-head {
+      grid-template-columns: 36px 44px 1.2fr 1fr 0.9fr;
+      gap: 10px;
+      padding: 12px 14px 10px;
+    }
+    .list-head .col-react,
+    .list-head .col-prec,
+    .list-head .col-streak { display: none; }
+    .list-row {
+      grid-template-columns: 36px 44px 1.2fr 1fr 0.9fr;
+      gap: 10px;
+      padding: 12px 14px;
+    }
+    .list-row .col-react,
+    .list-row .col-prec,
+    .list-row .col-streak { display: none; }
+    .row-rank { font-size: 18px; }
+    .row-avatar { width: 36px; height: 36px; }
+    .row-name { font-size: 13.5px; }
+    .row-val { font-size: 15px; }
+
+    .you-row {
+      grid-template-columns: 36px 44px 1.2fr 1fr 0.9fr;
+      grid-auto-rows: auto;
+      gap: 10px;
+      padding: 18px 14px 14px;
+    }
+    .you-row .col-react,
+    .you-row .col-prec,
+    .you-row .col-streak { display: none; }
+    .you-row .climb-btn {
+      grid-column: 1 / -1;
+      width: 100%;
+      margin-top: 8px;
+    }
+
+    .quote-strip { flex-direction: column; align-items: flex-start; gap: 12px; padding: 14px 16px; }
+    .quote-strip .qtxt { font-size: 12.5px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ========== NAV ========== -->
+  <nav class="nav">
+    <div class="nav-left">
+      <a class="brand" href="index.html">
+        <div class="brand-logo">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 4 L8 11" />
+            <path d="M16 4 L16 11" />
+            <ellipse cx="12" cy="15" rx="6" ry="5.5" fill="currentColor" stroke="none"/>
+            <circle cx="9.6" cy="14.5" r="0.8" fill="#111"/>
+            <circle cx="14.4" cy="14.5" r="0.8" fill="#111"/>
+            <path d="M11 17 Q12 17.6 13 17" stroke="#111" stroke-width="1" fill="none"/>
+          </svg>
+        </div>
+        <div class="brand-name">ROKI<span class="zen">ZEN</span></div>
+      </a>
+      <div class="nav-tabs">
+        <a class="nav-tab" href="../Roki.html#home">Home</a>
+        <a class="nav-tab" href="../Roki.html#about">About</a>
+        <a class="nav-tab" href="../docs/index.html#lock">Docs</a>
+        <a class="nav-tab" href="../Roki.html#roadmap">Roadmap</a>
+        <a class="nav-tab active" href="#">Rankings</a>
+      </div>
+    </div>
+    <a class="join-crew" href="https://x.com/rokitherabbit" target="_blank" rel="noopener noreferrer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8 5 L8 10"/><path d="M16 5 L16 10"/>
+        <ellipse cx="12" cy="14" rx="5" ry="4.5" fill="currentColor" stroke="none"/>
+      </svg>
+      Join Crew
+    </a>
+  </nav>
+
+  <!-- ========== HEADER ========== -->
+  <div class="header">
+    <h1>RANKINGS</h1>
+    <div class="title-underline"></div>
+    <div class="title-tag">3 Cuts. One Focus. One Leaderboard.</div>
+  </div>
+
+  <!-- ========== PERIOD TABS ========== -->
+  <div class="period-tabs" role="tablist">
+    <button class="period-tab" data-period="daily">Daily</button>
+    <button class="period-tab" data-period="weekly">Weekly</button>
+    <button class="period-tab active" data-period="alltime">All-Time</button>
+  </div>
+
+  <!-- ========== PODIUM ========== -->
+  <div class="podium" id="podium"></div>
+
+  <!-- ========== RANKED LIST ========== -->
+  <div class="list-card">
+    <div class="list-head">
+      <div class="lbl">Rank</div>
+      <div class="lbl">&nbsp;</div>
+      <div class="lbl">Player</div>
+      <div class="lbl">Max Score</div>
+      <div class="lbl col-prec">Avg Precision</div>
+      <div class="lbl col-react">Avg Reaction</div>
+      <div class="lbl col-streak">Streak</div>
+      <div class="lbl">Tier</div>
+    </div>
+    <div id="list-body"></div>
+  </div>
+
+  <!-- ========== YOUR POSITION ========== -->
+  <div class="you-row" id="you-row">
+    <span class="you-tag">Your Position</span>
+    <div class="row-rank" id="you-rank">#847</div>
+    <div class="row-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4 L8 11"/><path d="M16 4 L16 11"/><ellipse cx="12" cy="15" rx="6" ry="5.5" fill="#fff" stroke="none"/><circle cx="9.6" cy="14.5" r="0.8" fill="#111"/><circle cx="14.4" cy="14.5" r="0.8" fill="#111"/></svg></div>
+    <div class="row-name">YOU<span class="handle">@you</span></div>
+    <div class="row-val score" id="you-score">68</div>
+    <div class="row-val col-prec" id="you-prec">62<span class="u">%</span></div>
+    <div class="row-val col-react" id="you-react">312<span class="u">ms</span></div>
+    <div class="row-val col-streak" id="you-streak">2/3</div>
+    <div><span class="badge quiet">Elite</span></div>
+    <a class="climb-btn" href="index.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+      Climb the Ranks
+    </a>
+  </div>
+
+  <!-- ========== QUOTE STRIP ========== -->
+  <div class="quote-strip">
+    <div class="left">
+      <div class="qicn">”</div>
+      <div class="qtxt">Zen is not about being the fastest.<br/>It's about being in the moment.</div>
+    </div>
+    <div class="right">
+      <div class="rlogo">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 4 L8 11"/><path d="M16 4 L16 11"/>
+          <ellipse cx="12" cy="15" rx="6" ry="5.5" fill="currentColor" stroke="none"/>
+        </svg>
+      </div>
+      <div class="rname">ROKI<span class="zen">ZEN</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Reusable rabbit avatar template -->
+<template id="rabbit-svg">
+  <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8 4 L8 11"/>
+    <path d="M16 4 L16 11"/>
+    <ellipse cx="12" cy="15" rx="6" ry="5.5" fill="#fff" stroke="none"/>
+    <circle cx="9.6" cy="14.5" r="0.8" fill="#111"/>
+    <circle cx="14.4" cy="14.5" r="0.8" fill="#111"/>
+    <path d="M11 17 Q12 17.6 13 17" stroke="#111" stroke-width="1" fill="none"/>
+  </svg>
+</template>
+
+<script>
+"use strict";
+
+// ===== Data =====
+const allTime = [
+  { rank: 1, name: 'HATTORI',  handle: '@hattori_z',   score: 298, prec: 96.4, react: 184, streak: 3, tier: 'Legendary' },
+  { rank: 2, name: 'YUKI',     handle: '@yuki.cuts',   score: 296, prec: 95.1, react: 192, streak: 3, tier: 'Legendary' },
+  { rank: 3, name: 'KENJI',    handle: '@kenji_no_kage',score: 293, prec: 94.0, react: 188, streak: 3, tier: 'Legendary' },
+  { rank: 4, name: 'MEI',      handle: '@meishiro',    score: 287, prec: 92.6, react: 201, streak: 3, tier: 'Legendary' },
+  { rank: 5, name: 'RONIN',    handle: '@ronin47',     score: 281, prec: 91.2, react: 207, streak: 3, tier: 'Legendary' },
+  { rank: 6, name: 'SORA',     handle: '@sora_ame',    score: 274, prec: 89.8, react: 215, streak: 2, tier: 'Legendary' },
+  { rank: 7, name: 'TATSU',    handle: '@tatsu_ryu',   score: 268, prec: 88.4, react: 222, streak: 2, tier: 'Elite' },
+  { rank: 8, name: 'AKIRA',    handle: '@akira.zen',   score: 261, prec: 87.0, react: 230, streak: 2, tier: 'Elite' },
+  { rank: 9, name: 'HANA',     handle: '@hana_blossom', score: 255, prec: 85.6, react: 238, streak: 2, tier: 'Elite' },
+  { rank: 10,name: 'SHIN',     handle: '@shin_kiri',   score: 249, prec: 84.2, react: 245, streak: 2, tier: 'Elite' },
+];
+
+const weekly = [
+  { rank: 1, name: 'YUKI',     handle: '@yuki.cuts',    score: 289, prec: 94.8, react: 196, streak: 3, tier: 'Legendary' },
+  { rank: 2, name: 'TATSU',    handle: '@tatsu_ryu',    score: 282, prec: 92.3, react: 204, streak: 3, tier: 'Legendary' },
+  { rank: 3, name: 'HATTORI',  handle: '@hattori_z',    score: 278, prec: 91.7, react: 199, streak: 3, tier: 'Legendary' },
+  { rank: 4, name: 'NAOKO',    handle: '@naoko_silent', score: 271, prec: 89.9, react: 211, streak: 3, tier: 'Legendary' },
+  { rank: 5, name: 'KAZE',     handle: '@kaze.wind',    score: 264, prec: 88.5, react: 220, streak: 2, tier: 'Elite' },
+  { rank: 6, name: 'MEI',      handle: '@meishiro',     score: 258, prec: 87.1, react: 228, streak: 2, tier: 'Elite' },
+  { rank: 7, name: 'RYU',      handle: '@ryu_dragon',   score: 251, prec: 85.7, react: 234, streak: 2, tier: 'Elite' },
+  { rank: 8, name: 'AKIRA',    handle: '@akira.zen',    score: 245, prec: 84.3, react: 241, streak: 2, tier: 'Elite' },
+  { rank: 9, name: 'KENJI',    handle: '@kenji_no_kage', score: 238, prec: 82.9, react: 248, streak: 2, tier: 'Elite' },
+  { rank: 10,name: 'HARU',     handle: '@haru_spring',  score: 232, prec: 81.5, react: 255, streak: 1, tier: 'Elite' },
+];
+
+const daily = [
+  { rank: 1, name: 'KAZE',     handle: '@kaze.wind',    score: 251, prec: 87.2, react: 209, streak: 3, tier: 'Elite' },
+  { rank: 2, name: 'NAOKO',    handle: '@naoko_silent', score: 244, prec: 85.8, react: 217, streak: 3, tier: 'Elite' },
+  { rank: 3, name: 'HARU',     handle: '@haru_spring',  score: 238, prec: 84.4, react: 224, streak: 3, tier: 'Elite' },
+  { rank: 4, name: 'SORA',     handle: '@sora_ame',     score: 231, prec: 83.0, react: 232, streak: 2, tier: 'Elite' },
+  { rank: 5, name: 'RYU',      handle: '@ryu_dragon',   score: 224, prec: 81.6, react: 240, streak: 2, tier: 'Elite' },
+  { rank: 6, name: 'HANA',     handle: '@hana_blossom', score: 217, prec: 80.2, react: 247, streak: 2, tier: 'Elite' },
+  { rank: 7, name: 'MEI',      handle: '@meishiro',     score: 210, prec: 78.8, react: 255, streak: 2, tier: 'Elite' },
+  { rank: 8, name: 'SHIN',     handle: '@shin_kiri',    score: 203, prec: 77.4, react: 263, streak: 1, tier: 'Adept' },
+  { rank: 9, name: 'TORU',     handle: '@toru_steel',   score: 196, prec: 76.0, react: 271, streak: 1, tier: 'Adept' },
+  { rank: 10,name: 'AYA',      handle: '@aya_mist',     score: 189, prec: 74.6, react: 279, streak: 1, tier: 'Adept' },
+];
+
+const youByPeriod = {
+  alltime: { rank: 847, score: 248, prec: 78.4, react: 248, streak: 2, tier: 'Elite' },
+  weekly:  { rank: 412, score: 187, prec: 71.2, react: 273, streak: 2, tier: 'Adept' },
+  daily:   { rank: 96,  score: 168, prec: 68.0, react: 291, streak: 1, tier: 'Adept' },
+};
+
+const datasets = { alltime: allTime, weekly, daily };
+
+// ===== Render =====
+const podiumEl = document.getElementById('podium');
+const listBody = document.getElementById('list-body');
+
+function rabbitSvg() {
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8 4 L8 11"/><path d="M16 4 L16 11"/>
+    <ellipse cx="12" cy="15" rx="6" ry="5.5" fill="#fff" stroke="none"/>
+    <circle cx="9.6" cy="14.5" r="0.8" fill="#111"/>
+    <circle cx="14.4" cy="14.5" r="0.8" fill="#111"/>
+    <path d="M11 17 Q12 17.6 13 17" stroke="#111" stroke-width="1" fill="none"/>
+  </svg>`;
+}
+
+function inkBrushSvg() {
+  return `<svg class="ink-brush" viewBox="0 0 200 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M10,55 C30,30 60,72 95,40 C125,12 155,68 190,38" stroke="#111" stroke-width="14" stroke-linecap="round" fill="none"/>
+    <path d="M22,58 Q40,46 58,58" stroke="#111" stroke-width="6" stroke-linecap="round" fill="none"/>
+  </svg>`;
+}
+
+function tierBadgeClass(tier) {
+  if (tier === 'Legendary' || tier === 'Elite') return '';
+  return 'quiet';
+}
+
+function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+
+function renderPodium(rows) {
+  const top3 = rows.slice(0, 3);
+  // visual order: 2nd, 1st, 3rd
+  const ordered = [top3[1], top3[0], top3[2]].filter(Boolean);
+  podiumEl.innerHTML = ordered.map((r) => {
+    const isFirst = r.rank === 1;
+    return `
+      <div class="podium-card${isFirst ? ' first' : ''}">
+        ${isFirst ? inkBrushSvg() : ''}
+        <span class="crown-icon">${isFirst ? '♛' : (r.rank === 2 ? '✦' : '✧')}</span>
+        <div class="podium-rank">${pad2(r.rank)}</div>
+        <div class="podium-avatar">${rabbitSvg()}</div>
+        <div class="podium-name">${r.name}</div>
+        <div class="podium-handle">${r.handle}</div>
+        <div class="podium-score-lbl">Max Score</div>
+        <div class="podium-score">${r.score}</div>
+        <div class="podium-divider"></div>
+        <span class="badge ${tierBadgeClass(r.tier)}">${r.tier}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderList(rows) {
+  const tail = rows.slice(3, 10);
+  listBody.innerHTML = tail.map((r) => `
+    <div class="list-row">
+      <div class="row-rank">${pad2(r.rank)}</div>
+      <div class="row-avatar">${rabbitSvg()}</div>
+      <div class="row-name">${r.name}<span class="handle">${r.handle}</span></div>
+      <div class="row-val score">${r.score}</div>
+      <div class="row-val col-prec">${r.prec.toFixed(1)}<span class="u">%</span></div>
+      <div class="row-val col-react">${r.react}<span class="u">ms</span></div>
+      <div class="row-val col-streak">${r.streak}/3</div>
+      <div><span class="badge ${tierBadgeClass(r.tier)}">${r.tier}</span></div>
+    </div>
+  `).join('');
+}
+
+function renderYou(period) {
+  const y = youByPeriod[period];
+  document.getElementById('you-rank').textContent = '#' + y.rank;
+  document.getElementById('you-score').textContent = y.score;
+  document.getElementById('you-prec').innerHTML = y.prec.toFixed(0) + '<span class="u">%</span>';
+  document.getElementById('you-react').innerHTML = y.react + '<span class="u">ms</span>';
+  document.getElementById('you-streak').textContent = y.streak + '/3';
+  const youRow = document.getElementById('you-row');
+  const badge = youRow.querySelector('.badge');
+  badge.textContent = y.tier;
+  badge.className = 'badge ' + tierBadgeClass(y.tier);
+}
+
+function selectPeriod(period) {
+  document.querySelectorAll('.period-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.period === period);
+  });
+  const rows = datasets[period];
+  renderPodium(rows);
+  renderList(rows);
+  renderYou(period);
+}
+
+document.querySelectorAll('.period-tab').forEach(b => {
+  b.addEventListener('click', () => selectPeriod(b.dataset.period));
+});
+
+// initial render
+selectPeriod('alltime');
+</script>
+
+</body>
+</html>

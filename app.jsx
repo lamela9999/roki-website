@@ -53,6 +53,8 @@ const Nav = () => (
       <li><a href="#home" className="active">Home</a></li>
       <li><a href="#about">About</a></li>
       <li><a href="docs/index.html#lock">Docs</a></li>
+      <li><a href="zen/">Zen</a></li>
+      <li><a href="zen/leaderboard.html">Rankings</a></li>
       <li><a href="#roadmap">Roadmap</a></li>
     </ul>
     <div className="nav-cta">
