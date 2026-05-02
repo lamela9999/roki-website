@@ -715,7 +715,9 @@
 
   /* ========== INTRO PROMPT ON FINAL CARD WHEN NOT PLAYED ========== */
   .play-cta {
-    position: fixed; right: 22px; bottom: 22px; z-index: 30;
+    position: fixed; bottom: 22px; z-index: 30;
+    /* Align to the .page container's right edge on wide screens; keep 22px gap on narrow viewports */
+    right: max(22px, calc((100vw - 1280px) / 2 + 22px));
     padding: 14px 22px;
     background: var(--ink);
     color: var(--cream-3);
