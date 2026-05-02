@@ -908,6 +908,7 @@
         <a class="nav-tab" href="../Roki.html#about">About</a>
         <a class="nav-tab" href="../docs/index.html#lock">Docs</a>
         <a class="nav-tab" href="../Roki.html#roadmap">Roadmap</a>
+        <a class="nav-tab" href="leaderboard.html">Rankings</a>
       </div>
     </div>
     <a class="join-crew" href="https://x.com/rokitherabbit" target="_blank" rel="noopener noreferrer">
@@ -3194,96 +3195,4 @@ function drawMissBorderPulse() {
   ctx.strokeRect(0.5, 0.5, W - 1, H - 1);
 }
 
-// Legacy stub — kept so older calls (if any) don't crash. Real trail is drawBladeTrail.
-function drawTrail() { /* no-op: replaced by drawBladeTrail */ }
-
-// ===== Wire UI =====
-document.getElementById('play-cta').addEventListener('click', startMatch);
-document.getElementById('play-quit').addEventListener('click', () => {
-  overlay.classList.add('hidden');
-  State.phase = 'idle';
-});
-document.getElementById('share-btn').addEventListener('click', () => {
-  // naive share copy
-  const txt = `I scored ${State.totalScore || '—'} on ROKI ZEN. Slice the drop. Find your zen.`;
-  if (navigator.clipboard) navigator.clipboard.writeText(txt).catch(() => {});
-});
-
-// ===== Cut-style picker =====
-(function () {
-  window.__cutStyle = localStorage.getItem('roki-cut-style') || 'sumi';
-  const picker = document.getElementById('cut-style-picker');
-  if (!picker) return;
-  const chips = picker.querySelectorAll('.chip');
-  const sync = () => {
-    chips.forEach(c => c.classList.toggle('active', c.dataset.variant === window.__cutStyle));
-  };
-  sync();
-  chips.forEach(c => c.addEventListener('click', () => {
-    window.__cutStyle = c.dataset.variant;
-    localStorage.setItem('roki-cut-style', window.__cutStyle);
-    sync();
-    // Preview-flash the variant immediately so users see what they picked
-    countdownEl.textContent = 'CUT';
-    countdownEl.classList.remove('hidden', 'cut-frame', 'var-sumi', 'var-slash', 'var-stamp');
-    void countdownEl.offsetWidth;
-    countdownEl.classList.add('cut-frame', 'var-' + window.__cutStyle);
-    clearTimeout(window.__cutPreviewT);
-    window.__cutPreviewT = setTimeout(() => {
-      if (State.phase !== 'countdown') {
-        countdownEl.classList.add('hidden');
-      }
-    }, 700);
-  }));
-})();
-
-// ===== Boot =====
-resize();
-startLoop();
-
-// ===== Mobile carousel dot tracking =====
-(function () {
-  const carousel = document.getElementById('attempts');
-  const dotsEls = document.querySelectorAll('#carousel-dots .cdot');
-  if (!carousel || !dotsEls.length) return;
-  const cards = [
-    document.getElementById('att-1'),
-    document.getElementById('att-2'),
-    document.getElementById('att-3'),
-  ];
-  function setActive(i) {
-    dotsEls.forEach((d, k) => d.classList.toggle('active', k === i));
-  }
-  // Click a dot to scroll to that card
-  dotsEls.forEach((d) => {
-    d.addEventListener('click', () => {
-      const idx = parseInt(d.dataset.idx, 10);
-      const card = cards[idx];
-      if (!card) return;
-      card.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-    });
-  });
-  // Track scroll position to update active dot
-  let raf = null;
-  carousel.addEventListener('scroll', () => {
-    if (raf) return;
-    raf = requestAnimationFrame(() => {
-      raf = null;
-      const cRect = carousel.getBoundingClientRect();
-      const cCenter = cRect.left + cRect.width / 2;
-      let bestIdx = 0, bestDist = Infinity;
-      cards.forEach((card, i) => {
-        if (!card) return;
-        const r = card.getBoundingClientRect();
-        const center = r.left + r.width / 2;
-        const dist = Math.abs(center - cCenter);
-        if (dist < bestDist) { bestDist = dist; bestIdx = i; }
-      });
-      setActive(bestIdx);
-    });
-  }, { passive: true });
-})();
-</script>
-
-</body>
-</html>
+// Legacy stub — kept so older calls (if any) don't crash. Real trail is drawBl
