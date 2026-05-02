@@ -40,14 +40,24 @@ export async function onRequestPost({ request, env }) {
   if (hist.length > 50) hist.length = 50;
   await env.ZEN_KV.put(histKey, JSON.stringify(hist));
 
-  // Update global leaderboard (top 100 by best score per user)
+  // Append to a global match log so daily/weekly leaderboards can be computed by time window
+  const GLOBAL_LOG_KEY = 'matches:global';
+  const GLOBAL_LOG_LIMIT = 2000; // last ~2000 matches across all users
+  const gl = (await env.ZEN_KV.get(GLOBAL_LOG_KEY, 'json')) || [];
+  gl.unshift({ id, name, score, prec, react, streak, tier: tierFor(score), ts: Date.now() });
+  if (gl.length > GLOBAL_LOG_LIMIT) gl.length = GLOBAL_LOG_LIMIT;
+  await env.ZEN_KV.put(GLOBAL_LOG_KEY, JSON.stringify(gl));
+
+  // Update global all-time leaderboard (top 100 by best score per user)
   const lb = (await env.ZEN_KV.get(LB_KEY, 'json')) || [];
   // Strip any existing entry for this user
   const filtered = lb.filter(r => r.id !== id);
   // Compute the user's best from history
   const best = hist.reduce((m, r) => Math.max(m, r.score || 0), 0);
-  const userBestEntry = hist.find(r => r.score === best) || { score: best, prec, react, streak, tier };
-  filtered.push({ id, name, score: best, prec: userBestEntry.prec, react: userBestEntry.react, streak: userBestEntry.streak, tier: userBestEntry.tier, ts: Date.now() });
+  const userBestEntry = hist.find(r => r.score === best) || { score: best, prec, react, streak };
+  // Tier ALWAYS derived from the best score — never from the latest match
+  const bestTier = tierFor(best);
+  filtered.push({ id, name, score: best, prec: userBestEntry.prec, react: userBestEntry.react, streak: userBestEntry.streak, tier: bestTier, ts: Date.now() });
   filtered.sort((a, b) => b.score - a.score || a.ts - b.ts);
   if (filtered.length > LB_LIMIT) filtered.length = LB_LIMIT;
   await env.ZEN_KV.put(LB_KEY, JSON.stringify(filtered));

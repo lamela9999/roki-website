@@ -828,7 +828,9 @@ async function selectPeriod(period) {
   // Try the backend first
   try {
     const meId = (Player.getId && Player.getId()) || '';
-    const lbUrl = '/api/leaderboard' + (meId ? ('?me=' + encodeURIComponent(meId)) : '');
+    const params = new URLSearchParams({ period });
+    if (meId) params.set('me', meId);
+    const lbUrl = '/api/leaderboard?' + params.toString();
     const r = await fetch(lbUrl, { cache: 'no-store' });
     console.log('[lb] /api/leaderboard status', r.status);
     if (r.ok) {
