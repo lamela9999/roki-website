@@ -3224,7 +3224,15 @@ const Player = (function () {
   const KEY_DATA = 'roki_zen_player_data';
 
   function getName() { try { return localStorage.getItem(KEY_NAME) || ''; } catch (e) { return ''; } }
-  function getId()   { try { return localStorage.getItem(KEY_ID)   || ''; } catch (e) { return ''; } }
+  function getId()   {
+    try {
+      let id = localStorage.getItem(KEY_ID);
+      if (id) return id;
+      const legacy = localStorage.getItem('roki_zen_user_tag');
+      if (legacy) { localStorage.setItem(KEY_ID, legacy); return legacy; }
+      return '';
+    } catch (e) { return ''; }
+  }
   function setLocal(name, id) {
     try { localStorage.setItem(KEY_NAME, name); } catch (e) {}
     if (id) try { localStorage.setItem(KEY_ID, String(id)); } catch (e) {}

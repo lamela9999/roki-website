@@ -716,10 +716,20 @@ function renderList(rows) {
 const Player = (function () {
   const KEY_NAME = 'roki_zen_username';
   const KEY_ID   = 'roki_zen_user_id';
+  const KEY_TAG  = 'roki_zen_user_tag'; // legacy random 4-digit
   const KEY_DATA = 'roki_zen_player_data';
   function getName() { try { return localStorage.getItem(KEY_NAME) || ''; } catch (e) { return ''; } }
-  function getId()   { try { return localStorage.getItem(KEY_ID)   || ''; } catch (e) { return ''; } }
-  function getTag()  { return getId(); } // back-compat: tag = sequential id now
+  function getId()   {
+    try {
+      let id = localStorage.getItem(KEY_ID);
+      if (id) return id;
+      // Migrate legacy random tag → KEY_ID so the # shows on screen even before backend
+      const tag = localStorage.getItem(KEY_TAG);
+      if (tag) { localStorage.setItem(KEY_ID, tag); return tag; }
+      return '';
+    } catch (e) { return ''; }
+  }
+  function getTag()  { return getId(); }
   function getData() {
     try {
       const raw = localStorage.getItem(KEY_DATA);
@@ -736,38 +746,83 @@ const Player = (function () {
   return { getName, getId, getTag, getData, tierFromScore };
 })();
 
-// Compute the player's actual rank by inserting their bestScore into the period's rows.
+// Find the player's row in whichever rows we just rendered.
+// Server-driven leaderboard wins; otherwise fall back to local data.
+window.__lastRows = window.__lastRows || [];
 function realYou(period) {
-  const data = Player.getData();
-  const name = Player.getName();
-  const rows = datasets[period] || [];
-  if (!data || !data.bestScore) {
-    // No data yet — fall back to mock
-    return Object.assign({}, youByPeriod[period], { name: name ? name.toUpperCase() : 'YOU', handle: name ? '@' + name : '@you' });
+  const data = Player.getData ? Player.getData() : null;
+  const name = Player.getName ? Player.getName() : '';
+  const id   = Player.getId   ? Player.getId()   : '';
+  const handle = '@' + (name || 'you') + (id ? '#' + id : '');
+
+  // 1) Try to find this user in the real rendered leaderboard rows
+  const rows = window.__lastRows || [];
+  if (id) {
+    const mineId = String(id);
+    const mine = rows.find(r => String(r.id || '') === mineId);
+    if (mine) {
+      return {
+        rank: mine.rank,
+        name: name.toUpperCase(),
+        handle,
+        score: mine.score,
+        prec: mine.prec || 0,
+        react: mine.react || 0,
+        streak: mine.streak || 0,
+        tier: mine.tier || 'Beginner',
+      };
+    }
   }
-  // Find what rank you'd hold among the mock rows
-  const score = data.bestScore;
-  let rank = 1;
-  for (const r of rows) { if (r.score > score) rank++; }
-  // If beyond the visible list, give an approximate position past the last shown rank
-  if (rank > rows.length) rank = rows.length + Math.floor(Math.random() * 50) + 1; // visual placeholder
+  // Try by exact name match (in case id wasn't stamped on the row)
+  if (name) {
+    const lower = name.toLowerCase();
+    const mine = rows.find(r => (r.name || '').toLowerCase() === lower);
+    if (mine) {
+      return {
+        rank: mine.rank,
+        name: name.toUpperCase(),
+        handle,
+        score: mine.score,
+        prec: mine.prec || 0,
+        react: mine.react || 0,
+        streak: mine.streak || 0,
+        tier: mine.tier || 'Beginner',
+      };
+    }
+  }
+
+  // 2) Not on the visible leaderboard. Use local data + position past the end.
+  if (data && data.bestScore) {
+    return {
+      rank: rows.length + 1,
+      name: (name || 'YOU').toUpperCase(),
+      handle,
+      score: data.bestScore,
+      prec: data.bestPrec || 0,
+      react: data.bestReact || 0,
+      streak: data.bestStreak || 0,
+      tier: data.lastTier || (data.bestScore >= 270 ? 'Legendary' : data.bestScore >= 200 ? 'Elite' : data.bestScore >= 100 ? 'Adept' : 'Beginner'),
+    };
+  }
+
+  // 3) Hasn't played yet
   return {
-    rank: rank,
-    name: name ? name.toUpperCase() : 'YOU',
-    handle: name ? '@' + name : '@you',
-    score: score,
-    prec: data.bestPrec || 0,
-    react: data.bestReact || 0,
-    streak: data.bestStreak || 0,
-    tier: data.lastTier || Player.tierFromScore(score),
+    rank: '—',
+    name: (name || 'YOU').toUpperCase(),
+    handle,
+    score: 0,
+    prec: 0,
+    react: 0,
+    streak: 0,
+    tier: 'Beginner',
   };
 }
+
 function renderYou(period) {
   const y = realYou(period);
-  document.getElementById('you-rank').textContent = '#' + y.rank;
+  document.getElementById('you-rank').textContent = (y.rank === '—' ? '—' : '#' + y.rank);
   document.getElementById('you-score').textContent = y.score;
   document.getElementById('you-avatar').innerHTML = tierImage(y.tier);
-  // Show real name + handle
   const nameEl = document.querySelector('#you-row .row-name');
   if (nameEl) nameEl.innerHTML = y.name + '<span class="handle">' + y.handle + '</span>';
   document.getElementById('you-prec').innerHTML = (y.prec || 0).toFixed(0) + '<span class="u">%</span>';
@@ -824,6 +879,7 @@ async function selectPeriod(period) {
     }
   }
 
+  window.__lastRows = realRows;
   renderPodium(realRows);
   renderList(realRows);
   renderYou(period);
