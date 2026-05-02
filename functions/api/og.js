@@ -26,6 +26,7 @@ export async function onRequestGet({ request }) {
   const tier  = (u.searchParams.get('tier')  || tierFor(score)).trim();
   const name  = (u.searchParams.get('name')  || '').trim().replace(/^@+/, '').slice(0, 30);
   const id    = (u.searchParams.get('id')    || '').trim().slice(0, 10);
+  const img   = (u.searchParams.get('img')   || '').trim().replace(/[^a-z0-9]/gi, '').slice(0, 32);
 
   const handle = name ? ('@' + name + (id ? '#' + id : '')) : '';
   const titleParts = [];
@@ -40,7 +41,10 @@ export async function onRequestGet({ request }) {
     ? `${handle ? handle + ' ' : ''}slashed ${score}/300 on ROKI ZEN. 3 cuts. One focus. Try to beat them.`
     : 'Slice the drop. Time it. Place it. Be precise.';
 
-  const img = `https://roki.buzz/assets/${tierImage(tier)}`;
+  // Prefer the user-uploaded score-card screenshot if provided, else the static tier mascot.
+  const ogImage = img
+    ? ('https://roki.buzz/api/share-image/' + img)
+    : ('https://roki.buzz/assets/' + tierImage(tier));
 
   const html = `<!doctype html>
 <html lang="en">
@@ -53,16 +57,16 @@ export async function onRequestGet({ request }) {
 <meta property="og:type"  content="website"/>
 <meta property="og:title" content="${escapeHtml(title)}"/>
 <meta property="og:description" content="${escapeHtml(desc)}"/>
-<meta property="og:image" content="${img}"/>
-<meta property="og:image:width"  content="3000"/>
-<meta property="og:image:height" content="3000"/>
+<meta property="og:image" content="${ogImage}"/>
+<meta property="og:image:width"  content="1200"/>
+<meta property="og:image:height" content="630"/>
 <meta property="og:url"   content="${escapeHtml(u.toString())}"/>
 
 <meta name="twitter:card"        content="summary_large_image"/>
 <meta name="twitter:site"        content="@rokitherabbit"/>
 <meta name="twitter:title"       content="${escapeHtml(title)}"/>
 <meta name="twitter:description" content="${escapeHtml(desc)}"/>
-<meta name="twitter:image"       content="${img}"/>
+<meta name="twitter:image"       content="${ogImage}"/>
 
 <meta http-equiv="refresh" content="0; url=/zen/"/>
 <link rel="canonical" href="https://roki.buzz/zen/"/>

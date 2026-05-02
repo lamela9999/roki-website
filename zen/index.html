@@ -916,6 +916,7 @@
     .result-card { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
   }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
@@ -2260,6 +2261,39 @@ function endMatch() {
   statMax.textContent = State.maxScore;
   statTotal.textContent = State.totalCum;
 
+  // Reset any prior share image id so the next tweet captures the latest card
+  window.__shareImageId = null;
+
+  // Pre-capture the Final Zen Card → upload → stash the id for buildTweet().
+  // Runs async; if it finishes before the user clicks Share, the OG card will use the screenshot.
+  setTimeout(async () => {
+    try {
+      const card = document.querySelector('.final-card');
+      if (!card || typeof html2canvas !== 'function') return;
+      const canvas = await html2canvas(card, { backgroundColor: '#FBF4E6', scale: 2, useCORS: true, logging: false });
+      const blob = await new Promise(res => canvas.toBlob(res, 'image/png', 0.92));
+      if (!blob) return;
+      // base64-encode and upload
+      const b64 = await new Promise((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(String(fr.result).split(',')[1] || '');
+        fr.onerror = reject;
+        fr.readAsDataURL(blob);
+      });
+      const r = await fetch('/api/share-image', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ data: b64 }),
+      });
+      if (!r.ok) { console.warn('[zen] share-image upload failed', r.status); return; }
+      const j = await r.json();
+      if (j && j.id) {
+        window.__shareImageId = j.id;
+        console.log('[zen] share image ready —', j.id);
+      }
+    } catch (e) { console.warn('[zen] share capture failed:', e); }
+  }, 350);
+
   // ===== Persist this match (local + backend) =====
   try {
     const _score  = State.totalScore;
@@ -3469,6 +3503,7 @@ const Player = (function () {
     const params = new URLSearchParams({
       score: String(score), tier: tier, name: name, id: id, t: String(Date.now()),
     });
+    if (window.__shareImageId) params.set('img', window.__shareImageId);
     const url = 'https://roki.buzz/api/og?' + params.toString();
     let text;
     if (score === 0) {
