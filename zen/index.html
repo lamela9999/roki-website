@@ -3229,26 +3229,38 @@ document.getElementById('play-quit').addEventListener('click', () => {
 // ===== Player store (localStorage) + Username modal =====
 const Player = (function () {
   const KEY_NAME = 'roki_zen_username';
-  const KEY_TAG  = 'roki_zen_user_tag';
+  const KEY_ID   = 'roki_zen_user_id';     // sequential id assigned by /api/register
   const KEY_DATA = 'roki_zen_player_data';
 
   function getName() { try { return localStorage.getItem(KEY_NAME) || ''; } catch (e) { return ''; } }
-  function getTag()  { try { return localStorage.getItem(KEY_TAG) || ''; } catch (e) { return ''; } }
-  function ensureTag() {
-    let t = getTag();
-    if (t) return t;
-    t = String(Math.floor(1000 + Math.random() * 9000));
-    try { localStorage.setItem(KEY_TAG, t); } catch (e) {}
-    return t;
+  function getId()   { try { return localStorage.getItem(KEY_ID)   || ''; } catch (e) { return ''; } }
+  function setLocal(name, id) {
+    try { localStorage.setItem(KEY_NAME, name); } catch (e) {}
+    if (id) try { localStorage.setItem(KEY_ID, String(id)); } catch (e) {}
   }
   function getFullHandle() {
-    const n = getName(); if (!n) return '';
-    return '@' + n + '#' + ensureTag();
+    const n = getName(); const id = getId(); if (!n) return '';
+    return '@' + n + (id ? '#' + id : '');
   }
-  function setName(name) {
-    try { localStorage.setItem(KEY_NAME, name); } catch (e) {}
-    ensureTag();
+  // Server registration: returns assigned id. Falls back to a local random id if the API is offline.
+  async function registerOnServer(name) {
+    try {
+      const r = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
+      if (r.ok) {
+        const data = await r.json();
+        if (data && data.id) { setLocal(name, data.id); return data.id; }
+      }
+    } catch (e) { console.warn('[Player] register API failed, going offline-only:', e); }
+    // Offline fallback: random 4-digit id (won't be unique cross-device, but lets the game work)
+    const fallback = String(Math.floor(1000 + Math.random() * 9000));
+    setLocal(name, fallback);
+    return fallback;
   }
+  function setName(name) { setLocal(name); }
 
   function getData() {
     try {
@@ -3299,14 +3311,15 @@ const Player = (function () {
       const err = wrap.querySelector('#username-err');
       const btn = wrap.querySelector('#username-save');
       input.focus();
-      function commit() {
+      async function commit() {
         let name = (input.value || '').trim().replace(/^@+/, '');
         if (!name) { err.textContent = 'Pick a handle.'; return; }
         if (name.length < 2) { err.textContent = 'Min 2 characters.'; return; }
         if (!/^[A-Za-z0-9_.]+$/.test(name)) { err.textContent = 'Letters, numbers, _ . only.'; return; }
-        setName(name);
+        btn.disabled = true; btn.textContent = '…';
+        const id = await registerOnServer(name);
         wrap.remove();
-        resolve('@' + name);
+        resolve('@' + name + '#' + id);
       }
       btn.addEventListener('click', commit);
       input.addEventListener('keydown', (e) => { if (e.key === 'Enter') commit(); });
@@ -3326,7 +3339,18 @@ const Player = (function () {
     el.textContent = full || '@—';
   }
 
-  return { getName, getTag, getFullHandle, setName, getData, saveData, recordMatch, showUsernameModal, ensureName, refreshHandleDisplay };
+
+  async function postScoreToServer(payload) {
+    try {
+      const r = await fetch('/api/score', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!r.ok) console.warn('[Player] /api/score returned', r.status);
+    } catch (e) { console.warn('[Player] /api/score failed:', e); }
+  }
+  return { getName, getId, getFullHandle, setName, registerOnServer, postScoreToServer, getData, saveData, recordMatch, showUsernameModal, ensureName, refreshHandleDisplay };
 })();
 
 // Show username modal on first visit, then keep handle visible
@@ -3358,6 +3382,16 @@ const Player = (function () {
       const avgReact = reactN ? Math.round(reactSum / reactN) : null;
       Player.recordMatch({ score, avgPrec, avgReact, bestStreak, tier });
       Player.refreshHandleDisplay();
+      // Send to backend (best-effort; falls through silently if KV not configured)
+      const id = Player.getId();
+      const name = Player.getName();
+      if (id && name && score > 0) {
+        Player.postScoreToServer({
+          id: parseInt(id, 10), name, score,
+          prec: avgPrec, react: avgReact || 0,
+          streak: bestStreak, tier,
+        });
+      }
     } catch (e) { console.warn('[player] save failed:', e); }
     return result;
   };

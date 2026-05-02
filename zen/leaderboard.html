@@ -715,8 +715,11 @@ function renderList(rows) {
 // ===== Player store (read-only on this page) =====
 const Player = (function () {
   const KEY_NAME = 'roki_zen_username';
+  const KEY_ID   = 'roki_zen_user_id';
   const KEY_DATA = 'roki_zen_player_data';
   function getName() { try { return localStorage.getItem(KEY_NAME) || ''; } catch (e) { return ''; } }
+  function getId()   { try { return localStorage.getItem(KEY_ID)   || ''; } catch (e) { return ''; } }
+  function getTag()  { return getId(); } // back-compat: tag = sequential id now
   function getData() {
     try {
       const raw = localStorage.getItem(KEY_DATA);
@@ -730,7 +733,7 @@ const Player = (function () {
     if (s >= 100) return 'Adept';
     return 'Beginner';
   }
-  return { getName, getData, tierFromScore };
+  return { getName, getId, getTag, getData, tierFromScore };
 })();
 
 // Compute the player's actual rank by inserting their bestScore into the period's rows.
@@ -776,34 +779,55 @@ function renderYou(period) {
   badge.className = 'badge ' + tierBadgeClass(y.tier);
 }
 
-function selectPeriod(period) {
+async function selectPeriod(period) {
   document.querySelectorAll('.period-tab').forEach(b => {
     b.classList.toggle('active', b.dataset.period === period);
   });
-  // REAL DATA only: build the leaderboard from the local player's data.
-  // (Cross-user board would need a backend; without one, the only real entry
-  //  on this device is YOU.)
-  const data = Player.getData ? Player.getData() : null;
-  const name = Player.getName ? Player.getName() : '';
-  const tag  = (Player.getTag ? Player.getTag() : '') || '';
-  const realRows = [];
-  if (data && data.bestScore && name) {
-    realRows.push({
-      rank: 1,
-      name: name.toUpperCase(),
-      handle: '@' + name + (tag ? '#' + tag : ''),
-      score: data.bestScore,
-      prec: data.bestPrec || 0,
-      react: data.bestReact || 0,
-      streak: data.bestStreak || 0,
-      tier: data.lastTier || (data.bestScore >= 270 ? 'Legendary' : data.bestScore >= 200 ? 'Elite' : data.bestScore >= 100 ? 'Adept' : 'Beginner'),
-    });
+
+  let realRows = [];
+  // Try the backend first
+  try {
+    const r = await fetch('/api/leaderboard', { cache: 'no-store' });
+    if (r.ok) {
+      const data = await r.json();
+      if (Array.isArray(data.entries)) {
+        realRows = data.entries.map(e => ({
+          rank: e.rank,
+          name: (e.name || '').toUpperCase(),
+          handle: e.fullHandle || ('@' + e.name + (e.id ? '#' + e.id : '')),
+          score: e.score,
+          prec: e.prec || 0,
+          react: e.react || 0,
+          streak: e.streak || 0,
+          tier: e.tier || 'Beginner',
+        }));
+      }
+    }
+  } catch (e) { console.warn('[lb] /api/leaderboard failed, using local fallback:', e); }
+
+  // Fallback to local-only data when API not reachable / not configured
+  if (!realRows.length) {
+    const data = Player.getData ? Player.getData() : null;
+    const name = Player.getName ? Player.getName() : '';
+    const id   = Player.getId   ? Player.getId()   : '';
+    if (data && data.bestScore && name) {
+      realRows.push({
+        rank: 1,
+        name: name.toUpperCase(),
+        handle: '@' + name + (id ? '#' + id : ''),
+        score: data.bestScore,
+        prec: data.bestPrec || 0,
+        react: data.bestReact || 0,
+        streak: data.bestStreak || 0,
+        tier: data.lastTier || (data.bestScore >= 270 ? 'Legendary' : data.bestScore >= 200 ? 'Elite' : data.bestScore >= 100 ? 'Adept' : 'Beginner'),
+      });
+    }
   }
+
   renderPodium(realRows);
   renderList(realRows);
   renderYou(period);
 
-  // Visual hint when there's no data yet
   const empty = document.getElementById('lb-empty');
   if (empty) empty.style.display = realRows.length === 0 ? '' : 'none';
 }
