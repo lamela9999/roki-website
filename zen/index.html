@@ -910,7 +910,6 @@
     nav.nav .nav-tabs { display: none !important; }
   }
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
@@ -3371,75 +3370,44 @@ const Player = (function () {
   if (!btn) { console.warn('[share] no #share-btn'); return; }
   const TWITTER_INTENT = 'https://twitter.com/intent/tweet';
 
-  function buildText() {
+  // Map a tier label to the share-page slug whose OG image we want X to scrape
+  function tierSlug(tier) {
+    const t = (tier || '').toLowerCase();
+    if (t.indexOf('legendary') !== -1) return 'legendary';
+    if (t.indexOf('elite') !== -1)     return 'elite';
+    if (t.indexOf('adept') !== -1 || t.indexOf('warrior') !== -1) return 'adept';
+    return 'beginner';
+  }
+
+  function buildTweet() {
     const score = (typeof State !== 'undefined' && Number.isFinite(State.totalScore)) ? State.totalScore : 0;
     const tierEl = document.getElementById('final-rank');
-    const tier = (tierEl && tierEl.textContent || '').trim() || 'Awaiting';
+    const tier = (tierEl && tierEl.textContent || '').trim() || 'Beginner';
     const handle = (typeof Player !== 'undefined' && Player.getFullHandle) ? Player.getFullHandle() : '';
-    const sig = handle ? `\n— ${handle}` : '';
-    if (score === 0 || tier === 'Awaiting') {
-      return `Just played ROKI ZEN. 3 cuts. One focus.${sig}\n\nBeat my score:\nhttps://roki.buzz/zen\n\n$Roki $RokiZen`;
+    const slug = tierSlug(tier);
+    // Tier-specific share URL — Twitter scrapes this and renders its OG image as a link card.
+    // Random param at the end forces a unique URL so X doesn't dedupe across tweets.
+    const url = 'https://roki.buzz/zen/share/' + slug + '.html?s=' + score + '&t=' + Date.now();
+    let text;
+    if (score === 0) {
+      text = 'Just played ROKI ZEN. 3 cuts. One focus.\n' + (handle ? '— ' + handle + '\n' : '') + '\nBeat my score:\n\n$Roki $RokiZen';
+    } else {
+      text = 'Just scored ' + score + '/300 on ROKI ZEN — ' + tier + ' tier.\n' + (handle ? '— ' + handle + '\n' : '') + '3 cuts. One focus. Try to beat me.\n\n$Roki $RokiZen';
     }
-    return `Just scored ${score}/300 on ROKI ZEN — ${tier} tier.${sig}\n3 cuts. One focus. Try to beat me.\n\nhttps://roki.buzz/zen\n\n$Roki $RokiZen`;
+    return TWITTER_INTENT + '?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(url);
   }
 
-  async function captureCard() {
-    const card = document.querySelector('.final-card');
-    if (!card || typeof html2canvas !== 'function') return null;
-    try {
-      const canvas = await html2canvas(card, { backgroundColor: '#FBF4E6', scale: 2, useCORS: true, logging: false });
-      return await new Promise((resolve) => canvas.toBlob(resolve, 'image/png', 0.95));
-    } catch (e) { console.warn('[share] capture failed:', e); return null; }
-  }
-  async function copyToClipboard(blob) {
-    if (!blob || !navigator.clipboard || !window.ClipboardItem) return false;
-    try { await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]); return true; }
-    catch (e) { console.warn('[share] clipboard write failed:', e); return false; }
-  }
-  function flashHint(msg) {
-    let el = document.getElementById('share-hint');
-    if (!el) {
-      el = document.createElement('div'); el.id = 'share-hint';
-      el.style.cssText = 'position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#111;color:#FBF4E6;padding:10px 18px;border-radius:8px;font:800 12px/1.2 Archivo,sans-serif;letter-spacing:1.2px;text-transform:uppercase;box-shadow:0 4px 0 rgba(0,0,0,0.25);z-index:9999;opacity:0;transition:opacity .2s;pointer-events:none';
-      document.body.appendChild(el);
-    }
-    el.textContent = msg;
-    requestAnimationFrame(() => { el.style.opacity = '1'; });
-    setTimeout(() => { el.style.opacity = '0'; }, 3500);
-  }
-
-  // Try Web Share API with files (mobile + desktop Chrome with PWA share targets — image auto-attaches if a target accepts files)
-  async function tryWebShareWithFiles(text, blob) {
-    if (!navigator.canShare || !navigator.share || !blob) return false;
-    const file = new File([blob], 'roki-zen-score.png', { type: 'image/png' });
-    if (!navigator.canShare({ files: [file] })) return false;
-    try { await navigator.share({ files: [file], text, title: 'ROKI ZEN' }); return true; }
-    catch (e) { return e && e.name === 'AbortError'; }
-  }
-
-  btn.addEventListener('click', async () => {
-    const text = buildText();
+  btn.addEventListener('click', () => {
+    const url = buildTweet();
+    // Direct nav: same tab on mobile, new tab on desktop. Either way: no share sheet, X opens straight.
     const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-    // Open X intent immediately on desktop (synchronous popup, beats the popup blocker)
-    if (!isMobile) {
-      window.open(TWITTER_INTENT + '?text=' + encodeURIComponent(text), '_blank', 'noopener,noreferrer');
+    if (isMobile) {
+      window.location.href = url;
+    } else {
+      window.open(url, '_blank', 'noopener,noreferrer');
     }
-
-    const blob = await captureCard();
-
-    // Try native file share (only does something useful if a share target accepts files)
-    if (await tryWebShareWithFiles(text, blob)) return;
-
-    // Otherwise: copy image to clipboard, small toast tells you to paste
-    if (blob) {
-      const ok = await copyToClipboard(blob);
-      if (ok) flashHint('Image copied — Ctrl+V on the X tab');
-    }
-
-    if (isMobile) window.location.href = TWITTER_INTENT + '?text=' + encodeURIComponent(text);
   });
-  console.log('[share] handler attached');
+  console.log('[share] handler attached — direct X intent, tier-URL OG card');
 })();
 
 // ===== Cut-style picker =====
