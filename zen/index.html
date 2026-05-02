@@ -4,6 +4,15 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>ROKI Zen — Slice the Drop</title>
+<meta property="og:title" content="ROKI ZEN — 3 Cuts. One Focus."/>
+<meta property="og:description" content="Slice the drop. Time it. Place it. Be precise. Reflex-cut mini-game from ROKI."/>
+<meta property="og:image" content="https://roki.buzz/assets/logo.jpg"/>
+<meta property="og:url" content="https://roki.buzz/zen/"/>
+<meta property="og:type" content="website"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="ROKI ZEN — 3 Cuts. One Focus."/>
+<meta name="twitter:description" content="Slice the drop. Time it. Place it. Be precise."/>
+<meta name="twitter:image" content="https://roki.buzz/assets/logo.jpg"/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -887,15 +896,13 @@
     display: block;
   }
 
-  /* Mobile-only Rankings button in the Zen nav */
+  /* Rankings button: hidden on desktop (already a tab), shown as primary right-side cta on mobile */
   .nav-cta-zen-rankings { display: none !important; }
   @media (max-width: 699px) {
-    .nav-cta-zen-rankings { display: inline-flex !important; background: var(--cream-3); color: var(--ink); }
-    .nav-cta-zen-rankings span { color: var(--ink); }
-    .nav-cta-zen-x span { display: none; }
-    .nav-cta-zen-x { padding: 9px 12px; min-width: 38px; justify-content: center; }
-    .nav-cta-zen-x svg { display: inline-block; }
-    nav.nav { gap: 6px; }
+    .nav-cta-zen-rankings { display: inline-flex !important; background: var(--red); color: #fff; border: 1.5px solid var(--ink); border-radius: 9px; padding: 9px 16px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; box-shadow: 0 2px 0 var(--ink); }
+    .nav-cta-zen-rankings span { color: #fff; }
+    .nav-cta-zen-x { display: none !important; }
+    nav.nav { gap: 8px; }
   }
 
   /* Mobile (<=699px): hide the desktop nav-tabs entirely. Only the brand + Rankings + X-icon stay. */
@@ -3223,10 +3230,26 @@ document.getElementById('play-quit').addEventListener('click', () => {
 // ===== Player store (localStorage) + Username modal =====
 const Player = (function () {
   const KEY_NAME = 'roki_zen_username';
+  const KEY_TAG  = 'roki_zen_user_tag';
   const KEY_DATA = 'roki_zen_player_data';
 
   function getName() { try { return localStorage.getItem(KEY_NAME) || ''; } catch (e) { return ''; } }
-  function setName(name) { try { localStorage.setItem(KEY_NAME, name); } catch (e) {} }
+  function getTag()  { try { return localStorage.getItem(KEY_TAG) || ''; } catch (e) { return ''; } }
+  function ensureTag() {
+    let t = getTag();
+    if (t) return t;
+    t = String(Math.floor(1000 + Math.random() * 9000));
+    try { localStorage.setItem(KEY_TAG, t); } catch (e) {}
+    return t;
+  }
+  function getFullHandle() {
+    const n = getName(); if (!n) return '';
+    return '@' + n + '#' + ensureTag();
+  }
+  function setName(name) {
+    try { localStorage.setItem(KEY_NAME, name); } catch (e) {}
+    ensureTag();
+  }
 
   function getData() {
     try {
@@ -3300,11 +3323,11 @@ const Player = (function () {
   function refreshHandleDisplay() {
     const el = document.getElementById('final-handle');
     if (!el) return;
-    const n = getName();
-    el.textContent = n ? '@' + n : '@—';
+    const full = getFullHandle();
+    el.textContent = full || '@—';
   }
 
-  return { getName, setName, getData, saveData, recordMatch, showUsernameModal, ensureName, refreshHandleDisplay };
+  return { getName, getTag, getFullHandle, setName, getData, saveData, recordMatch, showUsernameModal, ensureName, refreshHandleDisplay };
 })();
 
 // Show username modal on first visit, then keep handle visible
@@ -3352,10 +3375,12 @@ const Player = (function () {
     const score = (typeof State !== 'undefined' && Number.isFinite(State.totalScore)) ? State.totalScore : 0;
     const tierEl = document.getElementById('final-rank');
     const tier = (tierEl && tierEl.textContent || '').trim() || 'Awaiting';
+    const handle = (typeof Player !== 'undefined' && Player.getFullHandle) ? Player.getFullHandle() : '';
+    const sig = handle ? `\n— ${handle}` : '';
     if (score === 0 || tier === 'Awaiting') {
-      return `Just played ROKI ZEN. 3 cuts. One focus.\n\nBeat my score → roki.buzz/zen\n\n$Roki $RokiZen`;
+      return `Just played ROKI ZEN. 3 cuts. One focus.${sig}\n\nBeat my score:\nhttps://roki.buzz/zen\n\n$Roki $RokiZen`;
     }
-    return `Just scored ${score}/300 on ROKI ZEN — ${tier} tier.\n3 cuts. One focus. Try to beat me.\n\nroki.buzz/zen\n\n$Roki $RokiZen`;
+    return `Just scored ${score}/300 on ROKI ZEN — ${tier} tier.${sig}\n3 cuts. One focus. Try to beat me.\n\nhttps://roki.buzz/zen\n\n$Roki $RokiZen`;
   }
 
   async function captureCard() {
