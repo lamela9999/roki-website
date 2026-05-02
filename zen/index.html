@@ -3276,15 +3276,19 @@ const Player = (function () {
 
   function recordMatch({ score, avgPrec, avgReact, bestStreak, tier }) {
     const d = getData();
+    const prevBest = d.bestScore;
     d.matches += 1;
     d.totalScore += score;
-    if (score > d.bestScore) d.bestScore = score;
-    if (avgPrec > d.bestPrec) d.bestPrec = avgPrec;
-    if (avgReact && (d.bestReact == null || avgReact < d.bestReact)) d.bestReact = avgReact;
-    if (bestStreak > d.bestStreak) d.bestStreak = bestStreak;
+    if (Number.isFinite(score) && score > d.bestScore) d.bestScore = score;
+    if (Number.isFinite(avgPrec)  && avgPrec > d.bestPrec) d.bestPrec = avgPrec;
+    if (Number.isFinite(avgReact) && avgReact > 0 && (d.bestReact == null || avgReact < d.bestReact)) d.bestReact = avgReact;
+    if (Number.isFinite(bestStreak) && bestStreak > d.bestStreak) d.bestStreak = bestStreak;
     d.lastTier = tier;
     d.lastPlayed = Date.now();
+    // Defensive: never let bestScore decrease
+    if (d.bestScore < prevBest) d.bestScore = prevBest;
     saveData(d);
+    console.log('[zen] match recorded — score:', score, 'prevBest:', prevBest, 'newBest:', d.bestScore);
     return d;
   }
 
@@ -3340,14 +3344,25 @@ const Player = (function () {
 
 
   async function postScoreToServer(payload) {
+    console.log('[zen] POST /api/score —', payload);
     try {
       const r = await fetch('/api/score', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      if (!r.ok) console.warn('[Player] /api/score returned', r.status);
-    } catch (e) { console.warn('[Player] /api/score failed:', e); }
+      if (!r.ok) {
+        const txt = await r.text();
+        console.warn('[zen] /api/score returned', r.status, txt);
+        return null;
+      }
+      const data = await r.json();
+      console.log('[zen] /api/score ok —', data);
+      return data;
+    } catch (e) {
+      console.warn('[zen] /api/score failed:', e);
+      return null;
+    }
   }
   return { getName, getId, getFullHandle, setName, registerOnServer, postScoreToServer, getData, saveData, recordMatch, showUsernameModal, ensureName, refreshHandleDisplay };
 })();

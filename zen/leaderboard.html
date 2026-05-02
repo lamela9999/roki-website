@@ -801,7 +801,7 @@ function realYou(period) {
       prec: data.bestPrec || 0,
       react: data.bestReact || 0,
       streak: data.bestStreak || 0,
-      tier: data.lastTier || (data.bestScore >= 270 ? 'Legendary' : data.bestScore >= 200 ? 'Elite' : data.bestScore >= 100 ? 'Adept' : 'Beginner'),
+      tier: (data.bestScore >= 270 ? 'Legendary' : data.bestScore >= 200 ? 'Elite' : data.bestScore >= 100 ? 'Adept' : 'Beginner'),
     };
   }
 
@@ -843,8 +843,10 @@ async function selectPeriod(period) {
   // Try the backend first
   try {
     const r = await fetch('/api/leaderboard', { cache: 'no-store' });
+    console.log('[lb] /api/leaderboard status', r.status);
     if (r.ok) {
       const data = await r.json();
+      console.log('[lb] entries from API:', data.entries ? data.entries.length : 0, data);
       if (Array.isArray(data.entries)) {
         realRows = data.entries.map(e => ({
           rank: e.rank,
@@ -865,6 +867,7 @@ async function selectPeriod(period) {
     const data = Player.getData ? Player.getData() : null;
     const name = Player.getName ? Player.getName() : '';
     const id   = Player.getId   ? Player.getId()   : '';
+    console.log('[lb] using LOCAL fallback — bestScore:', data && data.bestScore, 'name:', name, 'id:', id);
     if (data && data.bestScore && name) {
       realRows.push({
         rank: 1,
@@ -874,7 +877,7 @@ async function selectPeriod(period) {
         prec: data.bestPrec || 0,
         react: data.bestReact || 0,
         streak: data.bestStreak || 0,
-        tier: data.lastTier || (data.bestScore >= 270 ? 'Legendary' : data.bestScore >= 200 ? 'Elite' : data.bestScore >= 100 ? 'Adept' : 'Beginner'),
+        tier: (data.bestScore >= 270 ? 'Legendary' : data.bestScore >= 200 ? 'Elite' : data.bestScore >= 100 ? 'Adept' : 'Beginner'),
       });
     }
   }
