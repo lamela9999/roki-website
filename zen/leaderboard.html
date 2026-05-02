@@ -746,76 +746,42 @@ const Player = (function () {
   return { getName, getId, getTag, getData, tierFromScore };
 })();
 
-// Find the player's row in whichever rows we just rendered.
-// Server-driven leaderboard wins; otherwise fall back to local data.
+// YOUR POSITION row — always your LOCAL data. Rank is taken from the
+// leaderboard only when your local id matches a leaderboard entry exactly.
+// Never shows another player's stats under your handle.
 window.__lastRows = window.__lastRows || [];
 function realYou(period) {
   const data = Player.getData ? Player.getData() : null;
   const name = Player.getName ? Player.getName() : '';
   const id   = Player.getId   ? Player.getId()   : '';
   const handle = '@' + (name || 'you') + (id ? '#' + id : '');
+  const bm = (data && data.bestMatch) || {};
 
-  // 1) Try to find this user in the real rendered leaderboard rows
+  // Compute MY rank — only if my id matches a leaderboard row exactly
+  let myRank = '—';
   const rows = window.__lastRows || [];
   if (id) {
-    const mineId = String(id);
-    const mine = rows.find(r => String(r.id || '') === mineId);
-    if (mine) {
-      return {
-        rank: mine.rank,
-        name: name.toUpperCase(),
-        handle,
-        score: mine.score,
-        prec: mine.prec || 0,
-        react: mine.react || 0,
-        streak: mine.streak || 0,
-        tier: mine.tier || 'Beginner',
-      };
-    }
-  }
-  // Try by exact name match (in case id wasn't stamped on the row)
-  if (name) {
-    const lower = name.toLowerCase();
-    const mine = rows.find(r => (r.name || '').toLowerCase() === lower);
-    if (mine) {
-      return {
-        rank: mine.rank,
-        name: name.toUpperCase(),
-        handle,
-        score: mine.score,
-        prec: mine.prec || 0,
-        react: mine.react || 0,
-        streak: mine.streak || 0,
-        tier: mine.tier || 'Beginner',
-      };
-    }
+    const idStr = String(id);
+    const mine = rows.find(r => String(r.id || '') === idStr);
+    if (mine) myRank = mine.rank;
   }
 
-  // 2) Not on the visible leaderboard. Use local data + position past the end.
-  if (data && data.bestScore) {
-    const bm = data.bestMatch || {};
-    return {
-      rank: rows.length + 1,
-      name: (name || 'YOU').toUpperCase(),
-      handle,
-      score: data.bestScore,
-      prec:   Number.isFinite(bm.prec)   ? bm.prec   : (data.bestPrec   || 0),
-      react:  Number.isFinite(bm.react)  ? bm.react  : (data.bestReact  || 0),
-      streak: Number.isFinite(bm.streak) ? bm.streak : (data.bestStreak || 0),
-      tier: (data.bestScore >= 270 ? 'Legendary' : data.bestScore >= 200 ? 'Elite' : data.bestScore >= 100 ? 'Adept' : 'Beginner'),
-    };
+  // No local data + no name → blank YOU row
+  if (!name && (!data || !data.bestScore)) {
+    return { rank: '—', name: 'YOU', handle: '@you', score: 0, prec: 0, react: 0, streak: 0, tier: 'Beginner' };
   }
 
-  // 3) Hasn't played yet
+  // Default: show local stats
+  const bestScore = (data && data.bestScore) || 0;
   return {
-    rank: '—',
+    rank: myRank,
     name: (name || 'YOU').toUpperCase(),
     handle,
-    score: 0,
-    prec: 0,
-    react: 0,
-    streak: 0,
-    tier: 'Beginner',
+    score: bestScore,
+    prec:   Number.isFinite(bm.prec)   ? bm.prec   : ((data && data.bestPrec)   || 0),
+    react:  Number.isFinite(bm.react)  ? bm.react  : ((data && data.bestReact)  || 0),
+    streak: Number.isFinite(bm.streak) ? bm.streak : ((data && data.bestStreak) || 0),
+    tier: (bestScore >= 270 ? 'Legendary' : bestScore >= 200 ? 'Elite' : bestScore >= 100 ? 'Adept' : 'Beginner'),
   };
 }
 
