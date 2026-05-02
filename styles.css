@@ -891,13 +891,22 @@ a { color: inherit; text-decoration: none; }
 }
 @media (max-width: 480px) {
   .crew-grid { grid-template-columns: repeat(2, 1fr); }
+  .nav-cta { display: flex; gap: 6px; }
   .nav-cta-desktop { display: none !important; }
   .nav-cta-mobile {
     display: inline-flex !important;
-    color: #fffff;
+    color: #ffffff;
     text-decoration: none;
+    padding: 9px 12px;
+    font-size: 11px;
+    letter-spacing: 0.08em;
   }
   .nav-cta-mobile span { color: #ffffff; }
+  .nav-cta-mobile.nav-cta-mobile-secondary {
+    background: var(--paper);
+    color: var(--ink);
+  }
+  .nav-cta-mobile.nav-cta-mobile-secondary span { color: var(--ink); }
 }
 
 /* ============ CA STRIP ============ */

@@ -364,15 +364,13 @@
     position: relative;
     display: grid; place-items: center;
     aspect-ratio: 1 / 1;
+    background: var(--red);
+    border: 1.5px solid var(--ink);
+    border-radius: 50%;
+    overflow: hidden;
   }
   .mascot-wrap .tier-bg {
-    position: absolute; inset: 6% 4% auto 4%;
-    aspect-ratio: 1/1;
-    background: var(--red);
-    border-radius: 50%;
-    z-index: 0;
-    box-shadow: 0 0 0 1.5px var(--ink) inset;
-    transition: background 0.35s ease, opacity 0.35s ease;
+    display: none;
   }
   .mascot-wrap.tier-beginner .tier-bg { background: var(--red); }
   .mascot-wrap.tier-warrior  .tier-bg { background: var(--red); }
@@ -888,6 +886,17 @@
     border-radius: inherit;
     display: block;
   }
+
+  /* Mobile-only Rankings button in the Zen nav */
+  .nav-cta-zen-rankings { display: none !important; }
+  @media (max-width: 699px) {
+    .nav-cta-zen-rankings { display: inline-flex !important; background: var(--cream-3); color: var(--ink); }
+    .nav-cta-zen-rankings span { color: var(--ink); }
+    .nav-cta-zen-x span { display: none; }
+    .nav-cta-zen-x { padding: 9px 12px; min-width: 38px; justify-content: center; }
+    .nav-cta-zen-x svg { display: inline-block; }
+    nav.nav { gap: 6px; }
+  }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
@@ -912,7 +921,10 @@
         <a class="nav-tab" href="leaderboard.html">Rankings</a>
       </div>
     </div>
-    <a class="join-crew" href="https://x.com/rokitherabbit" target="_blank" rel="noopener noreferrer">
+    <a class="join-crew nav-cta-zen-rankings" href="leaderboard.html">
+      <span>Rankings</span>
+    </a>
+    <a class="join-crew nav-cta-zen-x" href="https://x.com/rokitherabbit" target="_blank" rel="noopener noreferrer">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M8 5 L8 10"/><path d="M16 5 L16 10"/>
         <ellipse cx="12" cy="14" rx="5" ry="4.5" fill="currentColor" stroke="none"/>
@@ -3231,88 +3243,49 @@ document.getElementById('play-quit').addEventListener('click', () => {
     try { await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]); return true; }
     catch (e) { console.warn('[share] clipboard write failed:', e); return false; }
   }
-
-  // Big centered modal — can't be missed. Click anywhere to dismiss.
-  function showPasteModal(blob) {
-    const url = URL.createObjectURL(blob);
-    const wrap = document.createElement('div');
-    wrap.id = 'share-modal';
-    wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.78);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .2s ease';
-    wrap.innerHTML = `
-      <div style="background:#FBF4E6;border:2px solid #111;border-radius:14px;box-shadow:6px 6px 0 #111;max-width:480px;width:100%;padding:22px 22px 18px;text-align:center;font-family:Archivo,sans-serif">
-        <div style="font-family:'Archivo Black',sans-serif;font-size:18px;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px">Image ready</div>
-        <div style="color:#6B6258;font-size:13px;line-height:1.5;margin-bottom:14px">Your score card is on the clipboard.<br/>Switch to the X tab and press <b style="background:#111;color:#FBF4E6;padding:3px 8px;border-radius:4px;font-family:'JetBrains Mono',monospace">Ctrl + V</b> in the compose box to attach it.</div>
-        <img src="${url}" style="max-width:100%;border:1.5px solid #111;border-radius:8px;display:block;margin:0 auto 14px"/>
-        <div style="display:flex;gap:8px;justify-content:center">
-          <button id="share-modal-download" style="background:#FBF4E6;color:#111;border:1.5px solid #111;border-radius:8px;padding:10px 16px;font-family:Archivo,sans-serif;font-weight:800;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;box-shadow:0 2px 0 #111">Download</button>
-          <button id="share-modal-close" style="background:#E63946;color:#fff;border:1.5px solid #111;border-radius:8px;padding:10px 16px;font-family:Archivo,sans-serif;font-weight:800;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;box-shadow:0 2px 0 #111">Got it</button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(wrap);
-    function close() { URL.revokeObjectURL(url); wrap.remove(); }
-    wrap.addEventListener('click', (e) => { if (e.target === wrap) close(); });
-    wrap.querySelector('#share-modal-close').addEventListener('click', close);
-    wrap.querySelector('#share-modal-download').addEventListener('click', () => {
-      const a = document.createElement('a'); a.href = url; a.download = 'roki-zen-score.png';
-      document.body.appendChild(a); a.click(); a.remove();
-    });
+  function flashHint(msg) {
+    let el = document.getElementById('share-hint');
+    if (!el) {
+      el = document.createElement('div'); el.id = 'share-hint';
+      el.style.cssText = 'position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#111;color:#FBF4E6;padding:10px 18px;border-radius:8px;font:800 12px/1.2 Archivo,sans-serif;letter-spacing:1.2px;text-transform:uppercase;box-shadow:0 4px 0 rgba(0,0,0,0.25);z-index:9999;opacity:0;transition:opacity .2s;pointer-events:none';
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    requestAnimationFrame(() => { el.style.opacity = '1'; });
+    setTimeout(() => { el.style.opacity = '0'; }, 3500);
   }
 
-  // Try Web Share API with files (works on mobile + desktop Chrome with PWA share targets).
-  // Returns true if the share dialog handled it.
+  // Try Web Share API with files (mobile + desktop Chrome with PWA share targets — image auto-attaches if a target accepts files)
   async function tryWebShareWithFiles(text, blob) {
     if (!navigator.canShare || !navigator.share || !blob) return false;
     const file = new File([blob], 'roki-zen-score.png', { type: 'image/png' });
     if (!navigator.canShare({ files: [file] })) return false;
-    try {
-      await navigator.share({ files: [file], text, title: 'ROKI ZEN' });
-      return true;
-    } catch (e) {
-      if (e && e.name === 'AbortError') return true; // user cancelled, but we did our job
-      return false;
-    }
+    try { await navigator.share({ files: [file], text, title: 'ROKI ZEN' }); return true; }
+    catch (e) { return e && e.name === 'AbortError'; }
   }
 
   btn.addEventListener('click', async () => {
     const text = buildText();
     const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-    // DESKTOP: open X intent IMMEDIATELY in the user-gesture window so popup blocker doesn't kill it.
-    let popup = null;
+    // Open X intent immediately on desktop (synchronous popup, beats the popup blocker)
     if (!isMobile) {
-      const url = TWITTER_INTENT + '?text=' + encodeURIComponent(text);
-      popup = window.open(url, '_blank', 'noopener,noreferrer');
-      if (!popup) console.warn('[share] popup blocked');
+      window.open(TWITTER_INTENT + '?text=' + encodeURIComponent(text), '_blank', 'noopener,noreferrer');
     }
 
-    // Capture image (slow async, runs after popup is open)
     const blob = await captureCard();
 
-    // 1) Try the native share sheet with file (best UX — image auto-attaches if X is a target)
-    const used = await tryWebShareWithFiles(text, blob);
-    if (used) {
-      console.log('[share] handled by Web Share API');
-      return;
+    // Try native file share (only does something useful if a share target accepts files)
+    if (await tryWebShareWithFiles(text, blob)) return;
+
+    // Otherwise: copy image to clipboard, small toast tells you to paste
+    if (blob) {
+      const ok = await copyToClipboard(blob);
+      if (ok) flashHint('Image copied — Ctrl+V on the X tab');
     }
 
-    // 2) Fallback: image to clipboard + clear modal explaining how to paste
-    await copyToClipboard(blob);
-    if (!isMobile) {
-      // Show paste modal with image preview and Download fallback
-      if (blob) showPasteModal(blob);
-      return;
-    }
-
-    // 3) Last-resort mobile fallback (no Web Share API + no Clipboard): just open X intent
-    window.location.href = TWITTER_INTENT + '?text=' + encodeURIComponent(text);
+    if (isMobile) window.location.href = TWITTER_INTENT + '?text=' + encodeURIComponent(text);
   });
-
-  // Tiny CSS for the fadeIn animation
-  const style = document.createElement('style');
-  style.textContent = '@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }';
-  document.head.appendChild(style);
-
   console.log('[share] handler attached');
 })();
 

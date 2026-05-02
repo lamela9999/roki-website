@@ -61,7 +61,10 @@ const Nav = () => (
         <span className="btn-icon-bare"><img src="assets/logo-head.png" alt=""/></span>
         <span>Join Crew</span>
       </a>
-      <a href="docs/index.html" className="btn btn-primary nav-cta-mobile">
+      <a href="zen/" className="btn btn-primary nav-cta-mobile">
+        <span>Zen</span>
+      </a>
+      <a href="docs/index.html" className="btn nav-cta-mobile nav-cta-mobile-secondary">
         <span>Docs</span>
       </a>
     </div>
