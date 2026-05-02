@@ -894,6 +894,30 @@ document.querySelectorAll('.period-tab').forEach(b => {
 
 // initial render
 selectPeriod('alltime');
+
+// ===== Auto-refresh leaderboard while the tab is visible =====
+(function autoRefresh() {
+  let timer = null;
+  function refreshNow() {
+    const active = document.querySelector('.period-tab.active');
+    if (!active) return;
+    selectPeriod(active.dataset.period);
+  }
+  function start() {
+    stop();
+    // Refresh every 15 seconds — frequent enough to feel "live", gentle on the API
+    timer = setInterval(() => {
+      if (document.visibilityState === 'visible') refreshNow();
+    }, 15000);
+  }
+  function stop() { if (timer) { clearInterval(timer); timer = null; } }
+  // Start now, refresh when tab becomes visible again, refresh once on focus
+  start();
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') { refreshNow(); start(); } else stop();
+  });
+  window.addEventListener('focus', refreshNow);
+})();
 </script>
 
 </body>
