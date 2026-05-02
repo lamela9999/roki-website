@@ -793,14 +793,15 @@ function realYou(period) {
 
   // 2) Not on the visible leaderboard. Use local data + position past the end.
   if (data && data.bestScore) {
+    const bm = data.bestMatch || {};
     return {
       rank: rows.length + 1,
       name: (name || 'YOU').toUpperCase(),
       handle,
       score: data.bestScore,
-      prec: data.bestPrec || 0,
-      react: data.bestReact || 0,
-      streak: data.bestStreak || 0,
+      prec:   Number.isFinite(bm.prec)   ? bm.prec   : (data.bestPrec   || 0),
+      react:  Number.isFinite(bm.react)  ? bm.react  : (data.bestReact  || 0),
+      streak: Number.isFinite(bm.streak) ? bm.streak : (data.bestStreak || 0),
       tier: (data.bestScore >= 270 ? 'Legendary' : data.bestScore >= 200 ? 'Elite' : data.bestScore >= 100 ? 'Adept' : 'Beginner'),
     };
   }
@@ -869,15 +870,16 @@ async function selectPeriod(period) {
     const id   = Player.getId   ? Player.getId()   : '';
     console.log('[lb] using LOCAL fallback — bestScore:', data && data.bestScore, 'name:', name, 'id:', id);
     if (data && data.bestScore && name) {
+      const bm = data.bestMatch || {};
       realRows.push({
         rank: 1,
         name: name.toUpperCase(),
         handle: '@' + name + (id ? '#' + id : ''),
         score: data.bestScore,
-        prec: data.bestPrec || 0,
-        react: data.bestReact || 0,
-        streak: data.bestStreak || 0,
-        tier: (data.bestScore >= 270 ? 'Legendary' : data.bestScore >= 200 ? 'Elite' : data.bestScore >= 100 ? 'Adept' : 'Beginner'),
+        prec:   Number.isFinite(bm.prec)   ? bm.prec   : (data.bestPrec   || 0),
+        react:  Number.isFinite(bm.react)  ? bm.react  : (data.bestReact  || 0),
+        streak: Number.isFinite(bm.streak) ? bm.streak : (data.bestStreak || 0),
+        tier:   (data.bestScore >= 270 ? 'Legendary' : data.bestScore >= 200 ? 'Elite' : data.bestScore >= 100 ? 'Adept' : 'Beginner'),
       });
     }
   }
