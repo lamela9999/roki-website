@@ -909,6 +909,12 @@
   @media (max-width: 699px) {
     nav.nav .nav-tabs { display: none !important; }
   }
+
+  /* MOBILE PERF: backdrop blur is the heaviest layer on the page during gameplay; disable it on small screens */
+  @media (max-width: 768px) {
+    .play-overlay { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+    .result-card { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+  }
 </style>
 </head>
 <body>
@@ -1741,7 +1747,7 @@ const AudioFx = (() => {
 })();
 
 // ===== Canvas sizing =====
-let W = 0, H = 0, DPR = Math.max(1, window.devicePixelRatio || 1);
+let W = 0, H = 0, DPR = Math.min(2, Math.max(1, window.devicePixelRatio || 1));  // cap retina at 2 for mobile perf
 function resize() {
   const r = canvas.getBoundingClientRect();
   W = Math.floor(r.width); H = Math.floor(r.height);
