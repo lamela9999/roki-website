@@ -881,13 +881,7 @@
     .play-quit { padding: 5px 10px; font-size: 10px; }
   }
 
-  .brand-logo img {
-    width: 100%; height: 100%;
-    object-fit: cover;
-    border-radius: inherit;
-    display: block;
-  }
-
+  .brand-logo img,
   .quote-strip .rlogo img {
     width: 100%; height: 100%;
     object-fit: cover;
@@ -895,126 +889,7 @@
     display: block;
   }
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js">
-// ===== Share to X =====
-(function setupShare() {
-  const btn = document.getElementById('share-btn');
-  if (!btn) { console.warn('[share] no #share-btn'); return; }
-  const TWITTER_INTENT = 'https://twitter.com/intent/tweet';
-
-  function buildText() {
-    const score = (typeof State !== 'undefined' && Number.isFinite(State.totalScore)) ? State.totalScore : 0;
-    const tierEl = document.getElementById('final-rank');
-    const tier = (tierEl && tierEl.textContent || '').trim() || 'Awaiting';
-    if (score === 0 || tier === 'Awaiting') {
-      return `Just played ROKI ZEN. 3 cuts. One focus.\n\nBeat my score → roki.buzz/zen\n\n$Roki $RokiZen`;
-    }
-    return `Just scored ${score}/300 on ROKI ZEN — ${tier} tier.\n3 cuts. One focus. Try to beat me.\n\nroki.buzz/zen\n\n$Roki $RokiZen`;
-  }
-
-  async function captureCard() {
-    const card = document.querySelector('.final-card');
-    if (!card) return null;
-    if (typeof html2canvas !== 'function') {
-      console.warn('[share] html2canvas not loaded');
-      return null;
-    }
-    try {
-      const canvas = await html2canvas(card, {
-        backgroundColor: '#FBF4E6',
-        scale: 2,
-        useCORS: true,
-        logging: false,
-      });
-      return await new Promise((resolve) => canvas.toBlob(resolve, 'image/png', 0.95));
-    } catch (e) {
-      console.warn('[share] capture failed:', e);
-      return null;
-    }
-  }
-
-  async function copyToClipboard(blob) {
-    if (!blob || !navigator.clipboard || !window.ClipboardItem) return false;
-    try {
-      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-      return true;
-    } catch (e) {
-      console.warn('[share] clipboard write failed:', e);
-      return false;
-    }
-  }
-
-  function flashHint(msg) {
-    let el = document.getElementById('share-hint');
-    if (!el) {
-      el = document.createElement('div');
-      el.id = 'share-hint';
-      el.style.cssText = 'position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#111;color:#FBF4E6;padding:10px 16px;border-radius:8px;font:800 12px/1.2 Archivo,sans-serif;letter-spacing:1.2px;text-transform:uppercase;box-shadow:0 4px 0 rgba(0,0,0,0.25);z-index:9999;opacity:0;transition:opacity .2s';
-      document.body.appendChild(el);
-    }
-    el.textContent = msg;
-    requestAnimationFrame(() => { el.style.opacity = '1'; });
-    setTimeout(() => { el.style.opacity = '0'; }, 3000);
-  }
-
-  // Try Web Share API with files (mobile, some Chromium desktop). Returns true if used.
-  async function tryWebShareWithFiles(text) {
-    if (!navigator.canShare || !navigator.share) return false;
-    const blob = await captureCard();
-    if (!blob) {
-      // No image, but we can still text-share
-      try { await navigator.share({ text, title: 'ROKI ZEN' }); return true; } catch (e) {
-        if (e && e.name === 'AbortError') return true;
-        return false;
-      }
-    }
-    const file = new File([blob], 'roki-zen-score.png', { type: 'image/png' });
-    if (!navigator.canShare({ files: [file] })) return false;
-    try {
-      await navigator.share({ files: [file], text, title: 'ROKI ZEN' });
-      return true;
-    } catch (e) {
-      if (e && e.name === 'AbortError') return true;
-      return false;
-    }
-  }
-
-  btn.addEventListener('click', async () => {
-    const text = buildText();
-    console.log('[share] click — text:', text);
-
-    // 1) DESKTOP FALLBACK: open X intent IMMEDIATELY in the click's user gesture
-    //    so the popup blocker doesn't kill it. Capture/copy run after.
-    //    On mobile, this opens X and the Web Share API attempt below also runs;
-    //    on most mobile browsers window.open just navigates the same tab so the
-    //    Web Share dialog won't appear — that's fine, X handles the share.
-    const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-    if (!isMobile) {
-      const url = `${TWITTER_INTENT}?text=${encodeURIComponent(text)}`;
-      const popup = window.open(url, '_blank', 'noopener,noreferrer');
-      if (!popup) {
-        console.warn('[share] popup blocked');
-        flashHint('Popup blocked — allow popups for roki.buzz');
-      }
-      // Now try to capture + copy image so the user can paste it
-      const blob = await captureCard();
-      const ok = await copyToClipboard(blob);
-      flashHint(ok ? 'Image copied — Ctrl+V on the X compose' : 'Tweet opened — type your message');
-      return;
-    }
-
-    // 2) MOBILE: prefer the native share sheet with the image attached
-    const used = await tryWebShareWithFiles(text);
-    if (used) return;
-
-    // 3) Last-resort fallback for mobile: open X intent
-    window.location.href = `${TWITTER_INTENT}?text=${encodeURIComponent(text)}`;
-  });
-
-  console.log('[share] handler attached');
-})();
-</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
@@ -2329,7 +2204,7 @@ function endMatch() {
   let topPct = 'Top 80% of Players';
   if (State.totalScore >= 270) { rank = 'Legendary'; tier = 'legendary'; topPct = 'Top 1% of Players'; }
   else if (State.totalScore >= 200) { rank = 'Elite'; tier = 'elite'; topPct = 'Top 10% of Players'; }
-  else if (State.totalScore >= 100) { rank = 'Warrior'; tier = 'warrior'; topPct = 'Top 35% of Players'; }
+  else if (State.totalScore >= 100) { rank = 'Adept'; tier = 'warrior'; topPct = 'Top 35% of Players'; }
   finalRank.textContent = rank;
   finalTop.textContent = topPct;
   // Swap tier mascot
@@ -3318,4 +3193,162 @@ function drawMissBorderPulse() {
   ctx.strokeRect(0.5, 0.5, W - 1, H - 1);
 }
 
-// Legacy stub — kept so older calls (if any) don't crash. Real trail is drawBl
+// Legacy stub — kept so older calls (if any) don't crash. Real trail is drawBladeTrail.
+function drawTrail() { /* no-op: replaced by drawBladeTrail */ }
+
+// ===== Wire UI =====
+document.getElementById('play-cta').addEventListener('click', startMatch);
+document.getElementById('play-quit').addEventListener('click', () => {
+  overlay.classList.add('hidden');
+  State.phase = 'idle';
+});
+// ===== Share to X =====
+(function setupShare() {
+  const btn = document.getElementById('share-btn');
+  if (!btn) { console.warn('[share] no #share-btn'); return; }
+  const TWITTER_INTENT = 'https://twitter.com/intent/tweet';
+
+  function buildText() {
+    const score = (typeof State !== 'undefined' && Number.isFinite(State.totalScore)) ? State.totalScore : 0;
+    const tierEl = document.getElementById('final-rank');
+    const tier = (tierEl && tierEl.textContent || '').trim() || 'Awaiting';
+    if (score === 0 || tier === 'Awaiting') {
+      return `Just played ROKI ZEN. 3 cuts. One focus.\n\nBeat my score → roki.buzz/zen\n\n$Roki $RokiZen`;
+    }
+    return `Just scored ${score}/300 on ROKI ZEN — ${tier} tier.\n3 cuts. One focus. Try to beat me.\n\nroki.buzz/zen\n\n$Roki $RokiZen`;
+  }
+
+  async function captureCard() {
+    const card = document.querySelector('.final-card');
+    if (!card || typeof html2canvas !== 'function') return null;
+    try {
+      const canvas = await html2canvas(card, { backgroundColor: '#FBF4E6', scale: 2, useCORS: true, logging: false });
+      return await new Promise((resolve) => canvas.toBlob(resolve, 'image/png', 0.95));
+    } catch (e) { console.warn('[share] capture failed:', e); return null; }
+  }
+
+  async function copyToClipboard(blob) {
+    if (!blob || !navigator.clipboard || !window.ClipboardItem) return false;
+    try { await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]); return true; }
+    catch (e) { console.warn('[share] clipboard write failed:', e); return false; }
+  }
+
+  function flashHint(msg) {
+    let el = document.getElementById('share-hint');
+    if (!el) {
+      el = document.createElement('div'); el.id = 'share-hint';
+      el.style.cssText = 'position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#111;color:#FBF4E6;padding:10px 16px;border-radius:8px;font:800 12px/1.2 Archivo,sans-serif;letter-spacing:1.2px;text-transform:uppercase;box-shadow:0 4px 0 rgba(0,0,0,0.25);z-index:9999;opacity:0;transition:opacity .2s';
+      document.body.appendChild(el);
+    }
+    el.textContent = msg; requestAnimationFrame(() => { el.style.opacity = '1'; });
+    setTimeout(() => { el.style.opacity = '0'; }, 3000);
+  }
+
+  btn.addEventListener('click', async () => {
+    const text = buildText();
+    const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (!isMobile) {
+      const url = TWITTER_INTENT + '?text=' + encodeURIComponent(text);
+      const popup = window.open(url, '_blank', 'noopener,noreferrer');
+      if (!popup) { flashHint('Popup blocked — allow popups for roki.buzz'); }
+      const blob = await captureCard();
+      const ok = await copyToClipboard(blob);
+      flashHint(ok ? 'Image copied — Ctrl+V on the X compose' : 'Tweet opened — type your message');
+      return;
+    }
+    if (navigator.canShare && navigator.share) {
+      try {
+        const blob = await captureCard();
+        if (blob) {
+          const file = new File([blob], 'roki-zen-score.png', { type: 'image/png' });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file], text, title: 'ROKI ZEN' });
+            return;
+          }
+        }
+        await navigator.share({ text, title: 'ROKI ZEN' }); return;
+      } catch (e) { if (e && e.name === 'AbortError') return; }
+    }
+    window.location.href = TWITTER_INTENT + '?text=' + encodeURIComponent(text);
+  });
+  console.log('[share] handler attached');
+})();
+
+// ===== Cut-style picker =====
+(function () {
+  window.__cutStyle = localStorage.getItem('roki-cut-style') || 'sumi';
+  const picker = document.getElementById('cut-style-picker');
+  if (!picker) return;
+  const chips = picker.querySelectorAll('.chip');
+  const sync = () => {
+    chips.forEach(c => c.classList.toggle('active', c.dataset.variant === window.__cutStyle));
+  };
+  sync();
+  chips.forEach(c => c.addEventListener('click', () => {
+    window.__cutStyle = c.dataset.variant;
+    localStorage.setItem('roki-cut-style', window.__cutStyle);
+    sync();
+    // Preview-flash the variant immediately so users see what they picked
+    countdownEl.textContent = 'CUT';
+    countdownEl.classList.remove('hidden', 'cut-frame', 'var-sumi', 'var-slash', 'var-stamp');
+    void countdownEl.offsetWidth;
+    countdownEl.classList.add('cut-frame', 'var-' + window.__cutStyle);
+    clearTimeout(window.__cutPreviewT);
+    window.__cutPreviewT = setTimeout(() => {
+      if (State.phase !== 'countdown') {
+        countdownEl.classList.add('hidden');
+      }
+    }, 700);
+  }));
+})();
+
+// ===== Boot =====
+resize();
+startLoop();
+
+// ===== Mobile carousel dot tracking =====
+(function () {
+  const carousel = document.getElementById('attempts');
+  const dotsEls = document.querySelectorAll('#carousel-dots .cdot');
+  if (!carousel || !dotsEls.length) return;
+  const cards = [
+    document.getElementById('att-1'),
+    document.getElementById('att-2'),
+    document.getElementById('att-3'),
+  ];
+  function setActive(i) {
+    dotsEls.forEach((d, k) => d.classList.toggle('active', k === i));
+  }
+  // Click a dot to scroll to that card
+  dotsEls.forEach((d) => {
+    d.addEventListener('click', () => {
+      const idx = parseInt(d.dataset.idx, 10);
+      const card = cards[idx];
+      if (!card) return;
+      card.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    });
+  });
+  // Track scroll position to update active dot
+  let raf = null;
+  carousel.addEventListener('scroll', () => {
+    if (raf) return;
+    raf = requestAnimationFrame(() => {
+      raf = null;
+      const cRect = carousel.getBoundingClientRect();
+      const cCenter = cRect.left + cRect.width / 2;
+      let bestIdx = 0, bestDist = Infinity;
+      cards.forEach((card, i) => {
+        if (!card) return;
+        const r = card.getBoundingClientRect();
+        const center = r.left + r.width / 2;
+        const dist = Math.abs(center - cCenter);
+        if (dist < bestDist) { bestDist = dist; bestIdx = i; }
+      });
+      setActive(bestIdx);
+    });
+  }, { passive: true });
+})();
+</script>
+
+</body>
+</html>

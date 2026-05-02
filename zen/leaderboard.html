@@ -472,6 +472,13 @@
     .quote-strip .qtxt { font-size: 12.5px; }
   }
 
+  .brand-logo img,
+  .quote-strip .rlogo img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    border-radius: inherit;
+    display: block;
+  }
   .podium-avatar img.tier-pic,
   .row-avatar img.tier-pic {
     width: 100%; height: 100%;
@@ -479,14 +486,6 @@
     object-position: center 30%;
     display: block;
     border-radius: 50%;
-  }
-
-  .brand-logo img,
-  .quote-strip .rlogo img {
-    width: 100%; height: 100%;
-    object-fit: cover;
-    border-radius: inherit;
-    display: block;
   }
 </style>
 </head>
@@ -662,16 +661,15 @@ function rabbitSvg() {
 }
 
 // Returns an <img> for the tier mascot used as the player's avatar.
-// Tier names come from the data: Legendary, Elite, Warrior, Adept, Beginner.
-// We have 4 mascot files; Adept falls back to the warrior mascot.
+// 4 mascot files; Adept maps to the warrior mascot.
 function tierImage(tier) {
   const t = (tier || '').toLowerCase();
   let file;
-  if (t === 'legendary')      file = 'tier-legendary.png';
-  else if (t === 'elite')     file = 'tier-elite.png';
-  else if (t === 'warrior')   file = 'tier-warrior.png';
-  else if (t === 'adept')     file = 'tier-warrior.png';
-  else                        file = 'tier-beginner.png';
+  if (t === 'legendary')   file = 'tier-legendary.png';
+  else if (t === 'elite')  file = 'tier-elite.png';
+  else if (t === 'warrior') file = 'tier-warrior.png';
+  else if (t === 'adept')  file = 'tier-warrior.png';
+  else                     file = 'tier-beginner.png';
   return `<img class="tier-pic" src="../assets/${file}" alt="${tier} tier mascot" loading="lazy"/>`;
 }
 
@@ -735,4 +733,30 @@ function renderYou(period) {
   document.getElementById('you-avatar').innerHTML = tierImage(y.tier);
   document.getElementById('you-prec').innerHTML = y.prec.toFixed(0) + '<span class="u">%</span>';
   document.getElementById('you-react').innerHTML = y.react + '<span class="u">ms</span>';
-  doc
+  document.getElementById('you-streak').textContent = y.streak + '/3';
+  const youRow = document.getElementById('you-row');
+  const badge = youRow.querySelector('.badge');
+  badge.textContent = y.tier;
+  badge.className = 'badge ' + tierBadgeClass(y.tier);
+}
+
+function selectPeriod(period) {
+  document.querySelectorAll('.period-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.period === period);
+  });
+  const rows = datasets[period];
+  renderPodium(rows);
+  renderList(rows);
+  renderYou(period);
+}
+
+document.querySelectorAll('.period-tab').forEach(b => {
+  b.addEventListener('click', () => selectPeriod(b.dataset.period));
+});
+
+// initial render
+selectPeriod('alltime');
+</script>
+
+</body>
+</html>
