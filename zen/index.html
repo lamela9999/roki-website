@@ -1118,7 +1118,7 @@
     <!-- ========== FINAL ZEN CARD ========== -->
     <aside class="final-card">
       <span class="crown-top">♛</span>
-      <div class="final-head">Final Zen Card</div>
+      <div class="final-head"><span>Final Zen Card</span> <span style="float:right;font-family:'JetBrains Mono',monospace;color:var(--red);letter-spacing:0.5px;text-transform:lowercase" id="final-handle">@—</span></div>
       <div class="final-row">
         <div class="final-score-block">
           <div class="lbl">Final Score</div>
@@ -3219,6 +3219,129 @@ document.getElementById('play-quit').addEventListener('click', () => {
   overlay.classList.add('hidden');
   State.phase = 'idle';
 });
+
+// ===== Player store (localStorage) + Username modal =====
+const Player = (function () {
+  const KEY_NAME = 'roki_zen_username';
+  const KEY_DATA = 'roki_zen_player_data';
+
+  function getName() { try { return localStorage.getItem(KEY_NAME) || ''; } catch (e) { return ''; } }
+  function setName(name) { try { localStorage.setItem(KEY_NAME, name); } catch (e) {} }
+
+  function getData() {
+    try {
+      const raw = localStorage.getItem(KEY_DATA);
+      if (!raw) return defaultData();
+      const d = JSON.parse(raw);
+      return Object.assign(defaultData(), d);
+    } catch (e) { return defaultData(); }
+  }
+  function defaultData() {
+    return { matches: 0, bestScore: 0, totalScore: 0, bestPrec: 0, bestReact: null, bestStreak: 0, lastTier: 'Beginner', lastPlayed: 0 };
+  }
+  function saveData(d) { try { localStorage.setItem(KEY_DATA, JSON.stringify(d)); } catch (e) {} }
+
+  function recordMatch({ score, avgPrec, avgReact, bestStreak, tier }) {
+    const d = getData();
+    d.matches += 1;
+    d.totalScore += score;
+    if (score > d.bestScore) d.bestScore = score;
+    if (avgPrec > d.bestPrec) d.bestPrec = avgPrec;
+    if (avgReact && (d.bestReact == null || avgReact < d.bestReact)) d.bestReact = avgReact;
+    if (bestStreak > d.bestStreak) d.bestStreak = bestStreak;
+    d.lastTier = tier;
+    d.lastPlayed = Date.now();
+    saveData(d);
+    return d;
+  }
+
+  function showUsernameModal(opts) {
+    return new Promise((resolve) => {
+      const cur = (opts && opts.current) || getName() || '';
+      const wrap = document.createElement('div');
+      wrap.id = 'username-modal';
+      wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.78);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px';
+      wrap.innerHTML = `
+        <div style="background:#FBF4E6;border:2px solid #111;border-radius:14px;box-shadow:6px 6px 0 #111;max-width:360px;width:100%;padding:22px 22px 18px;text-align:center;font-family:Archivo,sans-serif">
+          <div style="font-family:'Archivo Black',sans-serif;font-size:20px;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px">Enter the Dojo</div>
+          <div style="color:#6B6258;font-size:13px;line-height:1.5;margin-bottom:14px">Pick a handle. It's saved on your device and shown on your scores.</div>
+          <input id="username-input" type="text" maxlength="20" placeholder="@yourname" value="${cur}" style="width:100%;padding:12px 14px;font:600 14px/1 'JetBrains Mono',monospace;border:1.5px solid #111;border-radius:8px;background:#FBF4E6;color:#111;outline:none;text-align:center;letter-spacing:1px;box-shadow:inset 2px 2px 0 rgba(0,0,0,0.04)"/>
+          <div id="username-err" style="color:#E63946;font-size:11px;letter-spacing:1px;margin-top:8px;min-height:14px;text-transform:uppercase;font-weight:700"></div>
+          <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
+            <button id="username-save" style="background:#E63946;color:#fff;border:1.5px solid #111;border-radius:8px;padding:10px 22px;font-family:Archivo,sans-serif;font-weight:800;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;box-shadow:0 3px 0 #111">Begin</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(wrap);
+      const input = wrap.querySelector('#username-input');
+      const err = wrap.querySelector('#username-err');
+      const btn = wrap.querySelector('#username-save');
+      input.focus();
+      function commit() {
+        let name = (input.value || '').trim().replace(/^@+/, '');
+        if (!name) { err.textContent = 'Pick a handle.'; return; }
+        if (name.length < 2) { err.textContent = 'Min 2 characters.'; return; }
+        if (!/^[A-Za-z0-9_.]+$/.test(name)) { err.textContent = 'Letters, numbers, _ . only.'; return; }
+        setName(name);
+        wrap.remove();
+        resolve('@' + name);
+      }
+      btn.addEventListener('click', commit);
+      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') commit(); });
+    });
+  }
+
+  async function ensureName() {
+    let n = getName();
+    if (n) return '@' + n;
+    return await showUsernameModal({});
+  }
+
+  function refreshHandleDisplay() {
+    const el = document.getElementById('final-handle');
+    if (!el) return;
+    const n = getName();
+    el.textContent = n ? '@' + n : '@—';
+  }
+
+  return { getName, setName, getData, saveData, recordMatch, showUsernameModal, ensureName, refreshHandleDisplay };
+})();
+
+// Show username modal on first visit, then keep handle visible
+(async function () {
+  await Player.ensureName();
+  Player.refreshHandleDisplay();
+})();
+
+// Hook into endMatch — after it runs, persist this match and update display.
+// We wrap by overriding endMatch with a thin wrapper that calls original then records.
+(function wireScoreSave() {
+  if (typeof endMatch !== 'function') return;
+  const _origEndMatch = endMatch;
+  window.endMatch = function () {
+    const result = _origEndMatch.apply(this, arguments);
+    try {
+      const score = (typeof State !== 'undefined') ? State.totalScore : 0;
+      const tier = (document.getElementById('final-rank') || {}).textContent || 'Beginner';
+      // Aggregate from State.results since endMatch already computed but didn't expose
+      let precSum = 0, n = 0, reactSum = 0, reactN = 0, streak = 0, bestStreak = 0;
+      for (const r of (State && State.results) || []) {
+        if (!r) continue;
+        n++;
+        precSum += r.positionScore || 0;
+        if (Number.isFinite(r.reactionMs)) { reactSum += r.reactionMs; reactN++; }
+        if (!r.missed) { streak++; bestStreak = Math.max(bestStreak, streak); } else { streak = 0; }
+      }
+      const avgPrec = n ? (precSum / n) * 100 : 0;
+      const avgReact = reactN ? Math.round(reactSum / reactN) : null;
+      Player.recordMatch({ score, avgPrec, avgReact, bestStreak, tier });
+      Player.refreshHandleDisplay();
+    } catch (e) { console.warn('[player] save failed:', e); }
+    return result;
+  };
+  // Also redirect any new direct refs (the file calls endMatch() directly, so global var is fine)
+})();
+
 // ===== Share to X =====
 (function setupShare() {
   const btn = document.getElementById('share-btn');

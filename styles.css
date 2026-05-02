@@ -893,67 +893,71 @@ a { color: inherit; text-decoration: none; }
 }
 /* Mobile-only nav buttons hidden by default */
 .nav-cta-mobile { display: none !important; }
+.nav-cta-mobile-burger { display: none !important; }
 .nav-burger-menu { display: none; }
 
 @media (max-width: 480px) {
   .crew-grid { grid-template-columns: repeat(2, 1fr); }
 
-  /* Bigger brand on mobile per design */
+  /* Bigger brand on mobile */
   .nav-brand .brand-name { font-size: 28px !important; letter-spacing: -0.01em; }
   .nav-brand .brand-mark { width: 48px !important; height: 48px !important; }
-  .nav { gap: 10px; }
 
   /* Hide desktop nav-tabs and Join Crew */
   .nav-links { display: none !important; }
-  .nav-cta { display: flex !important; align-items: center; gap: 12px; }
+  .nav-cta { display: flex !important; align-items: center; gap: 8px; margin-left: auto; }
   .nav-cta-desktop { display: none !important; }
 
   /* Show mobile-only items */
-  .nav-cta-mobile { display: inline-flex !important; text-decoration: none; }
+  .nav-cta-mobile { display: inline-flex !important; align-items: center; justify-content: center; text-decoration: none !important; }
 
-  /* ZEN — primary red pill */
+  /* Both ZEN + DOCS share the .btn shape (border/radius/shadow already on .btn).
+     We just override colors per role. */
+
+  /* ZEN — red bg + white text */
   .nav-cta-mobile.btn-primary {
-    color: #ffffff;
-    padding: 9px 16px;
-    font-size: 13px;
-    font-weight: 800;
-    letter-spacing: 0.12em;
+    background: var(--coral) !important;
+    color: #ffffff !important;
+    padding: 9px 18px !important;
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.14em !important;
   }
-  .nav-cta-mobile.btn-primary span { color: #ffffff; }
+  .nav-cta-mobile.btn-primary span { color: #ffffff !important; }
 
-  /* DOCS — plain text link, no button chrome */
-  .nav-cta-mobile-text {
-    background: transparent;
-    border: none;
-    box-shadow: none;
-    padding: 6px 8px !important;
-    font-family: var(--font-body, 'Inter Tight', sans-serif);
-    font-size: 13px;
-    font-weight: 800;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+  /* DOCS — paper bg + ink text (same shape as ZEN, different color) */
+  .nav-cta-mobile.nav-cta-mobile-secondary {
+    background: var(--paper) !important;
     color: var(--ink) !important;
+    border: 1.5px solid var(--ink) !important;
+    padding: 9px 18px !important;
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.14em !important;
+    box-shadow: none !important;
   }
-  .nav-cta-mobile-text span { color: var(--ink) !important; }
-  .nav-cta-mobile-text:hover { background: rgba(20,17,15,0.06); border-radius: 6px; box-shadow: none; }
+  .nav-cta-mobile.nav-cta-mobile-secondary span { color: var(--ink) !important; }
 
-  /* Hamburger icon button */
+  /* Hamburger — strip iOS default blue, paint ink */
   .nav-cta-mobile-burger {
+    display: inline-flex !important;
+    align-items: center; justify-content: center;
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
-    padding: 6px !important;
-    color: var(--ink);
+    padding: 6px 4px !important;
+    color: var(--ink) !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
     cursor: pointer;
-    display: inline-flex !important;
-    align-items: center; justify-content: center;
-    transform: none;
   }
+  .nav-cta-mobile-burger svg { color: var(--ink) !important; stroke: var(--ink) !important; }
   .nav-cta-mobile-burger:hover { background: rgba(20,17,15,0.06) !important; border-radius: 6px; }
-  .nav-cta-mobile-burger:active { transform: none; box-shadow: none !important; }
-  .nav-cta-mobile-burger.open { background: var(--ink) !important; color: var(--cream); }
+  .nav-cta-mobile-burger:active { transform: none !important; box-shadow: none !important; }
+  .nav-cta-mobile-burger.open { background: var(--ink) !important; border-radius: 6px; }
+  .nav-cta-mobile-burger.open svg { color: var(--cream) !important; stroke: var(--cream) !important; }
 
-  /* Dropdown menu (opened by burger) */
+  /* Dropdown panel */
   .nav-burger-menu {
     display: flex !important;
     flex-direction: column;
@@ -977,7 +981,7 @@ a { color: inherit; text-decoration: none; }
     font-weight: 800;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--ink);
+    color: var(--ink) !important;
     text-decoration: none;
     border-radius: 8px;
   }

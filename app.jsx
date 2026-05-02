@@ -84,7 +84,7 @@ const Nav = () => {
       <a href="zen/" className="btn btn-primary nav-cta-mobile">
         <span>Zen</span>
       </a>
-      <a href="docs/index.html" className="nav-cta-mobile nav-cta-mobile-text">
+      <a href="docs/index.html" className="btn nav-cta-mobile nav-cta-mobile-secondary">
         <span>Docs</span>
       </a>
       <button className="nav-cta-mobile nav-cta-mobile-burger" id="mobile-burger" aria-label="Menu">

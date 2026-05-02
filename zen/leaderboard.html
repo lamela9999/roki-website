@@ -726,14 +726,65 @@ function renderList(rows) {
   `).join('');
 }
 
+
+// ===== Player store (read-only on this page) =====
+const Player = (function () {
+  const KEY_NAME = 'roki_zen_username';
+  const KEY_DATA = 'roki_zen_player_data';
+  function getName() { try { return localStorage.getItem(KEY_NAME) || ''; } catch (e) { return ''; } }
+  function getData() {
+    try {
+      const raw = localStorage.getItem(KEY_DATA);
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch (e) { return null; }
+  }
+  function tierFromScore(s) {
+    if (s >= 270) return 'Legendary';
+    if (s >= 200) return 'Elite';
+    if (s >= 100) return 'Adept';
+    return 'Beginner';
+  }
+  return { getName, getData, tierFromScore };
+})();
+
+// Compute the player's actual rank by inserting their bestScore into the period's rows.
+function realYou(period) {
+  const data = Player.getData();
+  const name = Player.getName();
+  const rows = datasets[period] || [];
+  if (!data || !data.bestScore) {
+    // No data yet — fall back to mock
+    return Object.assign({}, youByPeriod[period], { name: name ? name.toUpperCase() : 'YOU', handle: name ? '@' + name : '@you' });
+  }
+  // Find what rank you'd hold among the mock rows
+  const score = data.bestScore;
+  let rank = 1;
+  for (const r of rows) { if (r.score > score) rank++; }
+  // If beyond the visible list, give an approximate position past the last shown rank
+  if (rank > rows.length) rank = rows.length + Math.floor(Math.random() * 50) + 1; // visual placeholder
+  return {
+    rank: rank,
+    name: name ? name.toUpperCase() : 'YOU',
+    handle: name ? '@' + name : '@you',
+    score: score,
+    prec: data.bestPrec || 0,
+    react: data.bestReact || 0,
+    streak: data.bestStreak || 0,
+    tier: data.lastTier || Player.tierFromScore(score),
+  };
+}
 function renderYou(period) {
-  const y = youByPeriod[period];
+  const y = realYou(period);
   document.getElementById('you-rank').textContent = '#' + y.rank;
   document.getElementById('you-score').textContent = y.score;
   document.getElementById('you-avatar').innerHTML = tierImage(y.tier);
-  document.getElementById('you-prec').innerHTML = y.prec.toFixed(0) + '<span class="u">%</span>';
-  document.getElementById('you-react').innerHTML = y.react + '<span class="u">ms</span>';
-  document.getElementById('you-streak').textContent = y.streak + '/3';
+  // Show real name + handle
+  const nameEl = document.querySelector('#you-row .row-name');
+  if (nameEl) nameEl.innerHTML = y.name + '<span class="handle">' + y.handle + '</span>';
+  document.getElementById('you-prec').innerHTML = (y.prec || 0).toFixed(0) + '<span class="u">%</span>';
+  document.getElementById('you-react').innerHTML = (y.react || 0) + '<span class="u">ms</span>';
+  document.getElementById('you-streak').textContent = (y.streak || 0) + '/3';
   const youRow = document.getElementById('you-row');
   const badge = youRow.querySelector('.badge');
   badge.textContent = y.tier;
