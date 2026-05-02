@@ -41,7 +41,27 @@ const BrandMark = ({ size = 42 }) => (
   </span>
 );
 
-const Nav = () => (
+const Nav = () => {
+  useEffect(() => {
+    const btn = document.getElementById('mobile-burger');
+    const menu = document.getElementById('nav-burger-menu');
+    if (!btn || !menu) return;
+    const close = () => { menu.hidden = true; btn.classList.remove('open'); };
+    const open  = () => { menu.hidden = false; btn.classList.add('open'); };
+    const toggle = (e) => { e.stopPropagation(); menu.hidden ? open() : close(); };
+    const onDocClick = (e) => {
+      if (menu.hidden) return;
+      if (!menu.contains(e.target) && e.target !== btn) close();
+    };
+    btn.addEventListener('click', toggle);
+    document.addEventListener('click', onDocClick);
+    menu.querySelectorAll('a').forEach(a => a.addEventListener('click', close));
+    return () => {
+      btn.removeEventListener('click', toggle);
+      document.removeEventListener('click', onDocClick);
+    };
+  }, []);
+  return (
   <nav className="nav">
     <a href="#home" className="nav-brand">
       <BrandMark size={42}/>
@@ -64,12 +84,27 @@ const Nav = () => (
       <a href="zen/" className="btn btn-primary nav-cta-mobile">
         <span>Zen</span>
       </a>
-      <a href="docs/index.html" className="btn nav-cta-mobile nav-cta-mobile-secondary">
+      <a href="docs/index.html" className="nav-cta-mobile nav-cta-mobile-text">
         <span>Docs</span>
       </a>
+      <button className="nav-cta-mobile nav-cta-mobile-burger" id="mobile-burger" aria-label="Menu">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+          <path d="M3 7h18"/><path d="M3 12h18"/><path d="M3 17h18"/>
+        </svg>
+      </button>
+    </div>
+    <div className="nav-burger-menu" id="nav-burger-menu" hidden>
+      <a href="#home">Home</a>
+      <a href="#about">About</a>
+      <a href="zen/">Zen</a>
+      <a href="zen/leaderboard.html">Rankings</a>
+      <a href="docs/index.html#lock">Docs</a>
+      <a href="#roadmap">Roadmap</a>
+      <a href="https://x.com/rokitherabbit" target="_blank" rel="noopener noreferrer">Join Crew</a>
     </div>
   </nav>
-);
+  );
+};
 
 
 const CAStrip = () => {
