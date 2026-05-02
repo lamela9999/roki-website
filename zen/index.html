@@ -880,7 +880,111 @@
     .play-actions .lbl-set { font-size: 9.5px; letter-spacing: 1.4px; flex: 1; text-align: center; }
     .play-quit { padding: 5px 10px; font-size: 10px; }
   }
+
+  .brand-logo img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    border-radius: inherit;
+    display: block;
+  }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js">
+// ===== Share to X =====
+(function setupShare() {
+  const btn = document.getElementById('share-btn');
+  if (!btn) return;
+  const SITE_URL = 'https://roki.buzz/zen';
+  const TWITTER_INTENT = 'https://twitter.com/intent/tweet';
+
+  function buildText() {
+    const score = (State && Number.isFinite(State.totalScore)) ? State.totalScore : 0;
+    const tierEl = document.getElementById('final-rank');
+    const tier = (tierEl && tierEl.textContent || '').trim() || 'Awaiting';
+    if (score === 0 || tier === 'Awaiting') {
+      return `Just played ROKI ZEN. 3 cuts. One focus.\n\nBeat my score → roki.buzz/zen\n\n$Roki $RokiZen`;
+    }
+    return `Just scored ${score}/300 on ROKI ZEN — ${tier} tier.\n3 cuts. One focus. Try to beat me.\n\nroki.buzz/zen\n\n$Roki $RokiZen`;
+  }
+
+  async function captureCard() {
+    const card = document.querySelector('.final-card');
+    if (!card || typeof html2canvas !== 'function') return null;
+    try {
+      const canvas = await html2canvas(card, {
+        backgroundColor: '#FBF4E6',
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+      return await new Promise((resolve) => canvas.toBlob(resolve, 'image/png', 0.95));
+    } catch (e) {
+      console.warn('Share card capture failed:', e);
+      return null;
+    }
+  }
+
+  async function copyToClipboard(blob) {
+    if (!blob || !navigator.clipboard || !window.ClipboardItem) return false;
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      return true;
+    } catch (e) {
+      console.warn('Clipboard write failed:', e);
+      return false;
+    }
+  }
+
+  function openTwitterIntent(text) {
+    const url = `${TWITTER_INTENT}?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+
+  function flashHint(msg) {
+    let el = document.getElementById('share-hint');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'share-hint';
+      el.style.cssText = 'position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#111;color:#FBF4E6;padding:10px 16px;border-radius:8px;font:800 12px/1.2 Archivo,sans-serif;letter-spacing:1.2px;text-transform:uppercase;box-shadow:0 4px 0 rgba(0,0,0,0.25);z-index:9999;opacity:0;transition:opacity .2s';
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    requestAnimationFrame(() => { el.style.opacity = '1'; });
+    setTimeout(() => { el.style.opacity = '0'; }, 2600);
+  }
+
+  btn.addEventListener('click', async () => {
+    const text = buildText();
+    const blob = await captureCard();
+
+    // 1. Try the native Web Share API with the image attached (mobile + some desktop)
+    if (blob && navigator.canShare && navigator.share) {
+      const file = new File([blob], 'roki-zen-score.png', { type: 'image/png' });
+      try {
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            text: text,
+            title: 'ROKI ZEN',
+          });
+          return;
+        }
+      } catch (e) {
+        if (e && e.name === 'AbortError') return; // user cancelled
+        console.warn('Web Share with files failed:', e);
+      }
+    }
+
+    // 2. Desktop fallback: copy image to clipboard, open X intent, tell user to paste.
+    const copied = await copyToClipboard(blob);
+    openTwitterIntent(text);
+    if (copied) {
+      flashHint('Image copied — press Ctrl+V on the X compose to attach');
+    } else {
+      flashHint('Tweet opened — image was too restricted to copy automatically');
+    }
+  });
+})();
+</script>
 </head>
 <body>
 
@@ -891,15 +995,7 @@
     <div class="nav-left">
       <div class="brand">
         <div class="brand-logo">
-          <!-- bunny mark -->
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M8 4 L8 11" />
-            <path d="M16 4 L16 11" />
-            <ellipse cx="12" cy="15" rx="6" ry="5.5" fill="currentColor" stroke="none"/>
-            <circle cx="9.6" cy="14.5" r="0.8" fill="#111"/>
-            <circle cx="14.4" cy="14.5" r="0.8" fill="#111"/>
-            <path d="M11 17 Q12 17.6 13 17" stroke="#111" stroke-width="1" fill="none"/>
-          </svg>
+          <img src="../assets/logo.jpg" alt="ROKI"/>
         </div>
         <div class="brand-name">ROKI<span class="zen">ZEN</span></div>
       </div>
