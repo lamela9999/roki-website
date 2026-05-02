@@ -3461,11 +3461,15 @@ const Player = (function () {
     const score = (typeof State !== 'undefined' && Number.isFinite(State.totalScore)) ? State.totalScore : 0;
     const tierEl = document.getElementById('final-rank');
     const tier = (tierEl && tierEl.textContent || '').trim() || 'Beginner';
+    const name = (typeof Player !== 'undefined' && Player.getName) ? Player.getName() : '';
+    const id   = (typeof Player !== 'undefined' && Player.getId) ? Player.getId() : '';
     const handle = (typeof Player !== 'undefined' && Player.getFullHandle) ? Player.getFullHandle() : '';
-    const slug = tierSlug(tier);
-    // Tier-specific share URL — Twitter scrapes this and renders its OG image as a link card.
-    // Random param at the end forces a unique URL so X doesn't dedupe across tweets.
-    const url = 'https://roki.buzz/zen/share/' + slug + '.html?s=' + score + '&t=' + Date.now();
+    // Dynamic OG card — title/description are per-tweet, image is the tier mascot.
+    // Cache-busted with t= so Twitter doesn't dedupe the same URL across tweets.
+    const params = new URLSearchParams({
+      score: String(score), tier: tier, name: name, id: id, t: String(Date.now()),
+    });
+    const url = 'https://roki.buzz/api/og?' + params.toString();
     let text;
     if (score === 0) {
       text = 'Just played ROKI ZEN. 3 cuts. One focus.\n' + (handle ? '— ' + handle + '\n' : '') + '\nBeat my score:\n\n$Roki $RokiZen';
