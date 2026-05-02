@@ -926,17 +926,20 @@ a { color: inherit; text-decoration: none; }
   .nav-cta-mobile.btn-primary span { color: #ffffff !important; }
 
   /* DOCS — paper bg + ink text (same shape as ZEN, different color) */
+  html .nav-cta a.nav-cta-mobile.nav-cta-mobile-secondary,
   .nav-cta-mobile.nav-cta-mobile-secondary {
-    background: var(--paper) !important;
-    color: var(--ink) !important;
-    border: 1.5px solid var(--ink) !important;
+    background: #FBF6EC !important;
+    color: #14110F !important;
+    border: 1.5px solid #14110F !important;
     padding: 9px 18px !important;
     font-size: 13px !important;
     font-weight: 800 !important;
     letter-spacing: 0.14em !important;
-    box-shadow: none !important;
+    box-shadow: 2px 2px 0 #14110F !important;
+    text-decoration: none !important;
   }
-  .nav-cta-mobile.nav-cta-mobile-secondary span { color: var(--ink) !important; }
+  html .nav-cta a.nav-cta-mobile.nav-cta-mobile-secondary span,
+  .nav-cta-mobile.nav-cta-mobile-secondary span { color: #14110F !important; }
 
   /* Hamburger — strip iOS default blue, paint ink */
   .nav-cta-mobile-burger {
@@ -951,7 +954,14 @@ a { color: inherit; text-decoration: none; }
     appearance: none !important;
     cursor: pointer;
   }
-  .nav-cta-mobile-burger svg { color: var(--ink) !important; stroke: var(--ink) !important; }
+  .nav-cta-mobile-burger,
+  .nav-cta-mobile-burger:link,
+  .nav-cta-mobile-burger:visited,
+  .nav-cta-mobile-burger:hover,
+  .nav-cta-mobile-burger:active,
+  .nav-cta-mobile-burger:focus { color: #14110F !important; }
+  .nav-cta-mobile-burger svg,
+  .nav-cta-mobile-burger svg * { color: #14110F !important; stroke: #14110F !important; fill: none !important; }
   .nav-cta-mobile-burger:hover { background: rgba(20,17,15,0.06) !important; border-radius: 6px; }
   .nav-cta-mobile-burger:active { transform: none !important; box-shadow: none !important; }
   .nav-cta-mobile-burger.open { background: var(--ink) !important; border-radius: 6px; }
