@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Roki Radar — on-chain forensic intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* ===== roki.buzz brand — mirrors styles.css ===== */
+  --cream:#F5EFE6;
+  --paper:#FBF6EC;
+  --ink:#14110F;
+  --ink-soft:#2C2824;
+  --muted:#6B6258;
+  --hairline:#E2D9CB;
+  --coral:#E8534A;
+  --coral-dark:#CF3F37;
+  --yellow:#FFDF3D;
+  --green:#25E684;
+  --blue:#2898E5;
+  --purple:#9A4EDC;
+  --orange:#FFA73F;
+  --red:#FF5959;
+  --green-ink:#0F7A45;
+  --blue-ink:#1F6FAE;
+  --orange-ink:#9A5A09;
+  --red-ink:#B02A2A;
+  --purple-ink:#6D3AA0;
+
+  /* ===== radar aliases — kept so JS-generated inline var(--brand)/etc. stay valid ===== */
+  --brand:var(--coral);
+  --brand-2:var(--coral-dark);
+  --brand-ink:var(--paper);
+  --bg:var(--cream);
+  --bg-2:#EFE7D8;
+  --surface:var(--paper);
+  --surface-2:#F1E9DA;
+  --line:var(--hairline);
+  --text:var(--ink);
+  --faint:#9A8F80;
+  --danger:var(--red);
+  --warn:var(--orange);
+  --ok:var(--green);
+  --info:var(--blue);
+  --radius:14px;
+  --radius-sm:10px;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:'Inter Tight',-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;
+  --display:'Archivo Black','Anton',sans-serif;
+  --shadow:3px 3px 0 var(--ink);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--cream)}
+body{
+  color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;overflow-x:hidden;
+}
+a{color:inherit;text-decoration:none}
+.container{max-width:1180px;margin:0 auto;padding:0 20px}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}
+.faint{color:var(--faint)}
+
+/* header — bordered "paper" nav pill, matches roki .nav */
+header.top{position:sticky;top:0;z-index:30;background:var(--cream);padding:16px 0 6px}
+.nav{display:flex;align-items:center;gap:18px;background:var(--paper);
+  border:1.5px solid var(--ink);border-radius:14px;padding:10px 14px;box-shadow:var(--shadow)}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-mark{width:42px;height:42px;flex:none;background:var(--coral);border:1.5px solid var(--ink);
+  border-radius:9px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.brand-mark img{width:100%;height:100%;object-fit:cover}
+.brand-text{line-height:1}
+.brand-name{font-family:var(--display);font-size:22px;letter-spacing:-.02em;display:flex;align-items:baseline;gap:7px}
+.brand-name .rad{color:var(--coral)}
+.brand-crown{width:18px;height:12px;color:var(--coral);margin-left:2px;filter:drop-shadow(1px 1px 0 var(--ink))}
+.brand-sub{font-size:9px;letter-spacing:.18em;font-weight:700;color:var(--muted);margin-top:4px;text-transform:uppercase}
+.navlinks{display:flex;gap:4px;margin-left:20px}
+.navlinks button{font-family:var(--sans);background:none;border:0;color:var(--ink-soft);font-size:12px;
+  font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:9px 14px;border-radius:8px;cursor:pointer}
+.navlinks button:hover{background:rgba(20,17,15,.07)}
+.navlinks button.active{color:var(--cream);background:var(--ink)}
+.spacer{flex:1}
+.pill-live{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:800;letter-spacing:.14em;
+  color:var(--muted);text-transform:uppercase;border:1.5px solid var(--ink);background:var(--paper);padding:6px 11px;border-radius:999px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(37,230,132,.5);animation:pulse 2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(37,230,132,.5)}70%{box-shadow:0 0 0 7px rgba(37,230,132,0)}100%{box-shadow:0 0 0 0 rgba(37,230,132,0)}}
+
+/* hero */
+.hero{padding:46px 0 22px}
+.hero h1{font-family:var(--display);font-size:clamp(40px,6vw,64px);line-height:.95;margin:0 0 16px;
+  letter-spacing:-.03em;text-transform:uppercase;color:var(--ink)}
+.hero h1 span{color:var(--coral)}
+.hero p{font-size:16px;color:var(--ink-soft);max-width:660px;margin:0 0 24px;line-height:1.55}
+
+/* search */
+.searchbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.searchbox{flex:1;min-width:280px;display:flex;align-items:center;gap:10px;background:var(--paper);
+  border:1.5px solid var(--ink);border-radius:11px;padding:0 14px;height:52px;box-shadow:var(--shadow)}
+.searchbox input{flex:1;background:none;border:0;outline:0;color:var(--ink);font-size:15px;font-family:var(--mono)}
+.searchbox input::placeholder{color:var(--faint)}
+.btn{font-family:var(--sans);cursor:pointer;border-radius:9px;font-weight:800;font-size:12px;letter-spacing:.14em;
+  text-transform:uppercase;padding:0 20px;height:52px;border:1.5px solid var(--ink);background:var(--paper);color:var(--ink);
+  transition:transform .12s,box-shadow .12s,background .15s}
+.btn:hover{transform:translate(-1px,-1px);box-shadow:var(--shadow)}
+.btn:active{transform:translate(1px,1px);box-shadow:none}
+.btn.primary{background:var(--coral);color:var(--paper);border-color:var(--ink)}
+.btn.primary:hover{background:var(--coral-dark)}
+.btn.small{height:38px;padding:0 14px;font-size:11px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.chip{cursor:pointer;font-size:12px;color:var(--ink-soft);border:1.5px solid var(--ink);background:var(--paper);
+  padding:6px 11px;border-radius:999px;font-family:var(--mono);font-weight:600;transition:transform .1s,box-shadow .1s,color .15s}
+.chip:hover{transform:translate(-1px,-1px);box-shadow:2px 2px 0 var(--ink);color:var(--coral)}
+
+/* sections / cards */
+section.view{display:none;padding:26px 0 70px}
+section.view.active{display:block}
+section.view > h1{font-family:var(--display);text-transform:uppercase;letter-spacing:-.01em;line-height:1.04}
+.grid{display:grid;gap:16px}
+.card{background:var(--paper);border:1.5px solid var(--ink);border-radius:var(--radius);padding:18px}
+.card h3{margin:0 0 4px;font-size:14px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;font-family:var(--sans)}
+.card .sub{font-size:11px;color:var(--muted);margin:0 0 14px;letter-spacing:.04em;text-transform:uppercase;font-weight:700}
+.klabel{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:800}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+
+/* lens selector */
+.lensbar{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 22px}
+.lens{cursor:pointer;border:1.5px solid var(--ink);background:var(--paper);border-radius:10px;
+  padding:9px 13px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);
+  display:flex;align-items:center;gap:8px;transition:transform .1s,box-shadow .1s,background .15s}
+.lens:hover{transform:translate(-1px,-1px);box-shadow:2px 2px 0 var(--ink)}
+.lens.active{color:var(--ink);background:var(--yellow);box-shadow:2px 2px 0 var(--ink)}
+.lens .ico{width:8px;height:8px;border-radius:50%;background:var(--muted);border:1px solid var(--ink)}
+.lens.active .ico{background:var(--coral)}
+
+/* gauge */
+.scanhead{display:grid;grid-template-columns:200px 1fr;gap:22px;align-items:center}
+.gauge-wrap{text-align:center}
+.gscore{font-size:44px;font-weight:700;line-height:1;font-family:var(--mono)}
+.gtier{font-family:var(--display);font-size:13px;margin-top:8px;letter-spacing:.1em;text-transform:uppercase}
+
+/* narrator — case-file verdict */
+.narrator{border:1.5px solid var(--ink);border-left:5px solid var(--coral);background:var(--cream);
+  border-radius:0 12px 12px 0;padding:16px 18px;margin-top:6px}
+.narrator .who{display:flex;align-items:center;gap:9px;font-size:10px;color:var(--muted);margin-bottom:9px;
+  font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+.narrator p{margin:0;font-size:15px;line-height:1.62;color:var(--ink-soft)}
+.narrator b{color:var(--ink);font-weight:700}
+.conf{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-top:12px;
+  border:1.5px solid var(--ink);background:var(--paper);padding:4px 10px;border-radius:999px;font-weight:700;letter-spacing:.04em}
+
+/* safety panel */
+.safegrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.safe{background:var(--cream);border:1.5px solid var(--ink);border-radius:10px;padding:12px 13px}
+.safe .v{font-size:15px;font-weight:700;margin-top:5px;display:flex;align-items:center;gap:7px}
+.tick{width:9px;height:9px;border-radius:50%;border:1px solid var(--ink);flex:none}
+.good{background:var(--green)} .bad{background:var(--red)} .mid{background:var(--orange)}
+
+/* badges */
+.badge{font-size:10px;font-weight:800;padding:3px 9px;border-radius:999px;border:1.5px solid var(--ink);
+  letter-spacing:.1em;text-transform:uppercase;display:inline-flex;align-items:center;line-height:1.4}
+.b-self{background:rgba(40,152,229,.18);color:var(--blue-ink)}
+.b-coll{background:rgba(255,167,63,.24);color:var(--orange-ink)}
+.b-dirty{background:rgba(255,89,89,.2);color:var(--red-ink)}
+.b-clean{background:rgba(37,230,132,.24);color:var(--green-ink)}
+.b-class{background:var(--cream);color:var(--ink-soft)}
+
+/* entity */
+.entity{background:var(--paper);border:1.5px solid var(--ink);border-radius:var(--radius);padding:16px 18px;
+  margin-bottom:14px;box-shadow:var(--shadow)}
+.entity .top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.members{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.wchip{font-family:var(--mono);font-size:11px;color:var(--ink-soft);background:var(--cream);
+  border:1.5px solid var(--ink);padding:3px 8px;border-radius:6px}
+.sigrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:9px;margin-top:14px}
+.sig{font-size:11px}
+.sig .lab{display:flex;justify-content:space-between;color:var(--muted);margin-bottom:4px;font-weight:600}
+.bar{height:8px;border-radius:3px;background:var(--cream);border:1.5px solid var(--ink);overflow:hidden}
+.bar > i{display:block;height:100%;background:var(--coral)}
+.entity .stats{display:flex;gap:22px;flex-wrap:wrap;margin-top:14px;padding-top:13px;border-top:1.5px solid var(--ink)}
+.stat .n{font-size:18px;font-weight:700;font-family:var(--mono)}
+.stat .l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;font-weight:700}
+
+/* funding */
+.funline{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--hairline);font-size:13.5px}
+.funline:last-child{border-bottom:0}
+.origin{font-size:10px;font-weight:800;padding:3px 9px;border-radius:6px;border:1.5px solid var(--ink);letter-spacing:.08em;text-transform:uppercase}
+.o-cex{background:rgba(40,152,229,.18);color:var(--blue-ink)}
+.o-bridge{background:rgba(154,78,220,.18);color:var(--purple-ink)}
+.o-deployer{background:rgba(255,89,89,.2);color:var(--red-ink)}
+.o-insider{background:rgba(255,167,63,.24);color:var(--orange-ink)}
+.o-fresh{background:var(--cream);color:var(--muted)}
+
+/* tables */
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);
+  font-weight:800;padding:11px 12px;border-bottom:1.5px solid var(--ink);background:var(--cream)}
+td{padding:11px 12px;border-bottom:1px solid var(--hairline)}
+tr:hover td{background:var(--cream)}
+.num{font-family:var(--mono);text-align:right}
+.pos{color:var(--green-ink)} .neg{color:var(--red-ink)}
+.boardtabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.boardtabs button{cursor:pointer;font-family:var(--sans);font-size:11px;font-weight:800;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-soft);background:var(--paper);border:1.5px solid var(--ink);border-radius:9px;
+  padding:9px 13px;transition:transform .1s,box-shadow .1s,background .15s}
+.boardtabs button:hover{transform:translate(-1px,-1px);box-shadow:2px 2px 0 var(--ink)}
+.boardtabs button.active{color:var(--paper);background:var(--ink)}
+
+/* note / honesty */
+.note{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;margin-top:10px}
+footer.site{border-top:1.5px solid var(--ink);margin-top:30px;padding:22px 0;color:var(--muted);font-size:12px}
+footer.site b{color:var(--coral)}
+.flex{display:flex} .between{justify-content:space-between} .center{align-items:center}
+.gap8{gap:8px}.gap12{gap:12px}.wrap{flex-wrap:wrap}
+.mt8{margin-top:8px}.mt16{margin-top:16px}.mt24{margin-top:24px}
+.hidden{display:none}
+.disclaim{background:var(--cream);border:1.5px solid var(--ink);border-radius:10px;padding:11px 14px;
+  font-size:12.5px;color:var(--ink-soft);display:flex;gap:9px;align-items:center}
+@media(max-width:720px){.scanhead{grid-template-columns:1fr}.hero h1{font-size:34px}.navlinks{display:none}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="container">
+    <div class="nav">
+      <a class="brand" href="/Roki.html" title="Back to roki.buzz">
+        <span class="brand-mark"><img src="assets/logo-head.png" alt="Roki"/></span>
+        <span class="brand-text">
+          <span class="brand-name">ROKI<span class="rad">RADAR</span>
+            <svg class="brand-crown" viewBox="0 0 26 18" fill="currentColor" stroke="currentColor" stroke-width="0.5" stroke-linejoin="round" aria-hidden="true"><path d="M2 16 L4 4 L9 10 L13 2 L17 10 L22 4 L24 16 Z"/></svg>
+          </span>
+          <span class="brand-sub">on-chain forensics</span>
+        </span>
+      </a>
+      <nav class="navlinks" id="nav">
+        <button data-view="scan" class="active">Scan</button>
+        <button data-view="entities">Entities</button>
+        <button data-view="boards">Leaderboards</button>
+        <button data-view="wallet">Wallet</button>
+        <button data-view="about">About</button>
+      </nav>
+      <div class="spacer"></div>
+      <div class="pill-live"><span class="dot"></span> read-only</div>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+
+  <!-- SCAN -->
+  <section class="view active" id="view-scan">
+    <div class="hero">
+      <h1>See who's <span>really</span> behind the token.</h1>
+      <p>Roki Radar re-merges wallets into entities, scores rug and coordination risk, and turns the on-chain signals into a plain-English verdict. Splitting a position across wallets to look clean is the number-one dodge. We undo it.</p>
+      <div class="searchbar">
+        <div class="searchbox">
+          <span class="faint mono">mint</span>
+          <input id="mintInput" placeholder="paste a token mint address..." spellcheck="false"/>
+        </div>
+        <button class="btn primary" onclick="runScan()">Run scan</button>
+      </div>
+      <div class="chips" id="presetChips"></div>
+    </div>
+
+    <div class="lensbar" id="lensbar"></div>
+    <div id="scanResult"></div>
+  </section>
+
+  <!-- ENTITIES -->
+  <section class="view" id="view-entities">
+    <div class="row" style="margin-bottom:6px">
+      <div><h1 style="font-size:24px;margin:0">Resolved entities</h1>
+      <p class="muted" style="margin:6px 0 0;font-size:14px">Wallets merged by the six pairwise signals, combined with a noisy-OR. Every merge shows its confidence and the signals that produced it.</p></div>
+    </div>
+    <div class="lensbar" style="margin-top:18px">
+      <div class="disclaim" style="width:100%"><span class="tick good"></span>
+      <span>Tier rule: edges &ge; 0.85 union-find merge as a <b>self</b> entity; 0.50&ndash;0.85 Louvain communities as <b>collusion</b>. Self vs collusion is then decided by independence, not edge strength alone.</span></div>
+    </div>
+    <div id="entityList" class="mt16"></div>
+  </section>
+
+  <!-- BOARDS -->
+  <section class="view" id="view-boards">
+    <h1 style="font-size:24px;margin:0 0 6px">Leaderboards</h1>
+    <p class="muted" style="margin:0 0 18px;font-size:14px">Ranked at the <b>entity</b> level on noise-corrected plus-minus. We always show raw, n, and adjusted together so three lucky trades can't top the board.</p>
+    <div class="boardtabs" id="boardtabs"></div>
+    <div class="card" style="padding:0;overflow:hidden"><div id="boardTable"></div></div>
+    <div class="note"><span class="tick good"></span> <span id="boardNote"></span></div>
+  </section>
+
+  <!-- WALLET -->
+  <section class="view" id="view-wallet">
+    <h1 style="font-size:24px;margin:0 0 6px">Wallet lookup</h1>
+    <p class="muted" style="margin:0 0 16px;font-size:14px">Resolve a wallet to its entity, classification, plus-minus, and any linked X identity.</p>
+    <div class="searchbar" style="margin-bottom:8px">
+      <div class="searchbox"><span class="faint mono">addr</span>
+        <input id="walletInput" placeholder="paste a wallet address..." spellcheck="false"/></div>
+      <button class="btn primary" onclick="runWallet()">Look up</button>
+    </div>
+    <div class="chips" id="walletChips"></div>
+    <div id="walletResult" class="mt24"></div>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="view" id="view-about">
+    <h1 style="font-size:24px;margin:0 0 10px">How Roki Radar works</h1>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">
+      <div class="card"><div class="klabel">1 · Ingest</div><h3 class="mt8">Parsed transactions</h3><p class="muted" style="font-size:13.5px;margin:0">Pull parsed Solana history (Helius), build a directed transfer graph, and strip hubs (DEXs, routers, CEXs) before any clustering. Skipping that collapses the graph into one blob.</p></div>
+      <div class="card"><div class="klabel">2 · Resolve</div><h3 class="mt8">Entity resolution</h3><p class="muted" style="font-size:13.5px;margin:0">Six signals - shared rent, Jito bundles, direct transfers, shared funders, time-sync, fingerprint - combine with a noisy-OR. Independence splits one operator's wallet farm from genuine collusion.</p></div>
+      <div class="card"><div class="klabel">3 · Score</div><h3 class="mt8">Plus-minus + risk</h3><p class="muted" style="font-size:13.5px;margin:0">Log-return trade scores with empirical-Bayes shrinkage rank entities fairly. Bag-worked PnL (dumping on your own callers) is tagged dirty and excluded from alpha boards.</p></div>
+      <div class="card"><div class="klabel">4 · Narrate</div><h3 class="mt8">Plain-English verdict</h3><p class="muted" style="font-size:13.5px;margin:0">The AI narrator turns the computed signals into a verdict. The lens you pick reweights the score and shifts emphasis - same data, different framing. It never claims certainty.</p></div>
+    </div>
+    <div class="disclaim mt24"><span class="tick mid"></span><span>v1 is read-only and non-custodial. No trade execution, no embedded wallet, no fiat. "Connect wallet" means sign-to-claim-identity only. <b>Live scans pull real market data (DexScreener) and mint/freeze authority (Solana RPC) on-chain.</b> Entity clustering, funding trace, and PnL leaderboards run on the Helius-powered backend and are rolling out — sample tokens show worked examples of those.</span></div>
+  </section>
+
+</main>
+
+<footer class="site"><div class="container row wrap">
+  <div>Roki <b style="color:var(--brand)">Radar</b> &middot; on-chain forensic intelligence</div>
+  <div class="faint">read-only &middot; non-custodial &middot; every score carries confidence + signals</div>
+</div></footer>
+<script>
+/* ---- locked algorithm constants (mirror src/roki_radar/config.py) ---- */
+var WEIGHTS={rent:.95,bundle:.85,xfer:.80,fund:.75,time:.60,fp:.40};
+var SELF_MIN=0.85, COLL_MIN=0.50, SHRINK_K=30, LEAGUE_MEAN=0.30;
+var SIGS=[['rent','shared rent'],['bundle','jito bundle'],['xfer','direct xfer'],['fund','shared funder'],['time','time-sync'],['fp','fingerprint']];
+
+function noisyOr(s){var p=1;for(var k in WEIGHTS){p*=(1-WEIGHTS[k]*(s[k]||0));}return 1-p;}
+function adjPm(raw,n){return (n/(n+SHRINK_K))*raw + (SHRINK_K/(n+SHRINK_K))*LEAGUE_MEAN;}
+function usd(v){if(v>=1e6)return '$'+(v/1e6).toFixed(2)+'M';if(v>=1e3)return '$'+(v/1e3).toFixed(1)+'k';return '$'+Math.round(v);}
+function pct(v){return (v*100).toFixed(1)+'%';}
+function shorten(a){return a.length>12?a.slice(0,4)+'..'+a.slice(-4):a;}
+
+/* ---- demo dataset (illustrative; same shapes the FastAPI scan returns) ---- */
+var TOKENS={
+ 'WIFDOG':{symbol:'WIFDOG',name:'WifDog',mint:'9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin',
+   mcap:412000,liq:88000,age:'3h',baseRisk:82,
+   safety:{mintAuth:false,freezeAuth:false,lpLocked:true,lpBurned:false,lpHolders:3},
+   funding:{topM:50,sameK:4,withinMin:9,origins:{cex_hot:11,bridge:3,deployer:1,insider_loop:10,fresh:25}},
+   entities:[
+     {id:'E-WD1',label:'deployer farm',type:'self',members:['7Fhq9aK2','9Kp4mB2x','3Lm7c3Qd','Hb21Zr8t'],
+      sig:{rent:1.0,bundle:.55,xfer:.78,fund:.62,time:.30,fp:.50},supply:.221,bal:91000,classification:'launch_sniper',rawPm:3.1,n:44},
+     {id:'E-WD2',label:'sync cluster',type:'collusion',members:['Qa55Lp1','Zx9KdT4','Mn3Rb7e'],
+      sig:{rent:0,bundle:.70,xfer:.20,fund:.30,time:.86,fp:.40},supply:.108,bal:38000,classification:'dumper',rawPm:1.2,n:22},
+     {id:'E-WD3',label:'organic LP',type:'self',members:['Lo8Pq2','Rt4Yu9'],
+      sig:{rent:.0,bundle:0,xfer:.55,fund:0,time:.10,fp:.35},supply:.034,bal:12500,classification:'whale',rawPm:0.8,n:9}
+   ]},
+ 'GIGACAT':{symbol:'GIGACAT',name:'GigaCat',mint:'4kP2maT23yvVM2ZWbrrpZb9PusVFin9xQeWvG816bUx',
+   mcap:2150000,liq:410000,age:'6d',baseRisk:34,
+   safety:{mintAuth:false,freezeAuth:false,lpLocked:true,lpBurned:true,lpHolders:41},
+   funding:{topM:50,sameK:2,withinMin:140,origins:{cex_hot:22,bridge:6,deployer:1,insider_loop:3,fresh:18}},
+   entities:[
+     {id:'E-GC1',label:'smart money',type:'self',members:['Sm4rtA1','Sm4rtB2'],
+      sig:{rent:.0,bundle:0,xfer:.62,fund:.20,time:.12,fp:.45},supply:.041,bal:142000,classification:'smart_money',rawPm:5.4,n:61},
+     {id:'E-GC2',label:'early cluster',type:'collusion',members:['Ea1Ky2','Ea3Kz4','Ea5Kw6'],
+      sig:{rent:0,bundle:.35,xfer:.18,fund:.55,time:.62,fp:.38},supply:.063,bal:88000,classification:'smart_money',rawPm:2.9,n:37}
+   ]},
+ 'RUGPULL':{symbol:'SAFEMOON2',name:'SafeMoon2',mint:'Zb9PusVFin9xQeWvG816bUx4kP2maT23yvVM2ZWbrrp',
+   mcap:96000,liq:9000,age:'40m',baseRisk:94,
+   safety:{mintAuth:true,freezeAuth:true,lpLocked:false,lpBurned:false,lpHolders:1},
+   funding:{topM:50,sameK:6,withinMin:5,origins:{cex_hot:4,bridge:1,deployer:1,insider_loop:18,fresh:26}},
+   entities:[
+     {id:'E-RP1',label:'one operator, many wallets',type:'self',members:['0pR8x1','0pR8x2','0pR8x3','0pR8x4','0pR8x5','0pR8x6'],
+      sig:{rent:1.0,bundle:.92,xfer:.85,fund:.80,time:.55,fp:.70},supply:.515,bal:61000,classification:'fresh_sybil',rawPm:0.4,n:51}
+   ]}
+};
+
+/* leaderboard universe (entity level) */
+var BOARD=[
+ {label:'smart money',token:'GIGACAT',type:'self',cls:'smart_money',rawPm:5.4,n:61,bal:142000,clean:5.4,bag:0,rec:4.9,x:'@gigawhale',tier:'verified'},
+ {label:'early cluster',token:'GIGACAT',type:'collusion',cls:'smart_money',rawPm:2.9,n:37,bal:88000,clean:2.9,bag:0,rec:3.1,x:'@earlybird',tier:'inferred'},
+ {label:'deployer farm',token:'WIFDOG',type:'self',cls:'launch_sniper',rawPm:3.1,n:44,bal:91000,clean:0.9,bag:128000,rec:2.2,x:'@wifdev',tier:'strong'},
+ {label:'sync cluster',token:'WIFDOG',type:'collusion',cls:'dumper',rawPm:1.2,n:22,bal:38000,clean:0.2,bag:54000,rec:1.0,x:'',tier:''},
+ {label:'alpha caller A',token:'GIGACAT',type:'self',cls:'alpha_caller',rawPm:4.1,n:48,bal:73000,clean:4.0,bag:3000,rec:3.8,x:'@alphapig',tier:'verified'},
+ {label:'bag worker X',token:'WIFDOG',type:'self',cls:'bag_worker',rawPm:2.0,n:33,bal:54000,clean:0.3,bag:240000,rec:1.4,x:'@mooncaller99',tier:'strong'},
+ {label:'rising sniper',token:'GIGACAT',type:'collusion',cls:'launch_sniper',rawPm:2.4,n:18,bal:31000,clean:2.1,bag:8000,rec:3.6,x:'',tier:''},
+ {label:'whale wallet',token:'GIGACAT',type:'self',cls:'whale',rawPm:1.9,n:14,bal:310000,clean:1.9,bag:0,rec:1.2,x:'@bigbags','tier':'inferred'},
+ {label:'one operator',token:'SAFEMOON2',type:'self',cls:'fresh_sybil',rawPm:0.4,n:51,bal:61000,clean:-0.6,bag:71000,rec:-0.4,x:'',tier:''}
+];
+
+/* lenses (mirror src/roki_radar/lenses/lenses.py) */
+var LENSES={
+ rug_auditor:{icon:'shield',label:'Rug auditor',order:['safety','funding','entities'],
+   w:{safety:1.5,clusters:1.3,funding:1.2},
+   lead:function(t,top){return 'Risk is driven by <b>'+pct(top.supply)+'</b> of supply concentrated in a single resolved entity and the LP/authority posture below.';}},
+ sniper_hunter:{icon:'target',label:'Sniper hunter',order:['entities','funding','safety'],
+   w:{clusters:1.4,funding:1.2},
+   lead:function(t,top){return 'Launch-window coordination stands out: bundled buys and time-synced entries cluster the top wallets into <b>'+t.entities.length+'</b> entities.';}},
+ long_term_holder:{icon:'anchor',label:'Long-term holder',order:['safety','entities','funding'],
+   w:{safety:1.2},
+   lead:function(t,top){return 'For a hold, the question is durability: supply concentration, LP lock/burn, and whether smart money is accumulating rather than flipping.';}},
+ copy_scout:{icon:'crosshair',label:'Copy scout',order:['entities','funding','safety'],
+   w:{clusters:1.1},
+   lead:function(t,top){return 'Looking for wallets worth copying: their plus-minus, whether calls survive, and whether they dump on followers (bag workers are flagged).';}}
+};
+
+var STATE={token:'WIFDOG',lens:'rug_auditor',board:'smart_money',sortBoard:'adj',live:false};
+var LIVE=null;
+
+/* ============================================================
+   LIVE SCAN ENGINE (Phase 1) — real on-chain data, no API key.
+   Market data: DexScreener (free). Mint/freeze authority + supply:
+   Solana JSON-RPC (free). Deeper forensic clustering (entities,
+   funding tree) needs the Helius backend and is marked pending.
+   ============================================================ */
+var RPC_URLS=['https://solana-rpc.publicnode.com','https://api.mainnet-beta.solana.com'];
+var DEX_URL='https://api.dexscreener.com/latest/dex/tokens/';
+function curTok(){return (STATE.live&&LIVE)?LIVE:TOKENS[STATE.token];}
+function escapeHtml(s){return String(s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
+function withTimeout(p,ms){return Promise.race([p,new Promise(function(_,rej){setTimeout(function(){rej(new Error('Request timed out — the chain or DexScreener was slow. Try again.'));},ms);})]);}
+function ageFrom(ms){if(!ms)return '?';var s=(Date.now()-ms)/1000;if(s>=86400)return Math.floor(s/86400)+'d';if(s>=3600)return Math.floor(s/3600)+'h';return Math.max(1,Math.floor(s/60))+'m';}
+function loadingCard(v){return '<div class="card"><div class="flex center gap12"><span class="dot"></span><div><div style="font-weight:800;text-transform:uppercase;letter-spacing:.06em;font-size:13px">Scanning on-chain…</div><div class="faint mono" style="font-size:12px">'+shorten(v)+' &middot; DexScreener + Solana RPC</div></div></div></div>';}
+function forensicNote(what){return '<div class="card"><h3>'+what+'</h3><p class="sub">forensic layer</p><div class="disclaim"><span class="tick mid"></span><span><b>'+what+'</b> runs on the Helius-powered backend (Phase 2), which isn\'t live yet. The market &amp; safety data above is real, pulled on-chain just now.</span></div></div>';}
+function liveBaseRisk(t,ageMs){
+ var r=12;
+ if(t.safety.mintAuth)r+=34;
+ if(t.safety.freezeAuth)r+=22;
+ if(t.liq<5000)r+=22;else if(t.liq<25000)r+=12;else if(t.liq<100000)r+=5;
+ var hrs=ageMs?(Date.now()-ageMs)/3.6e6:999;
+ if(hrs<1)r+=14;else if(hrs<24)r+=7;
+ if(t.mcap&&t.mcap<50000)r+=6;
+ return Math.max(0,Math.min(100,Math.round(r)));
+}
+async function rpcAccountInfo(mint){
+ var body=JSON.stringify({jsonrpc:'2.0',id:1,method:'getAccountInfo',params:[mint,{encoding:'jsonParsed'}]});
+ for(var i=0;i<RPC_URLS.length;i++){
+   try{
+     var r=await fetch(RPC_URLS[i],{method:'POST',headers:{'Content-Type':'application/json'},body:body});
+     if(!r.ok)continue;
+     var j=await r.json();
+     var info=j&&j.result&&j.result.value&&j.result.value.data&&j.result.value.data.parsed&&j.result.value.data.parsed.info;
+     if(info)return info;
+   }catch(e){}
+ }
+ return null;
+}
+async function fetchRealToken(mint){
+ if(!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(mint))throw new Error('That doesn\'t look like a Solana mint address.');
+ var dexP=fetch(DEX_URL+mint).then(function(r){return r.json();});
+ var rpcP=rpcAccountInfo(mint);
+ var res=await withTimeout(Promise.all([dexP,rpcP]),20000);
+ var dex=res[0],info=res[1];
+ var pairs=((dex&&dex.pairs)||[]).filter(function(p){return p.chainId==='solana';});
+ if(!pairs.length)throw new Error('No Solana trading pair found for this mint. It may be unlaunched, on another chain, or not an SPL token.');
+ pairs.sort(function(a,b){return ((b.liquidity&&b.liquidity.usd)||0)-((a.liquidity&&a.liquidity.usd)||0);});
+ var p=pairs[0];
+ var tok={
+   live:true,forensicPending:true,
+   symbol:((p.baseToken&&p.baseToken.symbol)||'?').replace(/^\$/,''),
+   name:(p.baseToken&&p.baseToken.name)||'Unknown token',
+   mint:mint,
+   mcap:p.marketCap||p.fdv||0,
+   liq:(p.liquidity&&p.liquidity.usd)||0,
+   priceUsd:parseFloat(p.priceUsd)||0,
+   vol24:(p.volume&&p.volume.h24)||0,
+   dex:p.dexId||'dex',
+   age:ageFrom(p.pairCreatedAt),
+   safety:{mintAuth:info?(info.mintAuthority!==null):null,freezeAuth:info?(info.freezeAuthority!==null):null,lpLocked:null,lpBurned:null,lpHolders:null},
+   entities:[],funding:null
+ };
+ tok.baseRisk=liveBaseRisk(tok,p.pairCreatedAt);
+ return tok;
+}
+function narrateLive(t,score){
+ var s=t.safety;var parts=[];
+ if(s.mintAuth&&s.freezeAuth)parts.push('both mint and freeze authority are still live — the deployer can inflate supply or freeze wallets');
+ else if(s.mintAuth)parts.push('mint authority is still live, so supply can be inflated');
+ else if(s.freezeAuth)parts.push('freeze authority is still live, so transfers can be frozen');
+ else if(s.mintAuth===false&&s.freezeAuth===false)parts.push('mint and freeze authority are both revoked');
+ if(t.liq<25000)parts.push('liquidity is thin ('+usd(t.liq)+'), so exits move price hard');
+ else parts.push(usd(t.liq)+' of liquidity');
+ if(t.hasHolders){var net=t.holders.top10-(t.holders.pooledPct||0);if(net>0.5)parts.push('the top 10 non-pooled accounts control '+pct(net)+' of supply — highly concentrated');else parts.push('top-10 holders are '+pct(t.holders.top10)+' of supply (pools included)');}
+ var price=t.priceUsd<0.01?t.priceUsd.toExponential(2):t.priceUsd.toFixed(4);
+ var lead='<b>'+escapeHtml(t.name)+' ($'+escapeHtml(t.symbol)+')</b> is live at $'+price+', '+usd(t.mcap)+' market cap, '+t.age+' old on '+escapeHtml(t.dex)+'. ';
+ var verdict=score>=75?'High-risk on the basics we can read — treat with caution.':score>=50?'Mixed posture — size accordingly.':score>=25?'Reasonable on the readable basics.':'Clean on the safety basics we can read.';
+ return lead+(parts.length?'Right now '+parts.join('; ')+'. ':'')+verdict+' This is the live market &amp; safety read; coordination/entity analysis needs the forensic backend. Probabilistic, not certainty.';
+}
+
+/* Map the /api/scan payload (server-side Helius) into the render model. */
+function apiToModel(d){
+ var m=d.market;
+ if(!m)throw new Error('no-market');
+ var ageMs=m.pairCreatedAt||0;
+ var h=d.holders&&d.holders.sampled?d.holders:null;
+ var tok={
+   live:true,forensicPending:true,hasHolders:!!h,holders:h,
+   symbol:(m.symbol||'?'),name:m.name||'Unknown token',mint:d.mint,
+   mcap:m.mcap||0,liq:m.liq||0,priceUsd:m.priceUsd||0,vol24:m.vol24||0,dex:m.dex||'dex',
+   age:ageFrom(ageMs),
+   safety:{mintAuth:d.safety?d.safety.mintAuth:null,freezeAuth:d.safety?d.safety.freezeAuth:null,lpLocked:null,lpBurned:null,lpHolders:null},
+   entities:[],funding:null
+ };
+ tok.baseRisk=liveBaseRisk(tok,ageMs);
+ if(h){var net=h.top10-(h.pooledPct||0);if(net>0.6)tok.baseRisk=Math.min(100,tok.baseRisk+18);else if(net>0.4)tok.baseRisk=Math.min(100,tok.baseRisk+10);else if(net>0.25)tok.baseRisk=Math.min(100,tok.baseRisk+4);}
+ return tok;
+}
+/* Try the server-side forensic API first; fall back to keyless client-side market+safety. */
+async function scanMint(mint){
+ try{
+   var r=await withTimeout(fetch('/api/scan?mint='+encodeURIComponent(mint)),20000);
+   if(r.ok){var d=await r.json();if(d&&d.market)return apiToModel(d);}
+ }catch(e){}
+ return await fetchRealToken(mint);
+}
+function holdersPanel(t){
+ var h=t.holders;if(!h||!h.sampled)return '';
+ var rows=h.list.slice(0,10).map(function(o,i){
+   var who=o.label?('<span class="badge b-class">'+escapeHtml(o.label)+'</span> <span class="wchip">'+shorten(o.owner||'?')+'</span>'):'<span class="wchip">'+shorten(o.owner||'?')+'</span>';
+   return '<div class="funline"><span class="mono faint" style="min-width:20px">'+(i+1)+'</span>'+who+'<span class="spacer"></span><span class="mono" style="font-weight:600">'+pct(o.pct)+'</span></div>';
+ }).join('');
+ var net=h.top10-(h.pooledPct||0);
+ var tickCls=net>0.5?'bad':net>0.3?'mid':'good';
+ return '<div class="card"><h3>Top-holder concentration</h3><p class="sub">top '+h.sampled+' accounts &middot; live via Helius</p>'
+  +'<div class="disclaim" style="margin-bottom:12px"><span class="tick '+tickCls+'"></span><span>Top 10 accounts hold <b>'+pct(h.top10)+'</b> of supply'+((h.pooledPct||0)>0.01?(' &middot; '+pct(h.pooledPct)+' is pooled/exchange (labeled)'):'')+'. Largest single account: <b>'+pct(h.top1)+'</b>.</span></div>'
+  +rows+'</div>';
+}
+
+/* ---------- rendering ---------- */
+function lensRiskScore(t,lens){
+ var base=t.baseRisk;
+ var L=LENSES[lens].w;
+ // emphasis: scale deviation from 50 by relevant weights, clamp 0-100
+ var bump=0;
+ if(L.safety){var bad=(t.safety.mintAuth?14:0)+(t.safety.freezeAuth?10:0)+(t.safety.lpLocked===false?12:0)+(t.safety.lpBurned===false?5:0);bump+=(L.safety-1)*bad;}
+ if(L.clusters&&t.entities&&t.entities.length){var topSup=Math.max.apply(null,t.entities.map(function(e){return e.supply}));bump+=(L.clusters-1)*topSup*60;}
+ if(L.funding&&t.funding){bump+=(L.funding-1)*(t.funding.sameK>=4?14:4);}
+ return Math.max(0,Math.min(100,Math.round(base+bump)));
+}
+function tierOf(s){if(s>=75)return['critical','var(--danger)'];if(s>=50)return['elevated','var(--warn)'];if(s>=25)return['moderate','var(--info)'];return['low','var(--ok)'];}
+
+function gaugeSVG(score){
+ var col=tierOf(score)[1];var r=52,c=Math.PI*r,frac=score/100;
+ return '<svg viewBox="0 0 140 140" width="160" height="160">'
+  +'<circle cx="70" cy="70" r="'+r+'" fill="none" stroke="rgba(20,17,15,.13)" stroke-width="11"/>'
+  +'<circle cx="70" cy="70" r="'+r+'" fill="none" stroke="'+col+'" stroke-width="11" stroke-linecap="round"'
+  +' stroke-dasharray="'+(c*2)+'" stroke-dashoffset="'+(c*2*(1-frac))+'" transform="rotate(-90 70 70)"/>'
+  +'<text x="70" y="66" text-anchor="middle" fill="var(--text)" font-size="30" font-weight="700" font-family="var(--mono)">'+score+'</text>'
+  +'<text x="70" y="86" text-anchor="middle" fill="var(--faint)" font-size="11">/ 100 risk</text></svg>';
+}
+
+function safetyPanel(t){
+ var s=t.safety;
+ function cell(lab,ok,val){var cls=ok==null?'mid':(ok?'good':'bad');return '<div class="safe"><div class="klabel">'+lab+'</div><div class="v"><span class="tick '+cls+'"></span>'+val+'</div></div>';}
+ return '<div class="card"><h3>Safety panel</h3><p class="sub">mint &amp; LP posture</p><div class="safegrid">'
+  +cell('mint authority',s.mintAuth==null?null:!s.mintAuth,s.mintAuth==null?'unknown':(s.mintAuth?'live (risk)':'revoked'))
+  +cell('freeze authority',s.freezeAuth==null?null:!s.freezeAuth,s.freezeAuth==null?'unknown':(s.freezeAuth?'live (risk)':'revoked'))
+  +cell('LP locked',s.lpLocked,s.lpLocked==null?'unknown':(s.lpLocked?'yes':'no'))
+  +cell('LP burned',s.lpBurned,s.lpBurned==null?'unknown':(s.lpBurned?'yes':'no'))
+  +cell('LP holders',s.lpHolders==null?null:s.lpHolders>5,s.lpHolders==null?'unknown':(s.lpHolders+(s.lpHolders<=3?' (thin)':'')))
+  +'</div></div>';
+}
+function fundingPanel(t){
+ var f=t.funding,o=f.origins;
+ var rows='';var map={cex_hot:['o-cex','CEX hot'],bridge:['o-bridge','bridge'],deployer:['o-deployer','deployer'],insider_loop:['o-insider','insider loop'],fresh:['o-fresh','fresh']};
+ for(var k in o){rows+='<div class="funline"><span class="origin '+map[k][0]+'">'+map[k][1]+'</span><span class="muted">'+o[k]+' of '+f.topM+' top holders</span></div>';}
+ var head=f.sameK+' of top '+f.topM+' holders funded by the same '+f.sameK+' wallets within '+f.withinMin+' min pre-launch';
+ return '<div class="card"><h3>Funding tree</h3><p class="sub">backward trace, depth 3</p>'
+  +'<div class="disclaim" style="margin-bottom:12px"><span class="tick '+(f.sameK>=4?'bad':'good')+'"></span><span>'+head+'</span></div>'
+  +rows+'</div>';
+}
+
+function entityCard(e){
+ var conf=noisyOr(e.sig);
+ var badge=e.type==='self'?'<span class="badge b-self">self entity</span>':'<span class="badge b-coll">collusion</span>';
+ var sigs=SIGS.map(function(p){var v=e.sig[p[0]]||0;return '<div class="sig"><div class="lab"><span>'+p[1]+'</span><span class="mono">'+v.toFixed(2)+'</span></div><div class="bar"><i style="width:'+(v*100)+'%"></i></div></div>';}).join('');
+ var mem=e.members.map(function(m){return '<span class="wchip">'+m+'</span>';}).join('');
+ return '<div class="entity"><div class="top"><div><div class="flex center gap8 wrap">'+badge
+  +' <span class="badge b-class">'+e.classification.replace(/_/g,' ')+'</span>'
+  +' <span class="muted" style="font-size:13px">'+e.label+'</span></div>'
+  +'<div class="members">'+mem+'</div></div>'
+  +'<div style="text-align:right"><div class="mono" style="font-size:22px;font-weight:700;color:var(--brand)">'+conf.toFixed(2)+'</div><div class="klabel">confidence</div></div></div>'
+  +'<div class="sigrow">'+sigs+'</div>'
+  +'<div class="stats">'
+  +'<div class="stat"><div class="n">'+pct(e.supply)+'</div><div class="l">supply</div></div>'
+  +'<div class="stat"><div class="n">'+usd(e.bal)+'</div><div class="l">combined bal</div></div>'
+  +'<div class="stat"><div class="n">'+e.members.length+'</div><div class="l">wallets</div></div>'
+  +'<div class="stat"><div class="n mono">'+adjPm(e.rawPm,e.n).toFixed(2)+'</div><div class="l">adj plus-minus</div></div>'
+  +'</div></div>';
+}
+
+function panelByKey(t,key){
+ if(key==='safety')return safetyPanel(t);
+ if(key==='funding')return (t.forensicPending||!t.funding)?forensicNote('Funding-tree trace'):fundingPanel(t);
+ if(key==='entities'){
+   if(t.forensicPending||!t.entities||!t.entities.length)return forensicNote('Entity resolution &amp; clustering');
+   var top=t.entities.map(entityCard).join('');return '<div class="card"><h3>Top entities</h3><p class="sub">'+t.entities.length+' resolved &middot; ordered by supply</p>'+top+'</div>';}
+ return '';
+}
+
+function renderScan(){
+ var t=curTok();var lens=LENSES[STATE.lens];
+ var score=lensRiskScore(t,STATE.lens);var tier=tierOf(score);
+ var top=(t.entities&&t.entities.length)?t.entities.slice().sort(function(a,b){return b.supply-a.supply})[0]:null;
+ var verdict=t.live?narrateLive(t,score):(lens.lead(t,top)+' '+narrate(t,score));
+ var meta=shorten(t.mint)+' &middot; mcap '+usd(t.mcap)+' &middot; liq '+usd(t.liq)+' &middot; '+t.age+' old'+(t.live?(' &middot; '+escapeHtml(t.dex)):'');
+ var confLine=t.live
+   ? '<span class="conf"><span class="tick good"></span> live on-chain read &middot; market via DexScreener · authority via Solana RPC</span>'
+   : '<span class="conf"><span class="tick '+(score>=60?'bad':'good')+'"></span> verdict confidence '+(0.72+(score>80?0.16:0.04)).toFixed(2)+' &middot; based on '+t.entities.length+' entities, funding trace, safety</span>';
+ var html='<div class="card" style="margin-bottom:16px"><div class="scanhead">'
+  +'<div class="gauge-wrap">'+gaugeSVG(score)+'<div class="gtier" style="color:'+tier[1]+'">'+tier[0]+' risk</div></div>'
+  +'<div><div class="row" style="margin-bottom:10px"><div><div style="font-size:19px;font-weight:600">'+escapeHtml(t.name)+' <span class="muted mono" style="font-size:13px">$'+escapeHtml(t.symbol)+'</span></div>'
+  +'<div class="faint mono" style="font-size:12px">'+meta+'</div></div></div>'
+  +'<div class="narrator"><div class="who"><span class="dot" style="width:6px;height:6px"></span> Roki narrator &middot; '+lens.label+' lens'+(t.live?' &middot; LIVE':'')+'</div>'
+  +'<p>'+verdict+'</p>'
+  +confLine
+  +'</div></div></div></div>';
+ var grid='<div class="grid" style="grid-template-columns:1fr">';
+ if(t.hasHolders)grid+=holdersPanel(t);
+ lens.order.forEach(function(k){grid+=panelByKey(t,k);});
+ grid+='</div>';
+ document.getElementById('scanResult').innerHTML=html+grid;
+}
+function narrate(t,score){
+ var s=t.safety;var parts=[];
+ if(s.mintAuth||s.freezeAuth)parts.push('mint/freeze authority is still live, so the deployer can mint or freeze at will');
+ if(!s.lpLocked)parts.push('liquidity is unlocked');
+ if(t.funding.sameK>=4)parts.push(t.funding.sameK+' of the top holders trace back to the same funder within minutes of launch');
+ var top=t.entities.slice().sort(function(a,b){return b.supply-a.supply})[0];
+ if(top.type==='self'&&top.supply>0.3)parts.push('what looks like '+top.members.length+' holders is really one operator controlling '+pct(top.supply)+' of supply');
+ var tail=parts.length?('Specifically, '+parts.join('; ')+'.'):'No single entity dominates supply and the LP posture is clean.';
+ var verdict=score>=75?' Treat this as a likely coordinated setup.':score>=50?' Trade with caution and size accordingly.':score>=25?' Some coordination, but not disqualifying.':' Looks comparatively organic.';
+ return tail+verdict+' This is a probabilistic read, not certainty.';
+}
+
+function renderEntities(){
+ var t=curTok();
+ if(t.forensicPending||!t.entities||!t.entities.length){
+   document.getElementById('entityList').innerHTML=forensicNote('Entity resolution &amp; clustering')
+    +'<div class="note"><span class="tick mid"></span> Scanned <b>$'+escapeHtml(t.symbol||'?')+'</b> live — wallet clustering needs the Helius backend (Phase 2). Until then the demo tokens show worked examples.</div>';
+   return;
+ }
+ document.getElementById('entityList').innerHTML='<div class="row wrap" style="margin-bottom:14px;gap:10px"><div class="muted" style="font-size:13.5px">Showing entities for <b style="color:var(--text)">$'+escapeHtml(t.symbol)+'</b> &middot; '+t.entities.length+' resolved</div></div>'
+  +t.entities.map(entityCard).join('');
+}
+
+/* boards */
+var BOARDS=[['smart_money','Smart money','ranks adj plus-minus among long-hold winners'],
+ ['snipers','Snipers','fast in/out launch entities, ranked on adj plus-minus'],
+ ['whales','Whales','largest combined entity balances'],
+ ['rising','Rising','recency-weighted current form'],
+ ['bag_worker','Bag worker','dumps on its own callers - dirty, excluded from alpha'],
+ ['alpha_callers','Alpha callers','clean plus-minus on called tokens that survived']];
+function renderBoardTabs(){
+ document.getElementById('boardtabs').innerHTML=BOARDS.map(function(b){return '<button class="'+(STATE.board===b[0]?'active':'')+'" onclick="setBoard(\''+b[0]+'\')">'+b[1]+'</button>';}).join('');
+ document.getElementById('boardNote').textContent=BOARDS.filter(function(b){return b[0]===STATE.board})[0][2];
+}
+function setBoard(b){STATE.board=b;renderBoardTabs();renderBoard();}
+function renderBoard(){
+ var rows=BOARD.slice();
+ var b=STATE.board;
+ if(b==='smart_money')rows=rows.filter(function(r){return r.cls==='smart_money'}).sort(function(a,c){return adjPm(c.rawPm,c.n)-adjPm(a.rawPm,a.n)});
+ else if(b==='snipers')rows=rows.filter(function(r){return r.cls==='launch_sniper'}).sort(function(a,c){return adjPm(c.rawPm,c.n)-adjPm(a.rawPm,a.n)});
+ else if(b==='whales')rows=rows.sort(function(a,c){return c.bal-a.bal}).slice(0,7);
+ else if(b==='rising')rows=rows.sort(function(a,c){return c.rec-a.rec});
+ else if(b==='bag_worker')rows=rows.filter(function(r){return r.bag>0}).sort(function(a,c){return c.bag-a.bag});
+ else if(b==='alpha_callers')rows=rows.filter(function(r){return r.x}).sort(function(a,c){return c.clean-a.clean});
+ var metricHead=b==='whales'?'balance':b==='rising'?'recency pm':b==='bag_worker'?'bag-worked pnl':b==='alpha_callers'?'clean pm':'adj pm';
+ var h='<table><thead><tr><th>#</th><th>entity</th><th>token</th><th>type</th><th class="num">raw</th><th class="num">n</th><th class="num">adj pm</th><th class="num">'+metricHead+'</th></tr></thead><tbody>';
+ rows.forEach(function(r,i){
+   var metric=b==='whales'?usd(r.bal):b==='rising'?r.rec.toFixed(2):b==='bag_worker'?usd(r.bag):b==='alpha_callers'?r.clean.toFixed(2):adjPm(r.rawPm,r.n).toFixed(2);
+   var dirty=b==='bag_worker'?' <span class="badge b-dirty">dirty</span>':'';
+   var nm=r.x?(' <span class="muted mono" style="font-size:11px">'+r.x+'</span>'):'';
+   h+='<tr><td class="mono faint">'+(i+1)+'</td><td>'+r.label+dirty+nm+'</td><td class="mono muted">$'+r.token+'</td>'
+     +'<td>'+(r.type==='self'?'<span class="badge b-self">self</span>':'<span class="badge b-coll">collusion</span>')+'</td>'
+     +'<td class="num '+(r.rawPm<0?'neg':'pos')+'">'+r.rawPm.toFixed(1)+'</td><td class="num muted">'+r.n+'</td>'
+     +'<td class="num">'+adjPm(r.rawPm,r.n).toFixed(2)+'</td><td class="num" style="color:var(--brand)">'+metric+'</td></tr>';
+ });
+ h+='</tbody></table>';
+ document.getElementById('boardTable').innerHTML=h;
+}
+
+/* wallet */
+function findEntity(addr){
+ for(var tk in TOKENS){var t=TOKENS[tk];for(var i=0;i<t.entities.length;i++){var e=t.entities[i];
+   if(e.members.indexOf(addr)>=0)return {e:e,token:t.symbol};}}
+ return null;
+}
+function renderWalletChips(){
+ var ex=['7Fhq9aK2','Sm4rtA1','0pR8x3','Qa55Lp1'];
+ document.getElementById('walletChips').innerHTML=ex.map(function(a){return '<span class="chip" onclick="document.getElementById(\'walletInput\').value=\''+a+'\';runWallet()">'+a+'</span>';}).join('');
+}
+function fmtAmt(n){return n>=1e9?(n/1e9).toFixed(2)+'B':n>=1e6?(n/1e6).toFixed(2)+'M':n>=1e3?(n/1e3).toFixed(1)+'k':n.toFixed(n<1?4:2);}
+function renderRealWallet(d){
+ var rows=(d.tokens||[]).slice(0,10).map(function(t){
+   var sym=t.symbol?('$'+escapeHtml(t.symbol)):('<span class="faint">'+shorten(t.mint)+'</span>');
+   return '<div class="funline"><span class="mono" style="min-width:110px">'+sym+'</span><span class="faint mono">'+fmtAmt(t.amount)+'</span><span class="spacer"></span><span class="mono" style="font-weight:600">'+(t.valueUsd!=null?usd(t.valueUsd):'—')+'</span></div>';
+ }).join('');
+ return '<div class="card"><div class="row wrap" style="margin-bottom:6px"><div><div class="klabel">wallet</div><div class="mono" style="font-size:15px;margin-top:3px;word-break:break-all">'+escapeHtml(d.addr)+'</div></div>'
+  +'<div style="text-align:right"><div class="mono" style="font-size:22px;font-weight:700;color:var(--brand)">'+(d.portfolioUsd?usd(d.portfolioUsd):'—')+'</div><div class="klabel">portfolio value</div></div></div>'
+  +'<div class="stats" style="border-top:0;padding-top:4px;gap:26px">'
+  +'<div class="stat"><div class="n mono">'+d.sol.toFixed(2)+'</div><div class="l">SOL'+(d.solUsd!=null?(' &middot; '+usd(d.solUsd)):'')+'</div></div>'
+  +'<div class="stat"><div class="n mono">'+d.tokenCount+'</div><div class="l">SPL tokens held</div></div>'
+  +'</div>'
+  +(rows?('<div class="klabel" style="margin:16px 0 8px">top holdings by value</div>'+rows):'<div class="note" style="margin-top:12px"><span class="tick mid"></span> No priced SPL holdings found.</div>')
+  +'<div class="note"><span class="tick good"></span> Live balances via Helius + DexScreener. Entity resolution, classification &amp; plus-minus are the forensic layer (Phase 3) — coming.</div></div>';
+}
+function realWalletLookup(a,box){
+ box.innerHTML=loadingCard(a);
+ withTimeout(fetch('/api/wallet?addr='+encodeURIComponent(a)),20000).then(function(r){
+   return r.json().then(function(d){if(!r.ok)throw new Error(d.error||('lookup failed ('+r.status+')'));return d;});
+ }).then(function(d){box.innerHTML=renderRealWallet(d);}).catch(function(err){
+   box.innerHTML='<div class="disclaim"><span class="tick mid"></span><span><b>Live wallet lookup runs on the deployed backend.</b> Once <span class="mono">/api/wallet</span> is live (Helius key set in Cloudflare), it resolves real SOL balance &amp; token holdings for any wallet. Meanwhile, try an example wallet above to see the entity view. <span class="faint">('+escapeHtml(err&&err.message||'')+')</span></span></div>';
+ });
+}
+function runWallet(){
+ var a=document.getElementById('walletInput').value.trim();
+ var box=document.getElementById('walletResult');
+ if(!a){box.innerHTML='';return;}
+ var hit=findEntity(a);
+ if(!hit){realWalletLookup(a,box);return;}
+ var e=hit.e;var conf=noisyOr(e.sig);
+ var bm=BOARD.filter(function(r){return r.label===e.label})[0];
+ var xrow=bm&&bm.x?('<div class="stat"><div class="n" style="font-size:14px">'+bm.x+' <span class="badge '+(bm.tier==='verified'?'b-clean':'b-class')+'">'+bm.tier+'</span></div><div class="l">linked X identity</div></div>'):'';
+ box.innerHTML='<div class="card"><div class="row wrap" style="margin-bottom:6px"><div><div style="font-size:13px" class="klabel">wallet</div><div class="mono" style="font-size:16px;margin-top:3px">'+a+'</div></div>'
+  +'<div style="text-align:right"><div class="mono" style="font-size:22px;font-weight:700;color:var(--brand)">'+conf.toFixed(2)+'</div><div class="klabel">entity confidence</div></div></div>'
+  +'<div class="disclaim" style="margin:12px 0"><span class="tick '+(e.type==='self'?'good':'mid')+'"></span><span>Part of <b>'+e.label+'</b> on $'+hit.token+' - a <b>'+e.type+'</b> entity of '+e.members.length+' wallets. Classified <b>'+e.classification.replace(/_/g,' ')+'</b>.</span></div>'
+  +'<div class="stats" style="border-top:0;padding-top:0">'
+  +'<div class="stat"><div class="n mono">'+e.rawPm.toFixed(1)+'</div><div class="l">raw plus-minus</div></div>'
+  +'<div class="stat"><div class="n mono">'+e.n+'</div><div class="l">trades</div></div>'
+  +'<div class="stat"><div class="n mono">'+adjPm(e.rawPm,e.n).toFixed(2)+'</div><div class="l">adj plus-minus</div></div>'
+  +(bm?'<div class="stat"><div class="n mono '+(bm.bag>0?'neg':'pos')+'">'+(bm.bag>0?usd(bm.bag):'$0')+'</div><div class="l">bag-worked (dirty)</div></div>':'')
+  +xrow+'</div>'
+  +'<div class="note"><span class="tick good"></span> Every figure carries the signals that produced it. This is a forensic estimate, not proof of identity.</div></div>';
+}
+
+/* nav + presets + lens */
+function show(view){
+ document.querySelectorAll('.view').forEach(function(s){s.classList.remove('active')});
+ document.getElementById('view-'+view).classList.add('active');
+ document.querySelectorAll('#nav button').forEach(function(b){b.classList.toggle('active',b.dataset.view===view)});
+ if(view==='entities')renderEntities();
+ if(view==='boards'){renderBoardTabs();renderBoard();}
+ window.scrollTo({top:0,behavior:'smooth'});
+}
+function setLens(l){STATE.lens=l;renderLensbar();renderScan();}
+function renderLensbar(){
+ document.getElementById('lensbar').innerHTML=Object.keys(LENSES).map(function(k){return '<div class="lens '+(STATE.lens===k?'active':'')+'" onclick="setLens(\''+k+'\')"><span class="ico"></span>'+LENSES[k].label+'</div>';}).join('');
+}
+function realScanExample(mint){document.getElementById('mintInput').value=mint;runScan();}
+function renderPresets(){
+ var demo=Object.keys(TOKENS).map(function(k){var t=TOKENS[k];return '<span class="chip" onclick="loadToken(\''+k+'\')">$'+t.symbol+' &middot; '+(t.baseRisk>=75?'high':t.baseRisk>=40?'mid':'low')+' risk demo</span>';}).join('');
+ var live='<span class="chip" style="border-color:var(--coral);color:var(--coral)" onclick="realScanExample(\'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm\')">⦿ live scan: $WIF</span>';
+ document.getElementById('presetChips').innerHTML=live+demo;
+}
+function loadToken(k){STATE.token=k;STATE.live=false;document.getElementById('mintInput').value=TOKENS[k].mint;renderScan();}
+async function runScan(){
+ var v=document.getElementById('mintInput').value.trim();
+ if(!v){STATE.live=false;renderScan();return;}
+ var found=null;for(var k in TOKENS){if(TOKENS[k].mint===v||k.toLowerCase()===v.toLowerCase()||TOKENS[k].symbol.toLowerCase()===v.toLowerCase())found=k;}
+ if(found){STATE.token=found;STATE.live=false;renderScan();return;}
+ var box=document.getElementById('scanResult');
+ box.innerHTML=loadingCard(v);
+ try{
+   LIVE=await scanMint(v);
+   STATE.live=true;
+   renderScan();
+ }catch(err){
+   STATE.live=false;
+   box.innerHTML='<div class="disclaim"><span class="tick bad"></span><span><b>Couldn\'t scan that mint.</b> '+escapeHtml(err&&err.message||'Unknown error')+'</span></div>';
+ }
+}
+
+document.getElementById('nav').addEventListener('click',function(e){if(e.target.dataset.view)show(e.target.dataset.view);});
+renderPresets();renderLensbar();loadToken('WIFDOG');renderWalletChips();
+</script>
+</body>
+</html>
