@@ -413,6 +413,32 @@ function withTimeout(p,ms){return Promise.race([p,new Promise(function(_,rej){se
 function ageFrom(ms){if(!ms)return '?';var s=(Date.now()-ms)/1000;if(s>=86400)return Math.floor(s/86400)+'d';if(s>=3600)return Math.floor(s/3600)+'h';return Math.max(1,Math.floor(s/60))+'m';}
 function loadingCard(v){return '<div class="card"><div class="flex center gap12"><span class="dot"></span><div><div style="font-weight:800;text-transform:uppercase;letter-spacing:.06em;font-size:13px">Scanning on-chain…</div><div class="faint mono" style="font-size:12px">'+shorten(v)+' &middot; DexScreener + Solana RPC</div></div></div></div>';}
 function forensicNote(what){return '<div class="card"><h3>'+what+'</h3><p class="sub">forensic layer</p><div class="disclaim"><span class="tick mid"></span><span><b>'+what+'</b> runs on the Helius-powered backend (Phase 2), which isn\'t live yet. The market &amp; safety data above is real, pulled on-chain just now.</span></div></div>';}
+var FUNDING_CACHE={};
+function fundingPlaceholder(){return '<div class="card" id="liveFunding"><h3>Funding-tree trace</h3><p class="sub">backward trace &middot; top holders</p><div class="note"><span class="dot"></span> tracing top-holder funding on-chain…</div></div>';}
+function fundingUnavailable(msg){return '<div class="card"><h3>Funding-tree trace</h3><p class="sub">forensic layer &middot; backend</p><div class="disclaim"><span class="tick mid"></span><span>Funding trace needs the Helius backend (set <span class="mono">HELIUS_API_KEY</span> in Cloudflare). '+(msg?('<span class="faint">'+escapeHtml(msg)+'</span>'):'')+'</span></div></div>';}
+function renderFundingCard(d){
+ if(!d.holdersAnalyzed)return '<div class="card"><h3>Funding-tree trace</h3><p class="sub">backward trace &middot; top holders</p><div class="note"><span class="tick mid"></span> Top holders are pools/CEX — no retail wallets to trace.</div></div>';
+ var shared=(d.sharedFunders||[]).map(function(g){return '<div class="funline"><span class="origin o-insider">shared funder</span><span class="mono faint">'+shorten(g.funder)+'</span><span class="spacer"></span><span class="mono" style="font-weight:600">'+g.count+' holders</span></div>';}).join('');
+ var bad=(d.sharedFunders&&d.sharedFunders.length)||d.freshCount>=2;
+ var head=d.sharedFunders.length?(d.sharedFunders[0].count+' of '+d.holdersAnalyzed+' top holders share a funder — coordinated funding')
+   :(d.freshCount?(d.freshCount+' of '+d.holdersAnalyzed+' top holders are fresh wallets (<14d old)')
+   :('No shared funders among '+d.holdersAnalyzed+' top holders — looks independent'));
+ return '<div class="card"><h3>Funding-tree trace</h3><p class="sub">backward trace &middot; '+d.holdersAnalyzed+' top retail holders</p>'
+  +'<div class="disclaim" style="margin-bottom:12px"><span class="tick '+(bad?'bad':'good')+'"></span><span>'+escapeHtml(head)+'</span></div>'
+  +shared
+  +'<div class="note"><span class="tick mid"></span> '+escapeHtml(d.note||'')+'</div></div>';
+}
+function loadFunding(mint){
+ var el=document.getElementById('liveFunding'); if(!el)return;
+ if(FUNDING_CACHE[mint]){el.outerHTML=renderFundingCard(FUNDING_CACHE[mint]);return;}
+ withTimeout(fetch('/api/funding?mint='+encodeURIComponent(mint)),24000).then(function(r){
+   return r.json().then(function(d){d.__http=r.status;return d;});
+ }).then(function(d){
+   var e2=document.getElementById('liveFunding'); if(!e2)return;
+   if(d.__http!==200||d.error){e2.outerHTML=fundingUnavailable(d.error);return;}
+   FUNDING_CACHE[mint]=d; e2.outerHTML=renderFundingCard(d);
+ }).catch(function(){var e2=document.getElementById('liveFunding'); if(e2)e2.outerHTML=fundingUnavailable('trace timed out');});
+}
 function liveBaseRisk(t,ageMs){
  var r=12;
  if(t.safety.mintAuth)r+=34;
@@ -582,7 +608,7 @@ function entityCard(e){
 
 function panelByKey(t,key){
  if(key==='safety')return safetyPanel(t);
- if(key==='funding')return (t.forensicPending||!t.funding)?forensicNote('Funding-tree trace'):fundingPanel(t);
+ if(key==='funding'){ if(t.live)return fundingPlaceholder(); return t.funding?fundingPanel(t):forensicNote('Funding-tree trace'); }
  if(key==='entities'){
    if(t.forensicPending||!t.entities||!t.entities.length)return forensicNote('Entity resolution &amp; clustering');
    var top=t.entities.map(entityCard).join('');return '<div class="card"><h3>Top entities</h3><p class="sub">'+t.entities.length+' resolved &middot; ordered by supply</p>'+top+'</div>';}
@@ -611,6 +637,7 @@ function renderScan(){
  lens.order.forEach(function(k){grid+=panelByKey(t,k);});
  grid+='</div>';
  document.getElementById('scanResult').innerHTML=html+grid;
+ if(t.live)loadFunding(t.mint);
 }
 function narrate(t,score){
  var s=t.safety;var parts=[];
