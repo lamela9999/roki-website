@@ -69,8 +69,13 @@ export async function onRequestGet({ request, env }) {
       }
     } catch (e) { /* pricing is best-effort */ }
 
+    // Only trust a price if the pair has real liquidity — thin pools give garbage prices
+    // that would inflate the portfolio with phantom value.
+    const MIN_LIQ_USD = 2000;
     tokens = tokens.map((t) => {
-      const price = priceOf[t.mint] ? priceOf[t.mint].price : null;
+      const pr = priceOf[t.mint];
+      const liquid = pr && pr._liq >= MIN_LIQ_USD;
+      const price = liquid ? pr.price : null;
       return {
         mint: t.mint,
         symbol: symOf[t.mint] || null,
