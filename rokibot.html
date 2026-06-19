@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Roki Bot — token-gated automated Solana trading</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* ===== roki.buzz brand — mirrors styles.css / radar.html ===== */
+  --cream:#F5EFE6; --paper:#FBF6EC; --ink:#14110F; --ink-soft:#2C2824; --muted:#6B6258;
+  --hairline:#E2D9CB; --coral:#E8534A; --coral-dark:#CF3F37; --yellow:#FFDF3D; --green:#25E684;
+  --blue:#2898E5; --purple:#9A4EDC; --orange:#FFA73F; --red:#FF5959;
+  --green-ink:#0F7A45; --blue-ink:#1F6FAE; --orange-ink:#9A5A09; --red-ink:#B02A2A; --purple-ink:#6D3AA0;
+  /* aliases */
+  --brand:var(--coral); --bg:var(--cream); --surface:var(--paper); --surface-2:#F1E9DA;
+  --line:var(--hairline); --text:var(--ink); --faint:#9A8F80;
+  --radius:14px; --radius-sm:10px;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:'Inter Tight',-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;
+  --display:'Archivo Black','Anton',sans-serif;
+  --shadow:3px 3px 0 var(--ink);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--cream)}
+body{color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+.container{max-width:1180px;margin:0 auto;padding:0 20px}
+.mono{font-family:var(--mono)} .muted{color:var(--muted)} .faint{color:var(--faint)}
+.spacer{flex:1}.flex{display:flex}.center{align-items:center}.between{justify-content:space-between}.wrap{flex-wrap:wrap}
+.gap8{gap:8px}.gap12{gap:12px}.mt8{margin-top:8px}.mt16{margin-top:16px}.mt24{margin-top:24px}.hidden{display:none}
+
+/* header */
+header.top{position:sticky;top:0;z-index:30;background:var(--cream);padding:16px 0 6px}
+.nav{display:flex;align-items:center;gap:16px;background:var(--paper);border:1.5px solid var(--ink);border-radius:14px;padding:10px 14px;box-shadow:var(--shadow)}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-mark{width:42px;height:42px;flex:none;background:var(--coral);border:1.5px solid var(--ink);border-radius:9px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.brand-mark img{width:100%;height:100%;object-fit:cover}
+.brand-text{line-height:1}
+.brand-name{font-family:var(--display);font-size:22px;letter-spacing:-.02em;display:flex;align-items:baseline;gap:7px}
+.brand-name .rad{color:var(--coral)}
+.brand-crown{width:18px;height:12px;color:var(--coral);margin-left:2px;filter:drop-shadow(1px 1px 0 var(--ink))}
+.brand-sub{font-size:9px;letter-spacing:.18em;font-weight:700;color:var(--muted);margin-top:4px;text-transform:uppercase}
+.navlinks{display:flex;gap:4px;margin-left:18px}
+.navlinks button{font-family:var(--sans);background:none;border:0;color:var(--ink-soft);font-size:12px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;padding:9px 13px;border-radius:8px;cursor:pointer}
+.navlinks button:hover{background:rgba(20,17,15,.07)}
+.navlinks button.active{color:var(--cream);background:var(--ink)}
+
+/* buttons */
+.btn{font-family:var(--sans);cursor:pointer;border-radius:9px;font-weight:800;font-size:12px;letter-spacing:.13em;text-transform:uppercase;padding:0 18px;height:46px;border:1.5px solid var(--ink);background:var(--paper);color:var(--ink);transition:transform .12s,box-shadow .12s,background .15s;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.btn:hover{transform:translate(-1px,-1px);box-shadow:var(--shadow)}
+.btn:active{transform:translate(1px,1px);box-shadow:none}
+.btn.primary{background:var(--coral);color:var(--paper);border-color:var(--ink)}
+.btn.primary:hover{background:var(--coral-dark)}
+.btn.small{height:38px;padding:0 13px;font-size:11px}
+
+/* sections / cards */
+section.view{display:none;padding:26px 0 70px}
+section.view.active{display:block}
+section.view>h1{font-family:var(--display);text-transform:uppercase;letter-spacing:-.01em;line-height:1.04;margin:0 0 6px}
+.grid{display:grid;gap:16px}
+.card{background:var(--paper);border:1.5px solid var(--ink);border-radius:var(--radius);padding:18px}
+.card h3{margin:0 0 4px;font-size:14px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+.card .sub{font-size:11px;color:var(--muted);margin:0 0 14px;letter-spacing:.04em;text-transform:uppercase;font-weight:700}
+.klabel{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:800}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+
+/* hero */
+.hero{padding:44px 0 14px}
+.hero h1{font-family:var(--display);font-size:clamp(38px,6vw,62px);line-height:.95;margin:0 0 16px;letter-spacing:-.03em;text-transform:uppercase}
+.hero h1 span{color:var(--coral)}
+.hero p{font-size:16px;color:var(--ink-soft);max-width:680px;margin:0 0 22px;line-height:1.55}
+.tagstrip{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.tagchip{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;border:1.5px solid var(--ink);background:var(--paper);padding:6px 11px;border-radius:999px}
+
+/* badges */
+.badge{font-size:10px;font-weight:800;padding:3px 9px;border-radius:999px;border:1.5px solid var(--ink);letter-spacing:.08em;text-transform:uppercase;display:inline-flex;align-items:center;line-height:1.4}
+.b-gate{background:rgba(255,89,89,.2);color:var(--red-ink)}
+.b-soft{background:rgba(40,152,229,.16);color:var(--blue-ink)}
+.b-ok{background:rgba(37,230,132,.22);color:var(--green-ink)}
+.b-warn{background:rgba(255,167,63,.22);color:var(--orange-ink)}
+.b-prev{background:var(--yellow);color:var(--ink)}
+
+/* gate */
+.gate{background:var(--paper);border:1.5px solid var(--ink);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+.gate .req{font-family:var(--mono);font-weight:600}
+.gate .bar{height:12px;border:1.5px solid var(--ink);border-radius:6px;background:var(--cream);overflow:hidden;margin-top:10px}
+.gate .bar>i{display:block;height:100%;background:var(--coral)}
+.gstatus{font-weight:700;display:flex;align-items:center;gap:8px;margin-top:12px}
+.tick{width:10px;height:10px;border-radius:50%;border:1px solid var(--ink);flex:none}
+.good{background:var(--green)}.bad{background:var(--red)}.mid{background:var(--orange)}
+
+/* modes */
+.modecard{background:var(--paper);border:1.5px solid var(--ink);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+.modecard .tag{font-family:var(--display);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--coral)}
+.modecard h3{font-family:var(--display);font-size:20px;text-transform:uppercase;margin:6px 0 8px;letter-spacing:-.01em}
+.modecard ul{margin:10px 0 0;padding-left:18px;color:var(--ink-soft);font-size:13.5px}
+.modecard li{margin-bottom:5px}
+
+/* configure: archetypes */
+.archbar{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 18px}
+.arch{cursor:pointer;border:1.5px solid var(--ink);background:var(--paper);border-radius:10px;padding:9px 12px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);transition:transform .1s,box-shadow .1s,background .15s}
+.arch:hover{transform:translate(-1px,-1px);box-shadow:2px 2px 0 var(--ink)}
+.arch.active{background:var(--yellow);color:var(--ink);box-shadow:2px 2px 0 var(--ink)}
+
+/* risk dial */
+.dial-wrap{display:grid;grid-template-columns:1fr;gap:14px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:14px;border:1.5px solid var(--ink);border-radius:8px;background:linear-gradient(90deg,var(--green),var(--yellow),var(--coral));outline:none;margin:8px 0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:7px;background:var(--ink);border:2px solid var(--paper);cursor:pointer;box-shadow:0 0 0 1.5px var(--ink)}
+input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:7px;background:var(--ink);border:2px solid var(--paper);cursor:pointer}
+.dialval{font-family:var(--mono);font-size:30px;font-weight:700}
+.limits{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:6px}
+.limit{background:var(--cream);border:1.5px solid var(--ink);border-radius:10px;padding:11px 12px}
+.limit .n{font-family:var(--mono);font-size:18px;font-weight:700;margin-top:3px}
+
+/* factor viz */
+.fgroup{margin-top:16px}
+.fgroup .gh{font-family:var(--display);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--coral);margin:0 0 8px;display:flex;align-items:center;gap:8px}
+.fgroup .gh .cost{font-family:var(--sans);font-weight:700;font-size:9px;color:var(--muted);border:1.5px solid var(--ink);border-radius:999px;padding:2px 7px;background:var(--paper)}
+.factor{display:grid;grid-template-columns:230px 1fr 38px;align-items:center;gap:10px;padding:5px 0}
+.factor .fn{font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:7px}
+.fbar{height:10px;border:1.5px solid var(--ink);border-radius:5px;background:var(--cream);overflow:hidden}
+.fbar>i{display:block;height:100%;background:var(--coral)}
+.factor .fw{font-family:var(--mono);font-size:12px;text-align:right;color:var(--muted)}
+.factor.gated .fbar{background:repeating-linear-gradient(45deg,var(--cream),var(--cream) 4px,#efe0cf 4px,#efe0cf 8px)}
+
+/* labeling chips */
+.label-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.lab{border:1.5px solid var(--ink);border-radius:12px;padding:14px;background:var(--paper)}
+.lab h4{margin:0 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:.04em}
+.lab p{margin:0;font-size:12.5px;color:var(--ink-soft)}
+.lab.signal{box-shadow:3px 3px 0 var(--green)}
+.lab.trap{box-shadow:3px 3px 0 var(--red)}
+
+/* steps */
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.step{border:1.5px solid var(--ink);border-radius:12px;padding:16px;background:var(--paper);position:relative}
+.step .num{width:28px;height:28px;border-radius:50%;background:var(--coral);color:var(--paper);font-family:var(--display);font-size:13px;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--ink);margin-bottom:10px}
+.step h4{margin:0 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.04em}
+.step ul{margin:8px 0 0;padding-left:16px;font-size:12.5px;color:var(--ink-soft)}
+
+/* chat */
+.chat{border:1.5px solid var(--ink);border-radius:12px;background:var(--cream);overflow:hidden}
+.chat .log{padding:14px;display:flex;flex-direction:column;gap:10px;max-height:280px;overflow:auto}
+.msg{max-width:86%;padding:9px 12px;border:1.5px solid var(--ink);border-radius:11px;font-size:13.5px;line-height:1.5}
+.msg.u{align-self:flex-end;background:var(--ink);color:var(--cream)}
+.msg.a{align-self:flex-start;background:var(--paper)}
+.chat .ask{display:flex;gap:6px;flex-wrap:wrap;padding:12px;border-top:1.5px solid var(--ink);background:var(--paper)}
+.chat .ask button{cursor:pointer;font-family:var(--mono);font-size:11.5px;border:1.5px solid var(--ink);background:var(--cream);border-radius:999px;padding:6px 10px}
+.chat .ask button:hover{background:var(--yellow)}
+
+.disclaim{background:var(--cream);border:1.5px solid var(--ink);border-radius:10px;padding:11px 14px;font-size:12.5px;color:var(--ink-soft);display:flex;gap:9px;align-items:flex-start}
+.note{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;margin-top:10px}
+footer.site{border-top:1.5px solid var(--ink);margin-top:30px;padding:22px 0;color:var(--muted);font-size:12px}
+footer.site b{color:var(--coral)}
+.pill-live{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;border:1.5px solid var(--ink);background:var(--paper);padding:6px 10px;border-radius:999px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
+@media(max-width:760px){.navlinks{display:none}.hero h1{font-size:34px}.factor{grid-template-columns:150px 1fr 34px}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="container">
+    <div class="nav">
+      <a class="brand" href="/Roki.html" title="Back to roki.buzz">
+        <span class="brand-mark"><img src="assets/logo-head.png" alt="Roki"/></span>
+        <span class="brand-text">
+          <span class="brand-name">ROKI<span class="rad">BOT</span>
+            <svg class="brand-crown" viewBox="0 0 26 18" fill="currentColor" stroke="currentColor" stroke-width="0.5" stroke-linejoin="round" aria-hidden="true"><path d="M2 16 L4 4 L9 10 L13 2 L17 10 L22 4 L24 16 Z"/></svg>
+          </span>
+          <span class="brand-sub">automated solana trading</span>
+        </span>
+      </a>
+      <nav class="navlinks" id="nav">
+        <button data-view="overview" class="active">Overview</button>
+        <button data-view="configure">Configure</button>
+        <button data-view="intel">Intel</button>
+        <button data-view="safety">Safety</button>
+        <button data-view="roadmap">Roadmap</button>
+      </nav>
+      <a href="/radar" style="font-size:12px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;padding:9px 13px;border-radius:8px;color:var(--coral);align-self:center" title="Roki Radar">Radar &#8599;</a>
+      <div class="spacer"></div>
+      <button class="btn primary small" id="connectBtn" onclick="connectWallet()">Connect wallet</button>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+
+  <!-- OVERVIEW -->
+  <section class="view active" id="view-overview">
+    <div class="hero">
+      <h1>Trade Solana <span>on your terms.</span></h1>
+      <p>Roki Bot is a token-gated, non-custodial trading platform. Pick a trader personality, set one risk dial, and a bot trades for you on its own wallet — never your main one. It runs on a shared on-chain intelligence brain, and you can ask it anything. It's an execution tool for <b>your</b> risk posture, not a money printer.</p>
+      <div class="tagstrip">
+        <span class="tagchip">⦿ non-custodial</span>
+        <span class="tagchip">$ROKI gated</span>
+        <span class="tagchip">two modes</span>
+        <span class="tagchip">tradable configs</span>
+        <span class="tagchip badge b-prev">in development</span>
+      </div>
+    </div>
+
+    <div class="grid" style="grid-template-columns:1.1fr .9fr">
+      <div class="gate" id="gatePanel">
+        <div class="row"><h3 style="margin:0">Access gate</h3><span class="badge b-soft" id="gateBadge">read-only check</span></div>
+        <p class="sub" style="margin:6px 0 0">Hold <span class="req">10,000,000 $ROKI</span> to unlock bot creation</p>
+        <div id="gateBody">
+          <div class="bar"><i id="gateBar" style="width:0%"></i></div>
+          <div class="gstatus" id="gateStatus"><span class="tick mid"></span> Connect your wallet to check eligibility.</div>
+          <div class="flex gap8 wrap" style="margin-top:14px">
+            <button class="btn primary small" onclick="connectWallet()">Connect wallet</button>
+            <button class="btn small" onclick="previewUnlock()">Explore config (preview)</button>
+          </div>
+          <div class="note"><span class="tick good"></span> Read-only: we check your $ROKI balance, nothing else. No signing, no transfers, no seed phrase — ever.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Ask the bot</h3>
+        <p class="sub">live assistant · preview</p>
+        <div class="chat">
+          <div class="log" id="chatLog">
+            <div class="msg a">Hi — I'm your bot's assistant. Ask me why I traded, your PnL, or tell me to change behavior. <b>(Preview: canned answers from sample state.)</b></div>
+          </div>
+          <div class="ask" id="chatAsk"></div>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="klabel" style="margin:26px 0 10px">Two modes, one engine</h3>
+    <div class="grid" style="grid-template-columns:1fr 1fr">
+      <div class="modecard">
+        <div class="tag">Mode A</div><h3>Discovery</h3>
+        <div class="muted" style="font-size:13.5px">"Find me good tokens to buy." A 20-factor scoring engine ranks the token universe; cheap on-chain filters first, expensive social signals only on survivors.</div>
+        <ul><li>Hard gates (honeypot, mint/freeze authority) reject rugs outright</li><li>Weighted factors feed a composite score</li><li>Your archetype = the weight vector over those factors</li></ul>
+      </div>
+      <div class="modecard">
+        <div class="tag">Mode B</div><h3>Position management</h3>
+        <div class="muted" style="font-size:13.5px">"I picked this token — trade it for me." Buy dips, sell pumps, ride the oscillation with re-entry logic.</div>
+        <ul><li>Majors (SOL) and memecoins use different strategy heads</li><li>For memecoins, on-chain flow is the signal — charts are mostly noise</li><li>Recipe = smart-money flow + lifecycle stage + your risk config</li></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONFIGURE -->
+  <section class="view" id="view-configure">
+    <h1>Configure your bot</h1>
+    <p class="muted" style="margin:0 0 14px;font-size:14px">Pick an archetype, then fine-tune with the risk dial. A config is a portable weight-vector + thresholds — an ownable, tradable object that plugs into the ROKI NFT economy. <span class="badge b-prev">interactive preview</span></p>
+
+    <div class="archbar" id="archbar"></div>
+
+    <div class="grid" style="grid-template-columns:1fr 1fr">
+      <div class="card">
+        <h3>Risk dial</h3><p class="sub">one number → concrete limits</p>
+        <div class="row"><span class="klabel">conservative</span><span class="dialval"><span id="dialVal">50</span><span class="faint" style="font-size:14px">/100</span></span><span class="klabel">degen</span></div>
+        <input type="range" id="dial" min="0" max="100" value="50" oninput="onDial(this.value)"/>
+        <div class="limits">
+          <div class="limit"><div class="klabel">max position</div><div class="n" id="lPos"></div></div>
+          <div class="limit"><div class="klabel">slippage cap</div><div class="n" id="lSlip"></div></div>
+          <div class="limit"><div class="klabel">min liquidity</div><div class="n" id="lLiq"></div></div>
+          <div class="limit"><div class="klabel">stop-loss</div><div class="n" id="lStop"></div></div>
+        </div>
+        <div class="note"><span class="tick good"></span> One dial, four limits — documented, not a black box.</div>
+      </div>
+
+      <div class="card">
+        <h3 id="archName">Archetype profile</h3><p class="sub" id="archDesc"></p>
+        <div class="row" style="margin-bottom:8px"><span class="klabel">suggested risk</span><span class="mono" id="archDial" style="font-weight:700"></span></div>
+        <div class="disclaim"><span class="tick mid"></span><span>Same 20 inputs, different weights. Degen weights social + momentum; conservative weights liquidity + wallet-cleanliness. Hard gates apply to <b>every</b> profile regardless of weight.</span></div>
+      </div>
+    </div>
+
+    <div class="card mt16">
+      <h3>20-factor scoring</h3><p class="sub">weights for the selected archetype · <span class="badge b-gate" style="vertical-align:middle">gate</span> = auto-reject, not weighted</p>
+      <div id="factors"></div>
+    </div>
+  </section>
+
+  <!-- INTEL -->
+  <section class="view" id="view-intel">
+    <h1>The intelligence</h1>
+    <p class="muted" style="margin:0 0 14px;font-size:14px">A shared brain runs once, centrally; every bot reads from it. The edge is <b>whose</b> action you react to — and not getting faked out by manufactured "smart money."</p>
+
+    <div class="card">
+      <h3>Wallet labeling — the moat</h3><p class="sub">classify wallets, follow funding lineage</p>
+      <div class="label-grid">
+        <div class="lab signal"><h4>Smart money <span class="badge b-ok">signal</span></h4><p>Consistent net-positive realized PnL. A buy here is real signal.</p></div>
+        <div class="lab"><h4>Insiders / devs <span class="badge b-warn">mixed</span></h4><p>Linked to creation/early funding. Accumulation = signal; first sell = hardest exit trigger.</p></div>
+        <div class="lab"><h4>Fresh / bot <span class="badge b-soft">noise</span></h4><p>New, no track record. Down-weight or ignore.</p></div>
+        <div class="lab trap"><h4>Cluster <span class="badge b-gate">trap</span></h4><p>Many wallets funded from one source, moving in sync. Manufactured "smart money" — a manipulation tell, treated as negative.</p></div>
+      </div>
+      <div class="grid mt16" style="grid-template-columns:1fr 1fr">
+        <div class="disclaim"><span class="tick good"></span><span><b>A+ setup:</b> a genuine net-positive wallet accumulating <i>into</i> a price dip.</span></div>
+        <div class="disclaim"><span class="tick bad"></span><span><b>The trap:</b> a cluster of fresh wallets pumping in sync — looks identical, isn't. Caught by following funding lineage (who funded whom), not a static address list.</span></div>
+      </div>
+      <div class="note"><span class="tick mid"></span> The edge is a data-freshness race (seconds-to-minutes on already-public data), not an MEV/latency race. We don't front-run the mempool.</div>
+    </div>
+
+    <div class="card mt16">
+      <h3>The brain — centralized learning</h3><p class="sub">learns on paper + history, never on your deposits</p>
+      <div class="grid" style="grid-template-columns:1fr 1fr">
+        <div><div class="klabel">measure signals, not trades</div><p style="font-size:13.5px;color:var(--ink-soft);margin:4px 0 12px">"When smart-money-buys-the-dip fired across 200 tokens, what was the hit rate?" — not "did this one trade win?"</p>
+        <div class="klabel">sizing ≠ selection</div><p style="font-size:13.5px;color:var(--ink-soft);margin:4px 0 0">Bet size stays flat while gathering evidence. Never size up on a win streak — that's the classic blow-up.</p></div>
+        <div><div class="klabel">graduate &amp; kill</div><p style="font-size:13.5px;color:var(--ink-soft);margin:4px 0 12px">A signal stays at small test size until it clears a sample-count + expectancy bar. Drifts net-negative → cut it.</p>
+        <div class="klabel">regime-aware</div><p style="font-size:13.5px;color:var(--ink-soft);margin:4px 0 0">Rolling stats read the current market regime; weights shift with it. Used mostly on <b>defense</b> — dialing every bot's aggression down when conditions turn hostile.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SAFETY -->
+  <section class="view" id="view-safety">
+    <h1>Non-custodial &amp; safe</h1>
+    <p class="muted" style="margin:0 0 14px;font-size:14px">The bot trades on a separate wallet you fund — never your main wallet — and the platform itself cannot move your money.</p>
+
+    <div class="grid" style="grid-template-columns:1fr 1fr">
+      <div class="card"><h3>How custody works</h3><p class="sub">enclave signing + policy engine</p>
+        <ul style="margin:0;padding-left:18px;font-size:13.5px;color:var(--ink-soft)">
+          <li>A fresh per-bot trading wallet; you fund it from your main wallet</li>
+          <li>The key lives in a secure hardware enclave; the bot gets <i>signatures</i>, never the raw key — so it can run 24/7</li>
+          <li>Policy: may sign swaps through the DEX router (Jupiter) only; may <b>not</b> transfer funds anywhere except your registered withdrawal address</li>
+          <li>You can withdraw or revoke anytime</li>
+        </ul>
+      </div>
+      <div class="card"><h3>Circuit breakers</h3><p class="sub">limits you set, enforced server-side</p>
+        <ul style="margin:0;padding-left:18px;font-size:13.5px;color:var(--ink-soft)">
+          <li>Kill switch — stop all trading instantly</li>
+          <li>Daily loss limit — auto-halt past a threshold</li>
+          <li>Per-position + slippage caps from your risk dial</li>
+          <li>DENY rules override ALLOW as hard circuit-breakers</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card mt16"><h3>Faith-conscious &amp; honest</h3>
+      <div class="disclaim" style="margin-bottom:10px"><span class="tick good"></span><span>Built on the ROKI ecosystem's halal-conscious principles: no gambling mechanics, no pay-to-win. The product is framed as a risk-posture <b>execution tool</b>, not a guaranteed money-maker.</span></div>
+      <div class="disclaim"><span class="tick mid"></span><span>Every config is a risk/reward choice: "take every profit" caps upside and bleeds fees; "let it ride" risks giving it back. The bot executes <i>your</i> posture without emotion. Nothing here is financial advice, and crypto trading can lose money.</span></div>
+    </div>
+  </section>
+
+  <!-- ROADMAP -->
+  <section class="view" id="view-roadmap">
+    <h1>Build phasing</h1>
+    <p class="muted" style="margin:0 0 16px;font-size:14px">What's live today, and what's coming. The page you're on is the showcase + real $ROKI gate; the trading engine is in development.</p>
+    <div class="steps">
+      <div class="step"><div class="num">1</div><h4>MVP</h4><ul><li>$ROKI access gate (live)</li><li>Config builder: archetypes + risk dial</li><li>One mode end-to-end on paper/backtest</li><li>Enclave wallet create → fund → withdraw</li></ul></div>
+      <div class="step"><div class="num">2</div><h4>v2</h4><ul><li>Both modes live with real execution</li><li>Central scoring brain + wallet labeling</li><li>AI assistant on live bot state</li><li>Kill switch + daily loss limits</li></ul></div>
+      <div class="step"><div class="num">3</div><h4>v3</h4><ul><li>Tradable configs as NFTs</li><li>Regime-aware weighting</li><li>Signal graduation/kill learning loop</li><li>Tier integration across the ROKI economy</li></ul></div>
+    </div>
+    <div class="disclaim mt24"><span class="tick mid"></span><span><b>Status:</b> this page is a product preview with a real, read-only $ROKI eligibility check. Bot creation, deposits, trading and the assistant shown here are previews on sample data — no live trading is running yet. Join early access to be first in.</span></div>
+    <div class="flex gap8 wrap mt16">
+      <a class="btn primary" href="https://x.com/RokiTheRabbit" target="_blank" rel="noopener">Request early access</a>
+      <a class="btn" href="/radar">Try Roki Radar →</a>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site"><div class="container row wrap">
+  <div>Roki <b>Bot</b> &middot; token-gated automated trading</div>
+  <div class="faint">non-custodial &middot; read-only gate &middot; an execution tool, not financial advice</div>
+</div></footer>
+
+<script>
+var ROKI_MINT='J96hj2LiXw6UFPm7cpGQV99G5SJi4mpP7PQRZFC6brrr';
+var ROKI_REQUIRED=10000000;
+var STATE={view:'overview',arch:'balanced',dial:50,unlocked:false};
+
+/* ---------- nav ---------- */
+function show(v){
+  STATE.view=v;
+  document.querySelectorAll('.view').forEach(function(s){s.classList.remove('active')});
+  document.getElementById('view-'+v).classList.add('active');
+  document.querySelectorAll('#nav button').forEach(function(b){b.classList.toggle('active',b.dataset.view===v)});
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+document.getElementById('nav').addEventListener('click',function(e){if(e.target.dataset.view)show(e.target.dataset.view);});
+
+/* ---------- helpers ---------- */
+function fmt(n){if(n>=1e9)return (n/1e9).toFixed(2)+'B';if(n>=1e6)return (n/1e6).toFixed(2)+'M';if(n>=1e3)return (n/1e3).toFixed(1)+'k';return Math.round(n).toLocaleString();}
+function usd(v){if(v>=1e6)return '$'+(v/1e6).toFixed(2)+'M';if(v>=1e3)return '$'+(v/1e3).toFixed(0)+'k';return '$'+Math.round(v);}
+function shorten(a){return a.length>12?a.slice(0,4)+'..'+a.slice(-4):a;}
+function escapeHtml(s){return String(s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
+function withTimeout(p,ms){return Promise.race([p,new Promise(function(_,r){setTimeout(function(){r(new Error('timed out'))},ms)})]);}
+
+/* ---------- risk dial ---------- */
+function riskMap(d){
+  return {
+    pos:(1+d/100*24),                                  // 1%–25% of bankroll per position
+    slip:(0.5+d/100*14.5),                             // 0.5%–15% slippage cap
+    minLiq:Math.round(250000*Math.pow(0.02,d/100)/100)*100, // $250k → $5k (exponential)
+    stop:Math.round(8+d/100*42)                        // 8%–50% stop-loss tolerance
+  };
+}
+function onDial(v){
+  STATE.dial=+v;document.getElementById('dialVal').textContent=v;
+  var m=riskMap(+v);
+  document.getElementById('lPos').textContent=m.pos.toFixed(1)+'%';
+  document.getElementById('lSlip').textContent=m.slip.toFixed(1)+'%';
+  document.getElementById('lLiq').textContent=usd(m.minLiq);
+  document.getElementById('lStop').textContent=m.stop+'%';
+}
+
+/* ---------- 20 factors ---------- */
+var FACTORS=[
+  {k:'f1',n:'Mention velocity',g:'Social'},
+  {k:'f2',n:'Poster quality',g:'Social'},
+  {k:'f3',n:'KOL / smart-account involvement',g:'Social'},
+  {k:'f4',n:'Engagement authenticity',g:'Social'},
+  {k:'f5',n:'Dev account credibility',g:'Social'},
+  {k:'f6',n:'Liquidity depth',g:'On-chain health'},
+  {k:'f7',n:'Real volume + trend',g:'On-chain health'},
+  {k:'f8',n:'Buy/sell pressure',g:'On-chain health'},
+  {k:'f9',n:'Holder count growth',g:'On-chain health'},
+  {k:'f10',n:'Holder concentration (top-10%)',g:'On-chain health'},
+  {k:'f11',n:'Token age',g:'On-chain health'},
+  {k:'f12',n:'Dev wallet behavior',g:'Wallet cleanliness'},
+  {k:'f13',n:'Mint authority revoked?',g:'Wallet cleanliness',gate:true},
+  {k:'f14',n:'Freeze authority revoked?',g:'Wallet cleanliness',gate:true},
+  {k:'f15',n:'LP burned / locked?',g:'Wallet cleanliness',gate:true},
+  {k:'f16',n:'Sniper / bundle at launch',g:'Wallet cleanliness'},
+  {k:'f17',n:'Insider-cluster linkage',g:'Wallet cleanliness'},
+  {k:'f18',n:'Price trend',g:'Momentum'},
+  {k:'f19',n:'Market-cap lifecycle stage',g:'Momentum'},
+  {k:'f20',n:'Narrative heat',g:'Momentum'}
+];
+var GROUPS=[['Social','expensive · scored last'],['On-chain health','cheap · pre-filter'],['Wallet cleanliness','cheap'],['Momentum','cheap']];
+
+/* ---------- 10 archetypes (group emphasis + boosted factors) ---------- */
+var ARCH=[
+ {id:'degen',name:'Degen Aper',dial:88,desc:'Social + momentum heavy, safety light. Lives for the early pump.',g:{Social:90,'On-chain health':40,'Wallet cleanliness':25,Momentum:95},boost:['f1','f3','f18','f20']},
+ {id:'conservative',name:'Conservative Hunter',dial:22,desc:'Liquidity + wallet-cleanliness heavy, social light. Survival first.',g:{Social:35,'On-chain health':90,'Wallet cleanliness':95,Momentum:45},boost:['f6','f10','f12','f15']},
+ {id:'smart',name:'Smart-Money Follower',dial:55,desc:'Reacts to genuine net-positive wallets and KOL involvement.',g:{Social:60,'On-chain health':65,'Wallet cleanliness':80,Momentum:55},boost:['f3','f12','f17']},
+ {id:'narrative',name:'Narrative Rider',dial:70,desc:'Rotates into whatever category is hot right now.',g:{Social:85,'On-chain health':55,'Wallet cleanliness':45,Momentum:80},boost:['f1','f20','f18']},
+ {id:'safety',name:'Safety Maximalist',dial:10,desc:'Every gate strict, cleanliness maxed. Avoids rugs above all.',g:{Social:30,'On-chain health':85,'Wallet cleanliness':100,Momentum:30},boost:['f12','f15']},
+ {id:'sniper',name:'Early Sniper',dial:78,desc:'Young tokens, clean launches, enough liquidity to exit.',g:{Social:55,'On-chain health':60,'Wallet cleanliness':60,Momentum:75},boost:['f11','f16','f6']},
+ {id:'momentum',name:'Momentum Trader',dial:66,desc:'Volume, buy pressure and price trend over everything.',g:{Social:45,'On-chain health':70,'Wallet cleanliness':50,Momentum:95},boost:['f7','f8','f18']},
+ {id:'insider',name:'Insider Watcher',dial:44,desc:'Watches dev + insider clusters; their first sell is the exit.',g:{Social:50,'On-chain health':60,'Wallet cleanliness':85,Momentum:50},boost:['f12','f17','f5']},
+ {id:'balanced',name:'Balanced',dial:50,desc:'Even weights across all four groups. A sane default.',g:{Social:60,'On-chain health':60,'Wallet cleanliness':60,Momentum:60},boost:[]},
+ {id:'whale',name:'Liquidity Whale',dial:34,desc:'Only deep, liquid markets with healthy holder spread.',g:{Social:30,'On-chain health':90,'Wallet cleanliness':70,Momentum:55},boost:['f6','f7','f10']}
+];
+function archOf(id){for(var i=0;i<ARCH.length;i++)if(ARCH[i].id===id)return ARCH[i];return ARCH[8];}
+function factorWeight(a,f){var w=a.g[f.g]||50;if(a.boost.indexOf(f.k)>=0)w=Math.min(100,w+12);return w;}
+
+function renderArchbar(){
+  document.getElementById('archbar').innerHTML=ARCH.map(function(a){
+    return '<div class="arch '+(STATE.arch===a.id?'active':'')+'" onclick="selectArch(\''+a.id+'\')">'+a.name+'</div>';
+  }).join('');
+}
+function selectArch(id){STATE.arch=id;var a=archOf(id);renderArchbar();
+  document.getElementById('archName').textContent=a.name;
+  document.getElementById('archDesc').textContent=a.desc;
+  document.getElementById('archDial').textContent=a.dial+' / 100';
+  document.getElementById('dial').value=a.dial;onDial(a.dial);
+  renderFactors();
+}
+function renderFactors(){
+  var a=archOf(STATE.arch),html='';
+  GROUPS.forEach(function(gr){
+    html+='<div class="fgroup"><div class="gh">'+gr[0]+'<span class="cost">'+gr[1]+'</span></div>';
+    FACTORS.filter(function(f){return f.g===gr[0]}).forEach(function(f){
+      var w=factorWeight(a,f);
+      var gate=f.gate?'<span class="badge b-gate">gate</span>':'';
+      html+='<div class="factor'+(f.gate?' gated':'')+'"><div class="fn">'+f.n+' '+gate+'</div>'
+        +'<div class="fbar"><i style="width:'+(f.gate?100:w)+'%"></i></div>'
+        +'<div class="fw">'+(f.gate?'GATE':w)+'</div></div>';
+    });
+    html+='</div>';
+  });
+  document.getElementById('factors').innerHTML=html;
+}
+
+/* ---------- gate ---------- */
+function setGate(html){document.getElementById('gateStatus').innerHTML=html;}
+function previewUnlock(){STATE.unlocked=true;document.getElementById('gateBar').style.width='100%';
+  setGate('<span class="tick good"></span> Preview mode — exploring the config builder. (Eligibility not verified.)');
+  show('configure');
+}
+async function connectWallet(){
+  var prov=window.solana||window.solflare;
+  if(!prov||!prov.connect){
+    setGate('<span class="tick mid"></span> No Solana wallet detected. Install <a href="https://phantom.app" target="_blank" rel="noopener" style="text-decoration:underline">Phantom</a> or Solflare, then reconnect. <a href="#" onclick="previewUnlock();return false" style="text-decoration:underline">Explore the preview instead.</a>');
+    return;
+  }
+  setGate('<span class="dot"></span> Connecting…');
+  try{
+    var resp=await prov.connect();
+    var addr=(resp&&resp.publicKey?resp.publicKey:prov.publicKey).toString();
+    document.getElementById('connectBtn').textContent=shorten(addr);
+    setGate('<span class="dot"></span> Checking $ROKI balance for '+shorten(addr)+'…');
+    await checkGate(addr);
+  }catch(e){
+    setGate('<span class="tick bad"></span> Wallet connection cancelled.');
+  }
+}
+async function checkGate(addr){
+  try{
+    var r=await withTimeout(fetch('/api/gate?addr='+encodeURIComponent(addr)),20000);
+    var d=await r.json();
+    if(!r.ok)throw new Error(d.error||('check failed ('+r.status+')'));
+    var pctOf=Math.min(100,d.balance/d.required*100);
+    document.getElementById('gateBar').style.width=pctOf+'%';
+    if(d.eligible){
+      STATE.unlocked=true;
+      document.getElementById('gateBadge').textContent='access unlocked';
+      document.getElementById('gateBadge').className='badge b-ok';
+      setGate('<span class="tick good"></span> <b>Access unlocked</b> — you hold '+fmt(d.balance)+' $ROKI. <a href="#" onclick="show(\'configure\');return false" style="text-decoration:underline">Configure your bot →</a>');
+    }else{
+      setGate('<span class="tick bad"></span> Holds <b>'+fmt(d.balance)+'</b> $ROKI · need 10,000,000 — '+fmt(d.shortfall)+' more to unlock. <a href="#" onclick="previewUnlock();return false" style="text-decoration:underline">Explore the preview.</a>');
+    }
+  }catch(err){
+    setGate('<span class="tick mid"></span> Live gate check runs on the deployed backend. Once <span class="mono">/api/gate</span> is live (Helius key set), this verifies your $ROKI on-chain. <a href="#" onclick="previewUnlock();return false" style="text-decoration:underline">Explore the config preview.</a> <span class="faint">('+escapeHtml(err&&err.message||'')+')</span>');
+  }
+}
+
+/* ---------- mock assistant ---------- */
+var QA=[
+ ['Why did you buy this?','I entered <b>$SAMPLE</b> because a net-positive smart-money wallet accumulated into a 22% dip while liquidity stayed above your $40k floor — your <b>Smart-Money Follower</b> profile weights that heavily. <span class="faint">(preview)</span>'],
+ ["What's my PnL?",'Sample bot: <b>+18.4%</b> realized over 23 trades, flat test-size. Remember — at this stage I keep size flat while a signal proves itself; I don\'t scale up on a streak. <span class="faint">(preview)</span>'],
+ ['Stop buying memes','Done — I\'ve set the meme category weight to zero and will only act on your chosen majors profile. You can re-enable it from Configure anytime. <span class="faint">(preview)</span>'],
+ ['Are we in a good regime?','Right now the brain reads holders staying in ~35s longer than last week — a more patient/greedy regime. I\'ve nudged aggression slightly down on defense until it confirms. <span class="faint">(preview)</span>']
+];
+function renderChat(){
+  document.getElementById('chatAsk').innerHTML=QA.map(function(q,i){return '<button onclick="askBot('+i+')">'+escapeHtml(q[0])+'</button>';}).join('');
+}
+function askBot(i){
+  var log=document.getElementById('chatLog');
+  log.insertAdjacentHTML('beforeend','<div class="msg u">'+escapeHtml(QA[i][0])+'</div>');
+  setTimeout(function(){log.insertAdjacentHTML('beforeend','<div class="msg a">'+QA[i][1]+'</div>');log.scrollTop=log.scrollHeight;},220);
+  log.scrollTop=log.scrollHeight;
+}
+
+/* ---------- init ---------- */
+renderArchbar();selectArch('balanced');renderChat();onDial(50);
+</script>
+</body>
+</html>
