@@ -20,8 +20,9 @@ const KNOWN_OWNERS = {
   '2ojv9BAiHUrvsm9gxDe7fJSzbNZSJcxZvf8dqmWGHG8S': 'exchange/custody',
 };
 const FRESH_DAYS = 14;
-const MAX_HOLDERS = 6;
-const TRACE_TIMEOUT_MS = 7000;
+const MAX_HOLDERS = 4;       // keep CPU/subrequests within CF Pages Functions limits
+const TX_LIMIT = 40;         // fewer enhanced-tx to parse (CPU budget)
+const TRACE_TIMEOUT_MS = 6000;
 
 export async function onRequestGet({ request, env }) {
   const mint = (new URL(request.url).searchParams.get('mint') || '').trim();
@@ -71,7 +72,7 @@ export async function onRequestGet({ request, env }) {
       try {
         const ctrl = new AbortController();
         const to = setTimeout(() => ctrl.abort(), TRACE_TIMEOUT_MS);
-        const r = await fetch(`https://api.helius.xyz/v0/addresses/${h.owner}/transactions?api-key=${KEY}&limit=100`, { signal: ctrl.signal });
+        const r = await fetch(`https://api.helius.xyz/v0/addresses/${h.owner}/transactions?api-key=${KEY}&limit=${TX_LIMIT}`, { signal: ctrl.signal });
         clearTimeout(to);
         if (!r.ok) return { owner: h.owner, funder: null };
         const txs = await r.json();
@@ -81,7 +82,7 @@ export async function onRequestGet({ request, env }) {
           if (nt.length) { funder = nt[0].fromUserAccount; fundTs = txs[i].timestamp; break; }
         }
         const oldestTs = txs.length ? txs[txs.length - 1].timestamp : null;
-        const fullHistory = txs.length < 100; // saw all txs → genesis funder
+        const fullHistory = txs.length < TX_LIMIT; // saw all txs → genesis funder
         const fresh = fullHistory && oldestTs && (now - oldestTs) < FRESH_DAYS * 86400;
         return { owner: h.owner, funder, fundTs, fresh, fullHistory };
       } catch (e) { return { owner: h.owner, funder: null }; }
@@ -104,7 +105,7 @@ export async function onRequestGet({ request, env }) {
       freshCount,
       genesisCount,
       sharedFunders,
-      window: 'last 100 tx per holder',
+      window: `last ${TX_LIMIT} tx per holder`,
       note: genesisCount < retail.length
         ? 'Some top holders are highly active; for those the funder shown is the most recent funding seen, not genesis.'
         : 'All analyzed holders had <100 lifetime txs, so funders are genesis-level.',

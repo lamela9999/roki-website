@@ -56,8 +56,9 @@ export async function onRequestGet({ request, env }) {
     const priceMints = [WSOL, ...tokens.map((t) => t.mint)].slice(0, 30);
     const priceOf = {};
     const symOf = {};
+    const dexGet = async (u) => { for (let i = 0; i < 3; i++) { try { const r = await fetch(u); if (r.ok) return await r.json(); } catch (e) { /* retry */ } await new Promise((res) => setTimeout(res, 400)); } return null; };
     try {
-      const dr = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${priceMints.join(',')}`).then((r) => r.json());
+      const dr = await dexGet(`https://api.dexscreener.com/latest/dex/tokens/${priceMints.join(',')}`);
       for (const p of (dr && dr.pairs) || []) {
         const m = p.baseToken && p.baseToken.address;
         const liq = (p.liquidity && p.liquidity.usd) || 0;
