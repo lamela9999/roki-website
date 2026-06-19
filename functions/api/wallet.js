@@ -76,12 +76,17 @@ export async function onRequestGet({ request, env }) {
       const pr = priceOf[t.mint];
       const liquid = pr && pr._liq >= MIN_LIQ_USD;
       const price = liquid ? pr.price : null;
+      // Realizable value: you can't exit more than the pool holds. Caps phantom value from
+      // scam tokens with manipulated prices in thin pools.
+      const raw = price != null ? price * t.amount : null;
+      const valueUsd = raw != null ? Math.min(raw, pr._liq) : null;
       return {
         mint: t.mint,
         symbol: symOf[t.mint] || null,
         amount: t.amount,
         priceUsd: price,
-        valueUsd: price != null ? price * t.amount : null,
+        valueUsd,
+        capped: raw != null && raw > pr._liq,
       };
     });
     tokens.sort((a, b) => (b.valueUsd || 0) - (a.valueUsd || 0));
