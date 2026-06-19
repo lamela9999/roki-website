@@ -252,6 +252,23 @@ footer.site b{color:var(--coral)}
 
     <div class="archbar" id="archbar"></div>
 
+    <div class="card" style="margin-bottom:16px">
+      <h3>Score a live token <span class="badge b-ok">real · on-chain</span></h3>
+      <p class="sub">runs a real mint through the selected archetype's weights + hard gates (Mode A)</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <div style="flex:1;min-width:260px;display:flex;align-items:center;gap:10px;background:var(--paper);border:1.5px solid var(--ink);border-radius:11px;padding:0 14px;height:48px;box-shadow:var(--shadow)">
+          <span class="faint mono">mint</span>
+          <input id="scoreMint" placeholder="paste any Solana token mint…" spellcheck="false" style="flex:1;background:none;border:0;outline:0;color:var(--ink);font-size:14px;font-family:var(--mono)"/>
+        </div>
+        <button class="btn primary" onclick="scoreToken()">Score</button>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+        <span class="tagchip" style="cursor:pointer" onclick="document.getElementById('scoreMint').value='DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263';scoreToken()">try $BONK</span>
+        <span class="tagchip" style="cursor:pointer" onclick="document.getElementById('scoreMint').value='J96hj2LiXw6UFPm7cpGQV99G5SJi4mpP7PQRZFC6brrr';scoreToken()">try $ROKI</span>
+      </div>
+      <div id="scoreResult" class="mt16"></div>
+    </div>
+
     <div class="grid" style="grid-template-columns:1fr 1fr">
       <div class="card">
         <h3>Risk dial</h3><p class="sub">one number → concrete limits</p>
@@ -530,6 +547,44 @@ function askBot(i){
   log.insertAdjacentHTML('beforeend','<div class="msg u">'+escapeHtml(QA[i][0])+'</div>');
   setTimeout(function(){log.insertAdjacentHTML('beforeend','<div class="msg a">'+QA[i][1]+'</div>');log.scrollTop=log.scrollHeight;},220);
   log.scrollTop=log.scrollHeight;
+}
+
+/* ---------- live token scoring (Mode A, real /api/discover) ---------- */
+function archName(id){var a=archOf(id);return a?a.name:id;}
+function gradeColor(s){return s>=70?'var(--green)':s>=45?'var(--yellow)':'var(--coral)';}
+function scoreToken(){
+  var m=document.getElementById('scoreMint').value.trim();
+  var box=document.getElementById('scoreResult');
+  if(!m){box.innerHTML='';return;}
+  box.innerHTML='<div class="disclaim"><span class="dot"></span><span>Scoring '+escapeHtml(shorten(m))+' through the <b>'+escapeHtml(archName(STATE.arch))+'</b> profile…</span></div>';
+  withTimeout(fetch('/api/discover?mint='+encodeURIComponent(m)+'&archetype='+STATE.arch),20000)
+    .then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||('failed '+r.status));return d;});})
+    .then(function(d){if(d.error)throw new Error(d.error);box.innerHTML=renderScore(d);})
+    .catch(function(e){box.innerHTML='<div class="disclaim"><span class="tick mid"></span><span><b>Live scoring runs on the deployed backend.</b> Once <span class="mono">/api/discover</span> is live (Helius key set in Cloudflare), this scores any mint through your archetype on real on-chain data. <span class="faint">('+escapeHtml(e&&e.message||'')+')</span></span></div>';});
+}
+function renderScore(d){
+  var c=d.composite,col=d.gates.rejected?'var(--coral)':gradeColor(c==null?0:c);
+  var gate=d.gates.rejected?'<span class="badge b-gate">rejected · '+escapeHtml(d.gates.fails.join(', '))+'</span>':'<span class="badge b-ok">gates passed</span>';
+  var groups={};d.factors.forEach(function(f){(groups[f.group]=groups[f.group]||[]).push(f);});
+  var fhtml='';Object.keys(groups).forEach(function(g){
+    fhtml+='<div class="fgroup"><div class="gh">'+g+'</div>';
+    groups[g].forEach(function(f){
+      var av=f.available,lab=f.gate?'<span class="badge b-gate">gate</span>':'';
+      var fill=f.gate?(f.value>=100?'var(--green)':'var(--coral)'):'var(--coral)';
+      fhtml+='<div class="factor'+(av?'':' gated')+'"><div class="fn">'+f.name+' '+lab+'</div>'
+        +'<div class="fbar"><i style="width:'+(av?f.value:0)+'%;background:'+(av?fill:'transparent')+'"></i></div>'
+        +'<div class="fw">'+(av?f.value:'<span class="faint">pending</span>')+'</div></div>';
+    });
+    fhtml+='</div>';
+  });
+  return '<div class="card" style="border-color:'+col+';box-shadow:3px 3px 0 '+col+'"><div class="row wrap">'
+    +'<div><div style="font-size:18px;font-weight:700">'+escapeHtml(d.market.name)+' <span class="muted mono" style="font-size:13px">$'+escapeHtml(d.market.symbol)+'</span></div>'
+    +'<div class="faint mono" style="font-size:12px">mcap '+usd(d.market.mcap)+' &middot; liq '+usd(d.market.liq)+' &middot; '+(d.market.ageDays!=null?d.market.ageDays+'d':'?')+' &middot; '+escapeHtml(d.market.dex||'')+'</div></div>'
+    +'<div style="text-align:right"><div class="mono" style="font-size:34px;font-weight:700;color:'+col+'">'+(c==null?'—':c)+'</div><div class="klabel">composite / 100</div></div></div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap" class="mt8">'+gate+' <span class="badge b-soft">'+escapeHtml(archName(d.archetype))+' weights</span> <span class="badge b-prev">'+d.availableCount+'/20 factors live</span></div>'
+    +'<div class="disclaim mt16"><span class="tick '+(d.gates.rejected?'bad':(c>=45?'good':'mid'))+'"></span><span>'+escapeHtml(d.verdict)+'</span></div>'
+    +fhtml
+    +'<div class="note"><span class="tick mid"></span> Greyed factors (social, holder-growth, dev behavior, LP lock, sniper, insider-cluster, narrative) need paid data or the Brain — excluded from the composite, not faked.</div></div>';
 }
 
 /* ---------- init ---------- */
