@@ -340,6 +340,7 @@ footer.site b{color:var(--coral)}
 
     <div class="card">
       <h3>Wallet labeling — the moat</h3><p class="sub">classify wallets, follow funding lineage</p>
+      <div class="disclaim" style="margin:0 0 12px"><span class="tick mid"></span><span><b>Live vs planned, honestly:</b> today "smart money" is computed <b>on demand</b> — for any wallet/token we pull its recent swaps and score it by <b>realized SOL profit + win-rate over closed trades</b> (live now in Radar's Wallet lookup &amp; Leaderboards, and funding-cluster detection). There is <b>no precomputed global list of smart wallets yet</b> — a maintained, PnL-ranked wallet database that catches fake clusters across the whole chain is the centralized <b>Brain</b> (backend phase, not built). The four categories below are the model the Brain will apply at scale.</span></div>
       <div class="label-grid">
         <div class="lab signal"><h4>Smart money <span class="badge b-ok">signal</span></h4><p>Consistent net-positive realized PnL. A buy here is real signal.</p></div>
         <div class="lab"><h4>Insiders / devs <span class="badge b-warn">mixed</span></h4><p>Linked to creation/early funding. Accumulation = signal; first sell = hardest exit trigger.</p></div>

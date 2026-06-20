@@ -62,7 +62,11 @@ export async function onRequestGet({ request, env }) {
       }
     }
     const universe = mints.slice(0, 16);
-    if (!universe.length) return json({ error: 'No trending tokens available right now.' }, 200);
+    const KV = env.ZEN_KV; // serve the last-good board when DexScreener's trending feed rate-limits CF
+    if (!universe.length) {
+      if (KV) { const c = await KV.get('radar:bb:' + archId, 'json').catch(() => null); if (c) return json({ ...c, stale: true }, 200, { 'cache-control': 'public, max-age=60' }); }
+      return json({ error: 'Trending feed is rate-limited right now — retry in a moment.' }, 200);
+    }
 
     // 2) market data per token (parallel single-mint — reliable) + 3) authorities (1 batched RPC)
     const [pairsArr, accInfos] = await Promise.all([
@@ -120,13 +124,15 @@ export async function onRequestGet({ request, env }) {
 
     rows.sort((a, b) => (b.composite == null ? -1 : b.composite) - (a.composite == null ? -1 : a.composite));
 
-    return json({
+    const out = {
       archetype: archId,
       scanned: rows.length,
       results: rows,
       note: 'Mode A on a live trending universe (DexScreener boosts), scored on the cheap on-chain factors. Drill into any result with /api/scan (concentration) and /api/funding (clusters). Social/Brain factors pending.',
       source: 'helius+dexscreener', ts: Date.now(),
-    }, 200, { 'cache-control': 'public, max-age=60' });
+    };
+    if (KV && rows.length) await KV.put('radar:bb:' + archId, JSON.stringify(out), { expirationTtl: 600 }).catch(() => {});
+    return json(out, 200, { 'cache-control': 'public, max-age=60' });
   } catch (e) {
     return json({ error: e.message || 'Discovery board failed.' }, 502);
   }
