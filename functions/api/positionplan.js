@@ -21,7 +21,7 @@ const MAJORS = new Set([
 function riskMap(d) {
   return {
     positionPct: +(1 + d / 100 * 24).toFixed(1),       // 1%–25% of bankroll
-    slippagePct: +(0.5 + d / 100 * 14.5).toFixed(1),   // 0.5%–15%
+    slippagePct: +(0.5 + d / 100 * 4.5).toFixed(1),    // 0.5%–5% (tight; real fills use MEV-protected routing, not a fat tolerance)
     minLiqUsd: Math.round(250000 * Math.pow(0.02, d / 100) / 100) * 100, // $250k→$5k
     stopLossPct: Math.round(8 + d / 100 * 42),          // 8%–50%
   };

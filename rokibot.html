@@ -304,6 +304,7 @@ footer.site b{color:var(--coral)}
           <div class="limit"><div class="klabel">stop-loss</div><div class="n" id="lStop"></div></div>
         </div>
         <div class="note"><span class="tick good"></span> One dial, four limits — documented, not a black box.</div>
+        <div class="note"><span class="tick mid"></span> Slippage cap stays tight (≤5%) on purpose. Real fills route through <b>MEV-protected execution</b> (Jito bundles / private RPC + Jupiter dynamic slippage) so you're not sandwiched — a fat tolerance is never the way to land a fill.</div>
       </div>
 
       <div class="card">
@@ -444,7 +445,7 @@ function withTimeout(p,ms){return Promise.race([p,new Promise(function(_,r){setT
 function riskMap(d){
   return {
     pos:(1+d/100*24),                                  // 1%–25% of bankroll per position
-    slip:(0.5+d/100*14.5),                             // 0.5%–15% slippage cap
+    slip:(0.5+d/100*4.5),                              // 0.5%–5% cap (tight on purpose — see MEV note)
     minLiq:Math.round(250000*Math.pow(0.02,d/100)/100)*100, // $250k → $5k (exponential)
     stop:Math.round(8+d/100*42)                        // 8%–50% stop-loss tolerance
   };
