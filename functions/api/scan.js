@@ -4,7 +4,7 @@
 // is NEVER sent to the browser. Returns real market + safety + top-holder concentration.
 // Entity clustering & funding-tree trace are the next phase (heavier transaction-graph work).
 
-import { json, preflight, pickPair } from './_utils.js';
+import { json, preflight, pickPair, solRpc } from './_utils.js';
 
 export const onRequestOptions = () => preflight();
 
@@ -23,19 +23,8 @@ export async function onRequestGet({ request, env }) {
   const mint = (new URL(request.url).searchParams.get('mint') || '').trim();
   if (!MINT_RE.test(mint)) return json({ error: "That doesn't look like a Solana mint address." }, 400);
 
-  const KEY = env.HELIUS_API_KEY;
-  if (!KEY) return json({ error: 'Forensic backend not configured (missing Helius key).' }, 503);
-  const EP = `https://mainnet.helius-rpc.com/?api-key=${KEY}`;
-
-  const rpc = async (method, params) => {
-    const r = await fetch(EP, {
-      method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
-    });
-    const j = await r.json();
-    if (j.error) throw new Error(`${method}: ${j.error.message || 'rpc error'}`);
-    return j.result;
-  };
+  // Free-first RPC (publicnode/mainnet-beta), Helius only as fallback / for top-holders.
+  const rpc = (method, params) => solRpc(method, params, env);
 
   try {
     const [dex, acct, largest, supply] = await Promise.all([
