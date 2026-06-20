@@ -681,6 +681,64 @@ function renderEntities(){
  document.getElementById('entityList').innerHTML='<div class="row wrap" style="margin-bottom:14px;gap:10px"><div class="muted" style="font-size:13.5px">Showing entities for <b style="color:var(--text)">$'+escapeHtml(t.symbol)+'</b> &middot; '+t.entities.length+' resolved</div></div>'
   +t.entities.map(entityCard).join('');
 }
+/* ---------- bubble map (self-contained force graph; no libs) ---------- */
+function bmColor(label,inCluster){
+  if(inCluster)return 'var(--orange)';
+  if(!label)return 'var(--green)';
+  if(/pool|contract|raydium|amm|meteora|orca/i.test(label))return 'var(--muted)';
+  if(/exchange|cex|custody|binance|coinbase/i.test(label))return 'var(--blue)';
+  return 'var(--ink-soft)';
+}
+function bmForce(nodes,edges,W,H,iters){
+  nodes.forEach(function(n,i){var a=i/nodes.length*Math.PI*2;n.x=W/2+Math.cos(a)*140;n.y=H/2+Math.sin(a)*110;n.vx=0;n.vy=0;});
+  var c=null;for(var k=0;k<nodes.length;k++)if(nodes[k].kind==='token')c=nodes[k];
+  for(var it=0;it<iters;it++){
+    for(var i=0;i<nodes.length;i++)for(var j=i+1;j<nodes.length;j++){
+      var a=nodes[i],b=nodes[j];var dx=a.x-b.x,dy=a.y-b.y;var d2=dx*dx+dy*dy||0.01;var dd=Math.sqrt(d2);
+      var rep=(a.r+b.r+34);var f=(rep*rep)/d2*0.5;var fx=dx/dd*f,fy=dy/dd*f;a.vx+=fx;a.vy+=fy;b.vx-=fx;b.vy-=fy;
+    }
+    edges.forEach(function(e){var a=e.a,b=e.b;var dx=b.x-a.x,dy=b.y-a.y;var dd=Math.sqrt(dx*dx+dy*dy)||0.01;var f=(dd-(e.len||110))*0.02;var fx=dx/dd*f,fy=dy/dd*f;a.vx+=fx;a.vy+=fy;b.vx-=fx;b.vy-=fy;});
+    nodes.forEach(function(n){n.vx+=(W/2-n.x)*0.002;n.vy+=(H/2-n.y)*0.002;n.x+=Math.max(-14,Math.min(14,n.vx));n.y+=Math.max(-14,Math.min(14,n.vy));n.vx*=0.85;n.vy*=0.85;});
+    if(c){c.x=W/2;c.y=H/2;c.vx=0;c.vy=0;}
+  }
+  nodes.forEach(function(n){n.x=Math.max(n.r+8,Math.min(W-n.r-8,n.x));n.y=Math.max(n.r+18,Math.min(H-n.r-14,n.y));});
+}
+function renderBubbleMap(t,d){
+  var list=(t.holders&&t.holders.list)||[];
+  var holders=list.slice(0,16).filter(function(o){return o.owner;});
+  if(!holders.length)return '';
+  var inClusterOf={};var funders=(d&&d.sharedFunders)||[];
+  funders.forEach(function(c){(c.holders||[]).forEach(function(h){inClusterOf[h]=c.funder;});});
+  var W=680,H=460,nodes=[],byId={};
+  function add(n){nodes.push(n);byId[n.id]=n;return n;}
+  var sym=t.symbol||'TOKEN';
+  add({id:'__token__',kind:'token',label:'$'+sym,r:24,color:'var(--coral)',addr:t.mint});
+  holders.forEach(function(o){
+    var r=Math.max(8,Math.min(26,8+Math.sqrt((o.pct||0)*100)*5));
+    add({id:o.owner,kind:'holder',r:r,color:bmColor(o.label,!!inClusterOf[o.owner]),addr:o.owner,pct:o.pct,wlabel:o.label,cluster:inClusterOf[o.owner],label:shorten(o.owner)});
+  });
+  funders.forEach(function(c){if(!byId[c.funder])add({id:c.funder,kind:'funder',r:14,color:'var(--red)',addr:c.funder,count:c.count,label:'funder'});});
+  var edges=[];
+  holders.forEach(function(o){edges.push({a:byId['__token__'],b:byId[o.owner],type:'own',len:120});});
+  funders.forEach(function(c){(c.holders||[]).forEach(function(h){if(byId[c.funder]&&byId[h])edges.push({a:byId[c.funder],b:byId[h],type:'fund',len:64});});});
+  bmForce(nodes,edges,W,H,170);
+  var lines=edges.map(function(e){var red=e.type==='fund';
+    return '<line x1="'+e.a.x.toFixed(1)+'" y1="'+e.a.y.toFixed(1)+'" x2="'+e.b.x.toFixed(1)+'" y2="'+e.b.y.toFixed(1)+'" stroke="'+(red?'var(--red)':'rgba(20,17,15,.16)')+'" stroke-width="'+(red?2.4:1)+'"'+(red?'':' stroke-dasharray="2 3"')+'/>';}).join('');
+  var circles=nodes.map(function(n){
+    var title=n.kind==='token'?('$'+sym+' — the token'):(n.kind==='funder'?('SHARED FUNDER '+n.addr+' — funded '+n.count+' top holders'):(n.addr+(n.wlabel?(' · '+n.wlabel):' · retail wallet')+(n.pct!=null?(' · '+pct(n.pct)+' of supply'):'')+(n.cluster?(' · ⚠ funded by '+shorten(n.cluster)):'')));
+    var showLabel=n.kind!=='holder'||n.r>=13;
+    return '<a href="https://solscan.io/account/'+encodeURIComponent(n.addr)+'" target="_blank" rel="noopener">'
+      +'<circle cx="'+n.x.toFixed(1)+'" cy="'+n.y.toFixed(1)+'" r="'+n.r+'" fill="'+n.color+'" stroke="var(--ink)" stroke-width="1.5"><title>'+escapeHtml(title)+'</title></circle>'
+      +(showLabel?'<text x="'+n.x.toFixed(1)+'" y="'+(n.y+n.r+10).toFixed(1)+'" text-anchor="middle" font-size="'+(n.kind==='token'?11:9)+'" font-family="var(--mono)" fill="var(--ink-soft)" style="pointer-events:none">'+escapeHtml(n.label)+'</text>':'')
+      +'</a>';}).join('');
+  var cc=funders.length;
+  var leg=function(c,t){return '<span class="flex center gap8"><span style="width:11px;height:11px;border-radius:50%;background:'+c+';border:1.5px solid var(--ink)"></span> '+t+'</span>';};
+  var legend='<div class="flex gap12 wrap" style="font-size:11px;margin-top:10px">'+leg('var(--coral)','token')+leg('var(--green)','retail')+leg('var(--orange)','in cluster')+leg('var(--blue)','exchange')+leg('var(--muted)','pool/contract')+'<span class="flex center gap8"><span style="width:16px;border-top:2.4px solid var(--red)"></span> shared funder</span></div>';
+  return '<div class="card" style="margin-bottom:16px"><div class="row wrap" style="margin-bottom:6px"><div><h3 style="margin:0">Holder bubble map</h3><p class="sub" style="margin:4px 0 0">'+holders.length+' top holders &middot; bubble size = supply &middot; red link = shared funder</p></div><span class="badge '+(cc?'b-dirty':'b-clean')+'">'+(cc?(cc+' cluster'+(cc>1?'s':'')+' flagged'):'no cluster')+'</span></div>'
+    +'<div style="background:var(--cream);border:1.5px solid var(--ink);border-radius:12px;overflow:hidden"><svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;display:block" role="img" aria-label="wallet bubble map">'+lines+circles+'</svg></div>'
+    +legend
+    +'<div class="note"><span class="tick mid"></span> Click any bubble → opens it on Solscan. Wallets funded by the same source are pulled together and linked in red — the manufactured-cluster (sybil) tell.</div></div>';
+}
 function renderFundingClusters(d,t){
  var clusters=(d.sharedFunders||[]);
  var head='<div class="row wrap" style="margin-bottom:12px;gap:10px"><div class="muted" style="font-size:13.5px">Funding-lineage trace for <b style="color:var(--text)">$'+escapeHtml(t.symbol||'?')+'</b> &middot; '+d.holdersAnalyzed+' top retail holders &middot; '+escapeHtml(d.window||'')+'</div></div>';
@@ -699,7 +757,7 @@ function renderFundingClusters(d,t){
    stats+='<div class="disclaim mt16"><span class="tick good"></span><span>No shared funder found across the analyzed top holders in this window — no obvious manufactured cluster. (Note: highly active wallets show only recent funding; deep genesis tracing is a backend job.)</span></div>';
  }
  stats+='</div>';
- return head+stats;
+ return renderBubbleMap(t,d)+head+stats;
 }
 
 /* boards */
