@@ -83,12 +83,21 @@ export async function onRequestGet({ request, env }) {
         }
       }
     }
-    const holders = {
+    // If the top-holder list came back empty (getTokenLargestAccounts is degraded on Helius for
+    // some heavy tokens, e.g. BONK), report it as UNAVAILABLE — never as 0%, which would falsely
+    // read as "no concentration = safe."
+    const holders = (list.length && total) ? {
+      available: true,
       sampled: list.length,
-      top1: list[0] ? list[0].pct : 0,
+      top1: list[0].pct,
       top10: list.slice(0, 10).reduce((s, h) => s + h.pct, 0),
       pooledPct: list.filter((h) => h.label).reduce((s, h) => s + h.pct, 0),
       list,
+    } : {
+      available: false,
+      sampled: 0,
+      reason: 'Top-holder data temporarily unavailable from the RPC for this token — retry in a moment.',
+      list: [],
     };
 
     return json({ mint, market, safety, holders, source: 'helius+dexscreener', ts: Date.now() }, 200, {

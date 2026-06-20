@@ -620,6 +620,8 @@ function panelByKey(t,key){
  if(key==='safety')return safetyPanel(t);
  if(key==='funding'){ if(t.live)return fundingPlaceholder(); return t.funding?fundingPanel(t):forensicNote('Funding-tree trace'); }
  if(key==='entities'){
+   if(t.live&&t.holders&&t.holders.available===false)
+     return '<div class="card"><h3>Holder bubble map</h3><p class="sub">top holders</p><div class="note"><span class="tick mid"></span> '+escapeHtml(t.holders.reason||'Top-holder data temporarily unavailable from the RPC — re-run the scan in a moment.')+'</div></div>';
    if(t.live&&t.holders&&t.holders.list&&t.holders.list.length)
      return renderBubbleMap(t,null)+'<div class="note" style="margin-top:-6px"><span class="tick mid"></span> Open the <b>Entities</b> tab for the full funding-lineage trace — it adds the red shared-funder cluster links.</div>';
    if(t.forensicPending||!t.entities||!t.entities.length)return forensicNote('Entity resolution &amp; clustering');
