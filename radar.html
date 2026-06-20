@@ -663,12 +663,42 @@ function narrate(t,score){
 function renderEntities(){
  var t=curTok();
  if(t.forensicPending||!t.entities||!t.entities.length){
-   document.getElementById('entityList').innerHTML=forensicNote('Entity resolution &amp; clustering')
-    +'<div class="note"><span class="tick mid"></span> Scanned <b>$'+escapeHtml(t.symbol||'?')+'</b> live — wallet clustering needs the Helius backend (Phase 2). Until then the demo tokens show worked examples.</div>';
+   // Live-scanned token → run the real funding-lineage / shared-funder cluster trace.
+   var box=document.getElementById('entityList');
+   if(t.live&&t.mint){
+     box.innerHTML='<div class="disclaim"><span class="dot"></span><span>Tracing funding lineage of <b>$'+escapeHtml(t.symbol||'?')+'</b>\'s top holders for shared-funder clusters…</span></div>';
+     withTimeout(fetch('/api/funding?mint='+encodeURIComponent(t.mint)),30000)
+      .then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||('failed '+r.status));return d;});})
+      .then(function(d){if(d.error)throw new Error(d.error);box.innerHTML=renderFundingClusters(d,t);})
+      .catch(function(e){box.innerHTML=forensicNote('Funding-lineage cluster trace')+'<div class="note"><span class="tick mid"></span> ('+escapeHtml(e&&e.message||'')+')</div>';});
+     return;
+   }
+   box.innerHTML=forensicNote('Entity resolution &amp; clustering')
+    +'<div class="note"><span class="tick mid"></span> Scan a live mint to run the real funding-lineage trace. Demo tokens show worked clustering examples.</div>';
    return;
  }
  document.getElementById('entityList').innerHTML='<div class="row wrap" style="margin-bottom:14px;gap:10px"><div class="muted" style="font-size:13.5px">Showing entities for <b style="color:var(--text)">$'+escapeHtml(t.symbol)+'</b> &middot; '+t.entities.length+' resolved</div></div>'
   +t.entities.map(entityCard).join('');
+}
+function renderFundingClusters(d,t){
+ var clusters=(d.sharedFunders||[]);
+ var head='<div class="row wrap" style="margin-bottom:12px;gap:10px"><div class="muted" style="font-size:13.5px">Funding-lineage trace for <b style="color:var(--text)">$'+escapeHtml(t.symbol||'?')+'</b> &middot; '+d.holdersAnalyzed+' top retail holders &middot; '+escapeHtml(d.window||'')+'</div></div>';
+ var stats='<div class="card"><div class="stats" style="border-top:0;padding-top:0">'
+  +'<div class="stat"><div class="n mono">'+clusters.length+'</div><div class="l">shared-funder clusters</div></div>'
+  +'<div class="stat"><div class="n mono">'+(d.freshCount||0)+'</div><div class="l">fresh wallets (&lt;14d)</div></div>'
+  +'<div class="stat"><div class="n mono">'+(d.genesisCount||0)+'/'+d.holdersAnalyzed+'</div><div class="l">genesis-level traces</div></div>'
+  +'</div>';
+ if(clusters.length){
+   stats+='<div class="mt16">'+clusters.map(function(c){
+     return '<div class="entity"><div class="top"><div><span class="badge b-coll">shared funder</span> <span class="muted" style="font-size:13px">'+c.count+' holders from one source</span>'
+       +'<div class="members" style="margin-top:8px"><span class="wchip">funder '+shorten(c.funder)+'</span>'+c.holders.map(function(h){return '<span class="wchip">'+shorten(h)+'</span>';}).join('')+'</div></div></div></div>';
+   }).join('')+'</div>';
+   stats+='<div class="note"><span class="tick bad"></span> Multiple top holders funded by the same wallet — a manufactured-cluster / sybil tell, not organic distribution.</div>';
+ } else {
+   stats+='<div class="disclaim mt16"><span class="tick good"></span><span>No shared funder found across the analyzed top holders in this window — no obvious manufactured cluster. (Note: highly active wallets show only recent funding; deep genesis tracing is a backend job.)</span></div>';
+ }
+ stats+='</div>';
+ return head+stats;
 }
 
 /* boards */
