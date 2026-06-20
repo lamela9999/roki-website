@@ -49,8 +49,13 @@ export async function solRpc(method, params, env) {
   const PN = 'https://solana-rpc.publicnode.com';
   const MB = 'https://api.mainnet-beta.solana.com';
   const helius = (env && env.HELIUS_API_KEY) ? `https://mainnet.helius-rpc.com/?api-key=${env.HELIUS_API_KEY}` : null;
+  // Accuracy-critical reads (supply, top-holders, owner classification, mint authority) go to
+  // paid Helius first — a flaky free node returning empty here corrupts the forensic math
+  // (e.g. supply=0 zeros every holder %). Cheap/high-volume reads stay free-first to save credits.
+  const ACCURACY = (method === 'getTokenLargestAccounts' || method === 'getMultipleAccounts'
+    || method === 'getTokenSupply' || method === 'getAccountInfo');
   let order;
-  if (method === 'getTokenLargestAccounts' || method === 'getMultipleAccounts') order = [helius, MB, PN]; // accuracy-critical → paid first
+  if (ACCURACY) order = [helius, MB, PN];
   else if (method === 'getTokenAccountsByOwner') order = [MB, helius];    // PN blocks
   else order = [PN, MB, helius];                                          // cheap/high-volume → free first
   order = order.filter(Boolean);
