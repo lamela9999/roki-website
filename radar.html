@@ -729,14 +729,15 @@ function renderBubbleMap(t,d){
   var edges=[];
   funders.forEach(function(c){(c.holders||[]).forEach(function(h){ if(byId[c.funder]&&byId[h]) edges.push({a:c.funder,b:h}); });});
   var id='bm-'+(++BM_N);
-  BM_REG[id]={nodes:nodes,edges:edges,byId:byId};
+  BM_REG[id]={nodes:nodes,edges:edges,byId:byId,sym:(t.symbol||'TOKEN')};
   var cc=funders.length;
   var leg=function(c,x){return '<span class="flex center gap8"><span style="width:11px;height:11px;border-radius:50%;background:'+c+';border:1.5px solid var(--ink)"></span> '+x+'</span>';};
   var legend='<div class="flex gap12 wrap" style="font-size:11px;margin-top:10px">'+leg('#25E684','retail')+leg('#FFA73F','in cluster')+leg('#2898E5','exchange')+leg('#6B6258','pool/contract')+leg('#FF5959','shared funder')+'<span class="flex center gap8"><span style="width:16px;border-top:2.4px solid #FF5959"></span> shared-funder link</span></div>';
   return '<div class="card" style="margin-bottom:16px"><div class="row wrap" style="margin-bottom:6px"><div><h3 style="margin:0">Holder bubble map</h3><p class="sub" style="margin:4px 0 0">'+holders.length+' top holders &middot; size = supply &middot; links = shared funder</p></div><span class="badge '+(cc?'b-dirty':'b-clean')+'">'+(cc?(cc+' cluster'+(cc>1?'s':'')+' flagged'):'no shared-funder cluster')+'</span></div>'
     +'<div style="background:var(--cream);border:1.5px solid var(--ink);border-radius:12px;overflow:hidden"><canvas id="'+id+'" style="width:100%;height:auto;display:block;cursor:grab;touch-action:none"></canvas></div>'
     +legend
-    +'<div class="note"><span class="tick mid"></span> '+(cc?'Wallets funded by the same source are linked in red and pull together — the manufactured-cluster (sybil) tell. ':'No shared funders among these holders — they look independent. ')+'Drag a bubble to explore &middot; click → Solscan.</div></div>';
+    +'<div id="bm-d-'+id+'" style="margin-top:12px"></div>'
+    +'<div class="note"><span class="tick mid"></span> '+(cc?'Wallets funded by the same source are linked in red and pull together — the manufactured-cluster (sybil) tell. ':'No shared funders among these holders — they look independent. ')+'Drag a bubble to move it &middot; <b>click it</b> for its % of supply + other holdings.</div></div>';
 }
 /* animate any registered bubble canvases now present in the DOM */
 function bmInit(){
@@ -754,11 +755,11 @@ function bmAnimate(cv,spec,id){
   function pick(p){var hit=null;nodes.forEach(function(n){var dx=n.x-p.x,dy=n.y-p.y;if(dx*dx+dy*dy<=(n.r+4)*(n.r+4))hit=n;});return hit;}
   cv.onmousedown=function(e){var n=pick(pos(e));if(n){drag=n;moved=false;cv.style.cursor='grabbing';}};
   cv.onmousemove=function(e){if(drag){var p=pos(e);drag.x=p.x;drag.y=p.y;drag.vx=drag.vy=0;moved=true;}};
-  cv.onmouseup=function(){if(drag&&!moved)window.open('https://solscan.io/account/'+encodeURIComponent(drag.addr),'_blank','noopener');drag=null;cv.style.cursor='grab';};
+  cv.onmouseup=function(){if(drag&&!moved)bmDetail(spec,drag,id);drag=null;cv.style.cursor='grab';};
   cv.onmouseleave=function(){drag=null;cv.style.cursor='grab';};
-  cv.ontouchstart=function(e){var n=pick(pos(e));if(n)drag=n;};
-  cv.ontouchmove=function(e){if(drag){e.preventDefault();var p=pos(e);drag.x=p.x;drag.y=p.y;drag.vx=drag.vy=0;}};
-  cv.ontouchend=function(){drag=null;};
+  cv.ontouchstart=function(e){var n=pick(pos(e));if(n){drag=n;moved=false;}};
+  cv.ontouchmove=function(e){if(drag){e.preventDefault();var p=pos(e);drag.x=p.x;drag.y=p.y;drag.vx=drag.vy=0;moved=true;}};
+  cv.ontouchend=function(){if(drag&&!moved)bmDetail(spec,drag,id);drag=null;};
   function frame(){
     if(!document.body.contains(cv)){cv.__bm=false;delete BM_REG[id];return;}
     var i,j;
@@ -782,6 +783,38 @@ function bmAnimate(cv,spec,id){
     nodes.forEach(function(n){n.vx+=(W/2-n.x)*0.004;n.vy+=(H/2-n.y)*0.004;n.x+=Math.max(-10,Math.min(10,n.vx));n.y+=Math.max(-10,Math.min(10,n.vy));n.vx*=0.86;n.vy*=0.86;n.x=Math.max(n.r+6,Math.min(W-n.r-6,n.x));n.y=Math.max(n.r+6,Math.min(H-n.r-18,n.y));});
   }
   frame(); // immediate first paint, then rAF drives the live animation when visible
+}
+function bmDetail(spec,n,id){
+  var el=document.getElementById('bm-d-'+id); if(!el)return;
+  var isAddr=/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(n.addr);
+  var solscan=isAddr?' <a href="https://solscan.io/account/'+encodeURIComponent(n.addr)+'" target="_blank" rel="noopener" style="text-decoration:underline">Solscan ↗</a>':'';
+  var fetchVal=function(addr){return withTimeout(fetch('/api/wallet?addr='+encodeURIComponent(addr)),20000).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;});};
+  if(n.kind==='funder'){
+    var members=spec.edges.filter(function(e){return e.a===n.id;}).map(function(e){return spec.byId[e.b];}).filter(Boolean);
+    var totalPct=members.reduce(function(s,m){return s+(m.pct||0);},0);
+    el.innerHTML='<div class="card" style="border-color:var(--red);box-shadow:3px 3px 0 var(--red)"><div class="klabel">shared-funder cluster</div>'
+      +'<div class="mono" style="font-size:14px;margin:3px 0">'+shorten(n.addr)+' &middot; '+members.length+' wallets'+solscan+'</div>'
+      +'<div class="stats" style="border-top:0;padding-top:0">'
+      +'<div class="stat"><div class="n">'+pct(totalPct)+'</div><div class="l">combined supply</div></div>'
+      +'<div class="stat"><div class="n mono" id="bmcv-'+id+'">…</div><div class="l">combined other holdings</div></div>'
+      +'</div>'
+      +'<div class="members" style="margin-top:10px">'+members.map(function(m){return '<span class="wchip">'+shorten(m.addr)+' &middot; '+pct(m.pct||0)+'</span>';}).join('')+'</div>'
+      +'<div class="note"><span class="tick bad"></span> '+members.length+' wallets from one funder hold <b>'+pct(totalPct)+'</b> of supply combined — a manufactured-cluster tell.</div></div>';
+    var addrs=members.map(function(m){return m.addr;}).filter(function(a){return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(a);});
+    var ev=document.getElementById('bmcv-'+id);
+    if(addrs.length) Promise.all(addrs.map(fetchVal)).then(function(rs){var sum=rs.reduce(function(s,dd){return s+((dd&&dd.portfolioUsd)||0);},0);if(ev)ev.textContent=usd(sum);});
+    else if(ev) ev.textContent='demo';
+  } else {
+    el.innerHTML='<div class="card"><div class="klabel">'+(n.wlabel?escapeHtml(n.wlabel):'wallet')+'</div>'
+      +'<div class="mono" style="font-size:13px;margin:3px 0;word-break:break-all">'+escapeHtml(n.addr)+solscan+'</div>'
+      +'<div class="stats" style="border-top:0;padding-top:4px">'
+      +'<div class="stat"><div class="n">'+pct(n.pct||0)+'</div><div class="l">of $'+escapeHtml(spec.sym)+' supply</div></div>'
+      +'<div class="stat"><div class="n mono" id="bmwv-'+id+'">…</div><div class="l">other holdings (portfolio)</div></div>'
+      +'</div></div>';
+    var wv=document.getElementById('bmwv-'+id);
+    if(isAddr) fetchVal(n.addr).then(function(dd){if(!wv)return;if(dd&&!dd.error)wv.textContent=usd(dd.portfolioUsd||0)+' ('+dd.tokenCount+' tok · '+(dd.sol||0).toFixed(1)+' SOL)';else wv.textContent='unavailable';});
+    else if(wv) wv.textContent='demo wallet';
+  }
 }
 function renderFundingClusters(d,t){
  var clusters=(d.sharedFunders||[]);
