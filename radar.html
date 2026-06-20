@@ -293,11 +293,11 @@ footer.site b{color:var(--coral)}
   <!-- BOARDS -->
   <section class="view" id="view-boards">
     <h1 style="font-size:24px;margin:0 0 6px">Leaderboards</h1>
-    <p class="muted" style="margin:0 0 14px;font-size:14px">Ranked at the <b>entity</b> level on noise-corrected plus-minus. We always show raw, n, and adjusted together so three lucky trades can't top the board.</p>
+    <p class="muted" style="margin:0 0 14px;font-size:14px">The <b>real recent traders</b> of whatever token you last scanned, ranked by how much SOL they've made or lost trading it. Scan a token (Scan tab) to populate this.</p>
     <div id="liveTraders" style="margin-bottom:20px"></div>
-    <div class="boardtabs" id="boardtabs"></div>
-    <div class="card" style="padding:0;overflow:hidden"><div id="boardTable"></div></div>
-    <div class="note"><span class="tick good"></span> <span id="boardNote"></span></div>
+    <div class="card"><h3>Cross-token leaderboards <span class="badge b-prev">coming</span></h3><p class="sub">smart money · snipers · whales · alpha callers</p>
+      <div class="disclaim"><span class="tick mid"></span><span>Ranking wallets across <b>all</b> tokens by realized profit (smart-money / snipers / whales / alpha-callers / bag-workers) needs historical price reconstruction over every trade — that's the next backend phase. The live per-token board above is real on-chain data today.</span></div>
+    </div>
   </section>
 
   <!-- WALLET -->
@@ -761,7 +761,7 @@ function bmAnimate(cv,spec,id){
       var rep=(a.r+b.r+28);var f=Math.min(9,(rep*rep)/d2*0.45);a.vx+=dx/dd*f;a.vy+=dy/dd*f;b.vx-=dx/dd*f;b.vy-=dy/dd*f;
     }
     edges.forEach(function(e){var a=byId[e.a],b=byId[e.b];if(!a||!b)return;var dx=b.x-a.x,dy=b.y-a.y;var dd=Math.sqrt(dx*dx+dy*dy)||0.01;var f=(dd-56)*0.03;a.vx+=dx/dd*f;a.vy+=dy/dd*f;b.vx-=dx/dd*f;b.vy-=dy/dd*f;});
-    nodes.forEach(function(n){if(n===drag)return;n.vx+=(W/2-n.x)*0.004+(Math.random()-0.5)*0.2;n.vy+=(H/2-n.y)*0.004+(Math.random()-0.5)*0.2;n.x+=Math.max(-10,Math.min(10,n.vx));n.y+=Math.max(-10,Math.min(10,n.vy));n.vx*=0.86;n.vy*=0.86;n.x=Math.max(n.r+6,Math.min(W-n.r-6,n.x));n.y=Math.max(n.r+6,Math.min(H-n.r-18,n.y));});
+    nodes.forEach(function(n){if(n===drag)return;n.vx+=(W/2-n.x)*0.004;n.vy+=(H/2-n.y)*0.004;n.x+=n.vx;n.y+=n.vy;n.vx*=0.84;n.vy*=0.84;n.x=Math.max(n.r+6,Math.min(W-n.r-6,n.x));n.y=Math.max(n.r+6,Math.min(H-n.r-18,n.y));});
     ctx.clearRect(0,0,W,H);
     ctx.lineWidth=2.4;ctx.strokeStyle='#FF5959';
     edges.forEach(function(e){var a=byId[e.a],b=byId[e.b];if(!a||!b)return;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();});
@@ -807,7 +807,7 @@ var BOARDS=[['smart_money','Smart money','ranks adj plus-minus among long-hold w
  ['alpha_callers','Alpha callers','clean plus-minus on called tokens that survived']];
 function loadLiveTraders(){
  var box=document.getElementById('liveTraders');if(!box)return;
- if(!(STATE.live&&LIVE&&LIVE.mint)){box.innerHTML='<div class="disclaim"><span class="tick mid"></span><span>Scan a live token (Scan tab) to see its <b>real recent traders</b> ranked by net SOL flow. The boards below are illustrative entity-level examples.</span></div>';return;}
+ if(!(STATE.live&&LIVE&&LIVE.mint)){box.innerHTML='<div class="disclaim"><span class="tick mid"></span><span><b>Scan a token first</b> (Scan tab) — this then ranks its real recent traders by net SOL made/lost trading it.</span></div>';return;}
  var sym=LIVE.symbol||'?';
  box.innerHTML='<div class="disclaim"><span class="dot"></span><span>Loading live traders on <b>$'+escapeHtml(sym)+'</b>…</span></div>';
  withTimeout(fetch('/api/smartmoney?mint='+encodeURIComponent(LIVE.mint)),25000)
@@ -925,7 +925,7 @@ function show(view){
  document.getElementById('view-'+view).classList.add('active');
  document.querySelectorAll('#nav button').forEach(function(b){b.classList.toggle('active',b.dataset.view===view)});
  if(view==='entities')renderEntities();
- if(view==='boards'){renderBoardTabs();renderBoard();loadLiveTraders();}
+ if(view==='boards'){loadLiveTraders();}
  var mn=document.getElementById('mobnav');if(mn)mn.value=view;
  window.scrollTo({top:0,behavior:'smooth'});
 }
