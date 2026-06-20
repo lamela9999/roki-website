@@ -265,8 +265,8 @@ footer.site b{color:var(--coral)}
       <p>Roki Radar re-merges wallets into entities, scores rug and coordination risk, and turns the on-chain signals into a plain-English verdict. Splitting a position across wallets to look clean is the number-one dodge. We undo it.</p>
       <div class="searchbar">
         <div class="searchbox">
-          <span class="faint mono">mint</span>
-          <input id="mintInput" placeholder="paste a token mint address..." spellcheck="false"/>
+          <span class="faint mono">🔍</span>
+          <input id="mintInput" placeholder="Paste a token contract address (or symbol) to scan…" spellcheck="false"/>
         </div>
         <button class="btn primary" onclick="runScan()">Run scan</button>
       </div>
@@ -415,6 +415,7 @@ var RPC_URLS=['https://solana-rpc.publicnode.com','https://api.mainnet-beta.sola
 var DEX_URL='https://api.dexscreener.com/latest/dex/tokens/';
 function curTok(){return (STATE.live&&LIVE)?LIVE:TOKENS[STATE.token];}
 function escapeHtml(s){return String(s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
+function copyCA(txt,el){if(!txt)return;try{navigator.clipboard.writeText(txt);}catch(e){}if(el){var o=el.innerHTML;el.innerHTML='copied &#x2713;';setTimeout(function(){el.innerHTML=o;},1100);}}
 function withTimeout(p,ms){return Promise.race([p,new Promise(function(_,rej){setTimeout(function(){rej(new Error('Request timed out — the chain or DexScreener was slow. Try again.'));},ms);})]);}
 function ageFrom(ms){if(!ms)return '?';var s=(Date.now()-ms)/1000;if(s>=86400)return Math.floor(s/86400)+'d';if(s>=3600)return Math.floor(s/3600)+'h';return Math.max(1,Math.floor(s/60))+'m';}
 function loadingCard(v){return '<div class="card"><div class="flex center gap12"><span class="dot"></span><div><div style="font-weight:800;text-transform:uppercase;letter-spacing:.06em;font-size:13px">Scanning on-chain…</div><div class="faint mono" style="font-size:12px">'+shorten(v)+' &middot; DexScreener + Solana RPC</div></div></div></div>';}
@@ -561,8 +562,13 @@ async function scanMint(mint){
 function holdersPanel(t){
  var h=t.holders;if(!h||!h.sampled)return '';
  var rows=h.list.slice(0,10).map(function(o,i){
-   var who=o.label?('<span class="badge b-class">'+escapeHtml(o.label)+'</span> <span class="wchip">'+shorten(o.owner||'?')+'</span>'):'<span class="wchip">'+shorten(o.owner||'?')+'</span>';
-   return '<div class="funline"><span class="mono faint" style="min-width:20px">'+(i+1)+'</span>'+who+'<span class="spacer"></span><span class="mono" style="font-weight:600">'+pct(o.pct)+'</span></div>';
+   var heldUsd=t.mcap?(o.pct*t.mcap):null;
+   var who=o.label?('<span class="badge b-class">'+escapeHtml(o.label)+'</span> '):'';
+   return '<div class="funline"><span class="mono faint" style="min-width:20px">'+(i+1)+'</span>'+who
+     +'<span class="wchip" style="cursor:pointer" title="click to copy address" onclick="copyCA(\''+(o.owner||'')+'\',this)">'+shorten(o.owner||'?')+' &#x2398;</span>'
+     +'<span class="spacer"></span>'
+     +(heldUsd!=null?'<span class="mono" style="font-weight:600;margin-right:14px">'+usd(heldUsd)+'</span>':'')
+     +'<span class="mono faint">'+pct(o.pct)+'</span></div>';
  }).join('');
  var net=h.top10-(h.pooledPct||0);
  var tickCls=net>0.5?'bad':net>0.3?'mid':'good';
@@ -660,12 +666,14 @@ function renderScan(){
  var verdict=t.live?narrateLive(t,score,STATE.lens):(lens.lead(t,top)+' '+narrate(t,score));
  var meta=shorten(t.mint)+' &middot; mcap '+usd(t.mcap)+' &middot; liq '+usd(t.liq)+' &middot; '+t.age+' old'+(t.live?(' &middot; '+escapeHtml(t.dex)):'');
  var confLine=t.live
-   ? '<span class="conf"><span class="tick good"></span> live on-chain read &middot; market via DexScreener · authority via Solana RPC</span>'
+   ? '<span class="conf"><span class="tick good"></span> live · pulled on-chain just now</span>'
    : '<span class="conf"><span class="tick '+(score>=60?'bad':'good')+'"></span> verdict confidence '+(0.72+(score>80?0.16:0.04)).toFixed(2)+' &middot; based on '+t.entities.length+' entities, funding trace, safety</span>';
  var html='<div class="card" style="margin-bottom:16px"><div class="scanhead">'
   +'<div class="gauge-wrap">'+gaugeSVG(score)+'<div class="gtier" style="color:'+tier[1]+'">'+tier[0]+' risk</div></div>'
   +'<div><div class="row" style="margin-bottom:10px"><div><div style="font-size:19px;font-weight:600">'+escapeHtml(t.name)+' <span class="muted mono" style="font-size:13px">$'+escapeHtml(t.symbol)+'</span></div>'
-  +'<div class="faint mono" style="font-size:12px">'+meta+'</div></div></div>'
+  +'<div class="faint mono" style="font-size:12px">'+meta+'</div>'
+  +(t.mint?'<div style="margin-top:6px"><span class="wchip mono" style="cursor:pointer;font-size:11px" title="click to copy contract address" onclick="copyCA(\''+t.mint+'\',this)">CA '+shorten(t.mint)+' &#x2398; copy</span></div>':'')
+  +'</div></div>'
   +'<div class="narrator"><div class="who"><span class="dot" style="width:6px;height:6px"></span> Roki narrator &middot; '+lens.label+' lens'+(t.live?' &middot; LIVE':'')+'</div>'
   +'<p>'+verdict+'</p>'
   +confLine
@@ -994,9 +1002,9 @@ function renderLensbar(){
 }
 function realScanExample(mint){document.getElementById('mintInput').value=mint;runScan();}
 function renderPresets(){
- var demo=Object.keys(TOKENS).map(function(k){var t=TOKENS[k];return '<span class="chip" onclick="loadToken(\''+k+'\')">$'+t.symbol+' &middot; '+(t.baseRisk>=75?'high':t.baseRisk>=40?'mid':'low')+' risk demo</span>';}).join('');
- var live='<span class="chip" style="border-color:var(--coral);color:var(--coral)" onclick="realScanExample(\'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm\')">⦿ live scan: $WIF</span>';
- document.getElementById('presetChips').innerHTML=live+demo;
+ var ex=[['BONK','DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263'],['WIF','EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm']];
+ document.getElementById('presetChips').innerHTML='<span class="faint" style="font-size:12px;align-self:center;margin-right:2px">try:</span>'
+   +ex.map(function(e){return '<span class="chip" onclick="realScanExample(\''+e[1]+'\')">$'+e[0]+'</span>';}).join('');
 }
 function loadToken(k){STATE.token=k;STATE.live=false;document.getElementById('mintInput').value=TOKENS[k].mint;renderScan();}
 async function runScan(){
