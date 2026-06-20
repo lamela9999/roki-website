@@ -317,6 +317,7 @@ footer.site b{color:var(--coral)}
 
     <div class="card mt16">
       <h3>20-factor scoring</h3><p class="sub">weights for the selected archetype · <span class="badge b-gate" style="vertical-align:middle">gate</span> = auto-reject, not weighted</p>
+      <div class="disclaim" style="margin-bottom:14px"><span class="tick mid"></span><span><b>How a token gets scored:</b> cheap on-chain factors run first as a pre-filter → expensive social factors only on survivors → each factor is normalized 0–100 → multiplied by this archetype's weight → averaged into the composite. <b>Hard gates</b> (mint/freeze authority, LP) can auto-reject regardless of score. Bars below = each factor's <b>weight</b> for this personality; <span class="badge b-ok" style="font-size:8px;padding:1px 6px">live</span> = computed on real data now, <span class="badge b-prev" style="font-size:8px;padding:1px 6px">soon</span> = needs paid X-data or the Brain.</span></div>
       <div id="factors"></div>
     </div>
   </section>
