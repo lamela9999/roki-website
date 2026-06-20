@@ -510,6 +510,19 @@ var ARCH=[
  {id:'whale',name:'Liquidity Whale',dial:34,desc:'Only deep, liquid markets with healthy holder spread.',g:{Social:30,'On-chain health':90,'Wallet cleanliness':70,Momentum:55},boost:['f6','f7','f10'],
    buy:'Only deep-liquidity tokens, on mean-reversion dips — larger size, fewer bets.',sell:'Patient; trims into strength back toward the range.',freq:'Low',hold:'Days'}
 ];
+var STRAT={
+ degen:{tp:[100,250],reentry:'Won’t chase a runner — only re-enters on a brand-new launch.'},
+ conservative:{tp:[30,60,100],reentry:'Re-enters only on a deeper dip if it’s still clean.'},
+ smart:{tp:[50,120],reentry:'Re-enters if smart-money wallets add again.'},
+ narrative:{tp:[60,150],reentry:'Re-enters while the narrative stays hot.'},
+ safety:{tp:[25,50],reentry:'Rarely re-enters — one clean position, then done.'},
+ sniper:{tp:[40,100],reentry:'Re-snipes only the very next clean launch.'},
+ momentum:{tp:[50,120],reentry:'Re-enters on a fresh momentum breakout.'},
+ insider:{tp:[60,150],reentry:'Re-enters if insiders keep accumulating; hard out on their first sell.'},
+ balanced:{tp:[40,80,150],reentry:'Re-enters on a moderate pullback.'},
+ whale:{tp:[20,40],reentry:'Adds on deeper mean-reversion dips.'}
+};
+function tpLadder(id){var s=STRAT[id]||STRAT.balanced;return s.tp.map(function(p,i){return '+'+p+'% → '+(i<s.tp.length-1?'sell ⅓':'trail rest');}).join('  ·  ');}
 function archOf(id){for(var i=0;i<ARCH.length;i++)if(ARCH[i].id===id)return ARCH[i];return ARCH[8];}
 function factorWeight(a,f){var w=a.g[f.g]||50;if(a.boost.indexOf(f.k)>=0)w=Math.min(100,w+12);return w;}
 
@@ -530,6 +543,8 @@ function selectArch(id){STATE.arch=id;var a=archOf(id);renderArchbar();
     +'<div style="display:flex;flex-direction:column;gap:7px;font-size:13px;line-height:1.45">'
     +'<div><span class="badge b-ok" style="vertical-align:middle">BUY</span> '+escapeHtml(a.buy)+'</div>'
     +'<div><span class="badge b-dirty" style="vertical-align:middle">SELL</span> '+escapeHtml(a.sell)+'</div>'
+    +'<div><span class="badge b-warn" style="vertical-align:middle">TAKE-PROFIT</span> <span class="mono" style="font-size:12px">'+tpLadder(a.id)+'</span></div>'
+    +'<div><span class="badge b-soft" style="vertical-align:middle">RE-ENTRY</span> '+escapeHtml((STRAT[a.id]||STRAT.balanced).reentry)+'</div>'
     +'</div>'
     +'<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">'
     +'<span class="limit" style="padding:8px 10px"><span class="klabel">frequency</span><div style="font-weight:700;font-size:13px">'+escapeHtml(a.freq)+'</div></span>'
@@ -742,6 +757,16 @@ function planToken(){
    .then(function(d){if(d.error)throw new Error(d.error);box.innerHTML=renderPlan(d);})
    .catch(function(e){box.innerHTML='<div class="disclaim"><span class="tick mid"></span><span><b>Live planning runs on the deployed backend.</b> Once <span class="mono">/api/positionplan</span> is live (Helius key set), this reads live price action + order flow + lifecycle for any token. <span class="faint">('+escapeHtml(e&&e.message||'')+')</span></span></div>';});
 }
+function modeBStrat(d){
+  var a=archOf(STATE.arch),s=STRAT[a.id]||STRAT.balanced,pl=d.plan;
+  return '<div class="klabel" style="margin:14px 0 6px">your '+escapeHtml(a.name)+' rules</div>'
+    +'<div style="display:flex;flex-direction:column;gap:6px;font-size:12.5px;line-height:1.4">'
+    +'<div><span class="badge b-ok" style="vertical-align:middle">BUY</span> '+escapeHtml(a.buy)+'</div>'
+    +'<div><span class="badge b-warn" style="vertical-align:middle">TAKE-PROFIT</span> <span class="mono" style="font-size:12px">'+tpLadder(a.id)+'</span></div>'
+    +'<div><span class="badge b-dirty" style="vertical-align:middle">STOP</span> '+(pl?(pl.stopLossPct+'% hard stop'):'—')+'</div>'
+    +'<div><span class="badge b-soft" style="vertical-align:middle">RE-ENTRY</span> '+escapeHtml(s.reentry)+'</div>'
+    +'</div>';
+}
 function renderPlan(d){
   var col=actionColor(d.action),pl=d.plan;
   var plan=pl?('<div class="limits" style="margin-top:12px">'
@@ -754,8 +779,8 @@ function renderPlan(d){
     +'<div><div style="font-size:18px;font-weight:700">'+escapeHtml(d.market.name)+' <span class="muted mono" style="font-size:13px">$'+escapeHtml(d.market.symbol)+'</span> <span class="badge b-soft">'+escapeHtml(d.assetClass)+'</span></div>'
     +'<div class="faint mono" style="font-size:12px">$'+d.market.priceUsd+' &middot; 1h '+d.market.h1+'% &middot; 24h '+d.market.h24+'% &middot; liq $'+usdShort(d.market.liq)+'</div></div>'
     +'<div style="text-align:right"><div class="mono" style="font-size:24px;font-weight:700;color:'+col+'">'+escapeHtml(d.action)+'</div><div class="klabel">conf '+d.confidence+'</div></div></div>'
-    +plan
-    +'<div class="disclaim mt16"><span class="tick mid"></span><span>'+escapeHtml(d.reasons.join(' '))+'</span></div>'
+    +plan+modeBStrat(d)
+    +'<div class="disclaim mt16"><span class="tick mid"></span><span><b>Live read:</b> '+escapeHtml(d.reasons.join(' '))+'</span></div>'
     +'<div class="note"><span class="tick mid"></span> Paper plan — not financial advice, no execution. Smart-money flow (Layer 1) is the intended primary signal and is pending.</div></div>';
 }
 
