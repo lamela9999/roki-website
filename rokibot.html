@@ -330,6 +330,7 @@ footer.site b{color:var(--coral)}
       <button class="btn primary small" onclick="runDiscoverBoard(true)">Refresh ranking</button>
     </div>
     <div id="boardResult"></div>
+    <div id="boardDetail" class="mt16"></div>
   </section>
 
   <!-- INTEL -->
@@ -706,7 +707,7 @@ function renderBoard(d){
     var c=r.composite,col=r.rejected?'var(--coral)':boardColor(c==null?0:c);
     var pick=pickMints[r.mint];
     var badge=r.rejected?' <span class="badge b-gate">gated</span>':(pick?' <span class="badge b-ok">BUY</span>':'');
-    return '<div style="display:grid;grid-template-columns:26px 1fr 78px 70px 56px;align-items:center;gap:8px;border-bottom:1px solid var(--hairline);padding:9px 0;'+(pick?'background:rgba(37,230,132,.08);border-left:3px solid var(--green);padding-left:8px':'')+'">'
+    return '<div onclick="boardDetail(\''+r.mint+'\')" title="See the factor breakdown" style="cursor:pointer;display:grid;grid-template-columns:26px 1fr 78px 70px 56px;align-items:center;gap:8px;border-bottom:1px solid var(--hairline);padding:9px 0;'+(pick?'background:rgba(37,230,132,.08);border-left:3px solid var(--green);padding-left:8px':'')+'">'
       +'<div class="mono faint">'+(i+1)+'</div>'
       +'<div><b>$'+escapeHtml(r.symbol)+'</b>'+badge+'<div class="faint mono" style="font-size:10px">'+escapeHtml(r.name).slice(0,26)+' &middot; '+(r.market.ageDays!=null?r.market.ageDays+'d':'?')+'</div></div>'
       +'<div class="mono" style="font-size:12px;text-align:right">$'+usdShort(r.market.mcap)+'<div class="faint" style="font-size:9px">mcap</div></div>'
@@ -746,6 +747,34 @@ function renderRegime(d){
     +'<div class="disclaim mt16"><span class="tick mid"></span><span>'+escapeHtml(d.narrative)+'</span></div></div>';
 }
 
+/* ---------- Discover: per-token factor breakdown (real /api/discover) ---------- */
+function boardDetail(mint){
+  var box=document.getElementById('boardDetail');if(!box)return;
+  box.innerHTML='<div class="disclaim"><span class="dot"></span><span>Scoring '+escapeHtml(shorten(mint))+' factor-by-factor through '+escapeHtml(archName(STATE.arch))+'…</span></div>';
+  box.scrollIntoView({behavior:'smooth',block:'start'});
+  withTimeout(fetch('/api/discover?mint='+encodeURIComponent(mint)+'&archetype='+STATE.arch),20000)
+   .then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||('failed '+r.status));return d;});})
+   .then(function(d){if(d.error)throw new Error(d.error);box.innerHTML=renderBoardFactors(d);})
+   .catch(function(e){box.innerHTML='<div class="disclaim"><span class="tick mid"></span><span>Factor breakdown needs the deployed backend. <span class="faint">('+escapeHtml(e&&e.message||'')+')</span></span></div>';});
+}
+function renderBoardFactors(d){
+  var groups={};d.factors.forEach(function(f){(groups[f.group]=groups[f.group]||[]).push(f);});
+  var body=Object.keys(groups).map(function(g){
+    return '<div style="margin-top:12px"><div style="font-family:var(--display);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--coral);margin:0 0 8px">'+escapeHtml(g)+'</div>'
+     +groups[g].map(function(f){
+       var mid;
+       if(f.gate){mid='<div class="faint" style="font-size:11px;font-weight:700">'+(f.available?(f.value===100?'✓ gate passed':'✗ GATE FAILED'):'gate · n/a')+'</div>';}
+       else if(f.available){mid='<div style="height:8px;border:1.5px solid var(--ink);border-radius:4px;background:var(--cream);overflow:hidden"><i style="display:block;height:100%;width:'+f.value+'%;background:var(--coral)"></i></div>';}
+       else{mid='<div class="faint" style="font-size:11px">pending data</div>';}
+       return '<div style="display:grid;grid-template-columns:190px 1fr 52px;gap:10px;align-items:center;padding:4px 0"><div style="font-size:12.5px">'+escapeHtml(f.name)+(f.gate?' <span class="badge b-gate">gate</span>':'')+'</div>'+mid+'<div class="mono faint" style="text-align:right;font-size:11px">'+(f.available&&!f.gate?('w'+f.weight):'')+'</div></div>';
+     }).join('')+'</div>';
+  }).join('');
+  var col=(d.gates&&d.gates.rejected)?'var(--coral)':(d.composite>=70?'var(--green)':d.composite>=45?'var(--yellow)':'var(--coral)');
+  return '<div class="card"><div class="row wrap"><div><h3 style="margin:0">'+escapeHtml(d.market.name)+' <span class="muted mono">$'+escapeHtml(d.market.symbol)+'</span></h3><p class="sub" style="margin:4px 0 0">why it scored for '+escapeHtml(archName(d.archetype))+' &middot; '+d.availableCount+'/'+d.totalFactors+' factors live</p></div><div style="text-align:right"><div class="mono" style="font-size:26px;font-weight:700;color:'+col+'">'+(d.composite==null?'—':d.composite)+'</div><div class="klabel">composite</div></div></div>'
+    +((d.gates&&d.gates.rejected)?'<div class="disclaim" style="border-color:var(--coral);margin:10px 0"><span class="tick bad"></span><span><b>Auto-rejected:</b> '+escapeHtml((d.gates.fails||[]).join(', '))+' — fails a hard gate for this profile.</span></div>':'')
+    +body
+    +'<div class="note"><span class="tick mid"></span> Bars = each factor’s live 0–100 score. <b>w</b> = its weight under '+escapeHtml(archName(d.archetype))+'. Composite = weighted average of the live, non-gate factors. Pending factors are excluded, never guessed.</div></div>';
+}
 /* ---------- Mode B — position plan (real /api/positionplan) ---------- */
 function actionColor(a){return a==='ACCUMULATE'?'var(--green)':(a==='AVOID'||a==='EXIT')?'var(--coral)':a==='TRIM'?'var(--orange)':'var(--blue)';}
 function planToken(){
