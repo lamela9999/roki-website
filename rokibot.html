@@ -206,7 +206,7 @@ footer.site b{color:var(--coral)}
       <p>Roki Bot is a token-gated, non-custodial trading platform. Pick a trader personality, set one risk dial, and a bot trades for you on its own wallet — never your main one. It runs on a shared on-chain intelligence brain, and you can ask it anything. It's an execution tool for <b>your</b> risk posture, not a money printer.</p>
       <div class="tagstrip">
         <span class="tagchip">⦿ non-custodial</span>
-        <span class="tagchip">$ROKI gated</span>
+        <span class="tagchip" id="gateChip">$ROKI gated</span>
         <span class="tagchip">two modes</span>
         <span class="tagchip">tradable configs</span>
         <span class="tagchip badge b-prev">in development</span>
@@ -216,13 +216,13 @@ footer.site b{color:var(--coral)}
     <div class="grid" style="grid-template-columns:1.1fr .9fr">
       <div class="gate" id="gatePanel">
         <div class="row"><h3 style="margin:0">Access gate</h3><span class="badge b-soft" id="gateBadge">read-only check</span></div>
-        <p class="sub" style="margin:6px 0 0">Hold <span class="req">10,000,000 $ROKI</span> to unlock bot creation</p>
+        <p class="sub" id="gateSub" style="margin:6px 0 0">Hold <span class="req">10,000,000 $ROKI</span> to unlock bot creation</p>
         <div id="gateBody">
           <div class="bar"><i id="gateBar" style="width:0%"></i></div>
           <div class="gstatus" id="gateStatus"><span class="tick mid"></span> Connect your wallet to check eligibility.</div>
           <div class="flex gap8 wrap" style="margin-top:14px">
             <button class="btn primary small" onclick="connectWallet()">Connect wallet</button>
-            <button class="btn small" onclick="previewUnlock()">Explore config (preview)</button>
+            <button class="btn small" id="previewBtn" onclick="previewUnlock()">Explore config (preview)</button>
           </div>
           <div class="note"><span class="tick good"></span> Read-only: we check your $ROKI balance, nothing else. No signing, no transfers, no seed phrase — ever.</div>
         </div>
@@ -419,6 +419,7 @@ footer.site b{color:var(--coral)}
 <script>
 var ROKI_MINT='J96hj2LiXw6UFPm7cpGQV99G5SJi4mpP7PQRZFC6brrr';
 var ROKI_REQUIRED=10000000;
+var GATE_ENABLED=false; // token-gate PAUSED for early access. Flip to true to require 10M $ROKI again. Balance is still checked + shown either way (tracking stays on).
 var STATE={view:'overview',arch:'balanced',dial:50,unlocked:false};
 
 /* ---------- nav ---------- */
@@ -561,9 +562,14 @@ async function checkGate(addr){
     document.getElementById('gateBar').style.width=pctOf+'%';
     if(d.eligible){
       STATE.unlocked=true;
-      document.getElementById('gateBadge').textContent='access unlocked';
+      document.getElementById('gateBadge').textContent=GATE_ENABLED?'access unlocked':'eligible · gate paused';
       document.getElementById('gateBadge').className='badge b-ok';
-      setGate('<span class="tick good"></span> <b>Access unlocked</b> — you hold '+fmt(d.balance)+' $ROKI. <a href="#" onclick="show(\'configure\');return false" style="text-decoration:underline">Configure your bot →</a>');
+      setGate('<span class="tick good"></span> <b>'+(GATE_ENABLED?'Access unlocked':'Eligible')+'</b> — you hold '+fmt(d.balance)+' $ROKI'+(GATE_ENABLED?'':' (over the 10M gate)')+'. <a href="#" onclick="show(\'configure\');return false" style="text-decoration:underline">Configure your bot →</a>');
+    }else if(!GATE_ENABLED){
+      STATE.unlocked=true;
+      document.getElementById('gateBadge').textContent='early access · gate paused';
+      document.getElementById('gateBadge').className='badge b-warn';
+      setGate('<span class="tick good"></span> <b>Open access</b> — the 10M $ROKI gate is paused for early access (switches on later). Tracking: you hold <b>'+fmt(d.balance)+'</b> $ROKI'+(d.shortfall>0?' ('+fmt(d.shortfall)+' below the gate)':'')+'. <a href="#" onclick="show(\'configure\');return false" style="text-decoration:underline">Configure your bot →</a>');
     }else{
       setGate('<span class="tick bad"></span> Holds <b>'+fmt(d.balance)+'</b> $ROKI · need 10,000,000 — '+fmt(d.shortfall)+' more to unlock. <a href="#" onclick="previewUnlock();return false" style="text-decoration:underline">Explore the preview.</a>');
     }
@@ -726,8 +732,19 @@ function renderPlan(d){
     +'<div class="note"><span class="tick mid"></span> Paper plan — not financial advice, no execution. Smart-money flow (Layer 1) is the intended primary signal and is pending.</div></div>';
 }
 
+/* ---------- gate state ---------- */
+function initGate(){
+  if(GATE_ENABLED)return; // gate on → leave the default "hold 10M to unlock" wording
+  STATE.unlocked=true;    // open access for now
+  var b=document.getElementById('gateBadge');b.textContent='early access · gate paused';b.className='badge b-warn';
+  document.getElementById('gateSub').innerHTML='Open for <b>early access</b> — the <span class="req">10,000,000 $ROKI</span> gate is tracked and switches on later';
+  var chip=document.getElementById('gateChip');if(chip)chip.textContent='$ROKI gate · paused';
+  var pb=document.getElementById('previewBtn');if(pb)pb.textContent='Open config →';
+  setGate('<span class="tick good"></span> Open access for now — no $ROKI required. Connect to track your balance, or jump straight to <a href="#" onclick="show(\'configure\');return false" style="text-decoration:underline">Configure</a>.');
+}
+
 /* ---------- init ---------- */
-renderArchbar();selectArch('balanced');renderChat();onDial(50);
+renderArchbar();selectArch('balanced');renderChat();onDial(50);initGate();
 </script>
 </body>
 </html>
