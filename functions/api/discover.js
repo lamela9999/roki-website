@@ -9,7 +9,7 @@
 // bundle, insider-cluster (see /api/funding), narrative heat. Pending factors are returned
 // as available:false and excluded from the composite — never faked.
 
-import { json, preflight, pickPair } from './_utils.js';
+import { json, preflight, pickPair, solRpc } from './_utils.js';
 
 export const onRequestOptions = () => preflight();
 
@@ -74,13 +74,8 @@ export async function onRequestGet({ request, env }) {
   if (!MINT_RE.test(mint)) return json({ error: "That doesn't look like a Solana mint address." }, 400);
   const arch = ARCH[archId] || ARCH.balanced;
 
-  const KEY = env.HELIUS_API_KEY;
-  if (!KEY) return json({ error: 'Scoring backend not configured (missing Helius key).' }, 503);
-  const EP = `https://mainnet.helius-rpc.com/?api-key=${KEY}`;
-  const rpc = async (method, params) => {
-    const r = await fetch(EP, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }) });
-    const j = await r.json(); if (j.error) throw new Error(`${method}: ${j.error.message || 'rpc error'}`); return j.result;
-  };
+  // Free-first RPC (retry-on-empty for top-holders), Helius fallback. Works keyless for cheap calls.
+  const rpc = (method, params) => solRpc(method, params, env);
 
   try {
     const [dex, acct, largest, supply] = await Promise.all([

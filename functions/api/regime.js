@@ -6,20 +6,15 @@
 // Fund-safe, read-only. (A production Brain persists these as a moving window + signal-perf
 // table; this computes an on-demand snapshot from the current universe.)
 
-import { json, preflight } from './_utils.js';
+import { json, preflight, solRpc } from './_utils.js';
 
 export const onRequestOptions = () => preflight();
 
 const median = (arr) => { const a = arr.filter((x) => x != null).sort((x, y) => x - y); return a.length ? a[Math.floor(a.length / 2)] : null; };
 
 export async function onRequestGet({ request, env }) {
-  const KEY = env.HELIUS_API_KEY;
-  if (!KEY) return json({ error: 'Backend not configured (missing Helius key).' }, 503);
-  const EP = `https://mainnet.helius-rpc.com/?api-key=${KEY}`;
-  const rpc = async (method, params) => {
-    const r = await fetch(EP, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }) });
-    const j = await r.json(); if (j.error) throw new Error(`${method}: ${j.error.message || 'rpc error'}`); return j.result;
-  };
+  // Free-first RPC, Helius fallback. Works keyless for cheap calls.
+  const rpc = (method, params) => solRpc(method, params, env);
   const dexGet = async (u) => { for (let i = 0; i < 2; i++) { try { const r = await fetch(u); if (r.ok) return await r.json(); } catch (e) { /**/ } } return null; };
 
   try {

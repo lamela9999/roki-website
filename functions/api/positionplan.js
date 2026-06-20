@@ -6,7 +6,7 @@
 // SOL/majors and memecoins get different heads (blueprint rule). Smart-money flow (Layer 1)
 // is the intended primary signal and is flagged as a pending enhancer here.
 
-import { json, preflight, pickPair } from './_utils.js';
+import { json, preflight, pickPair, solRpc } from './_utils.js';
 
 export const onRequestOptions = () => preflight();
 
@@ -33,13 +33,8 @@ export async function onRequestGet({ request, env }) {
   const risk = Math.max(0, Math.min(100, parseInt(url.searchParams.get('risk') || '50', 10) || 50));
   if (!MINT_RE.test(mint)) return json({ error: "That doesn't look like a Solana mint address." }, 400);
 
-  const KEY = env.HELIUS_API_KEY;
-  if (!KEY) return json({ error: 'Backend not configured (missing Helius key).' }, 503);
-  const EP = `https://mainnet.helius-rpc.com/?api-key=${KEY}`;
-  const rpc = async (method, params) => {
-    const r = await fetch(EP, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }) });
-    const j = await r.json(); if (j.error) throw new Error(`${method}: ${j.error.message || 'rpc error'}`); return j.result;
-  };
+  // Free-first RPC, Helius fallback. Works keyless for cheap calls.
+  const rpc = (method, params) => solRpc(method, params, env);
 
   try {
     const [dex, acct] = await Promise.all([
