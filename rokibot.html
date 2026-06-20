@@ -310,7 +310,8 @@ footer.site b{color:var(--coral)}
       <div class="card">
         <h3 id="archName">Archetype profile</h3><p class="sub" id="archDesc"></p>
         <div class="row" style="margin-bottom:8px"><span class="klabel">suggested risk</span><span class="mono" id="archDial" style="font-weight:700"></span></div>
-        <div class="disclaim"><span class="tick mid"></span><span>Same 20 inputs, different weights. Degen weights social + momentum; conservative weights liquidity + wallet-cleanliness. Hard gates apply to <b>every</b> profile regardless of weight.</span></div>
+        <div id="archStrategy"></div>
+        <div class="disclaim" style="margin-top:12px"><span class="tick mid"></span><span>Same 20 inputs, different weights <b>and</b> a different strategy. Hard gates apply to <b>every</b> profile regardless of weight.</span></div>
       </div>
     </div>
 
@@ -463,41 +464,51 @@ function onDial(v){
 
 /* ---------- 20 factors ---------- */
 var FACTORS=[
-  {k:'f1',n:'Mention velocity',g:'Social'},
-  {k:'f2',n:'Poster quality',g:'Social'},
-  {k:'f3',n:'KOL / smart-account involvement',g:'Social'},
-  {k:'f4',n:'Engagement authenticity',g:'Social'},
-  {k:'f5',n:'Dev account credibility',g:'Social'},
-  {k:'f6',n:'Liquidity depth',g:'On-chain health'},
-  {k:'f7',n:'Real volume + trend',g:'On-chain health'},
-  {k:'f8',n:'Buy/sell pressure',g:'On-chain health'},
-  {k:'f9',n:'Holder count growth',g:'On-chain health'},
-  {k:'f10',n:'Holder concentration (top-10%)',g:'On-chain health'},
-  {k:'f11',n:'Token age',g:'On-chain health'},
-  {k:'f12',n:'Dev wallet behavior',g:'Wallet cleanliness'},
-  {k:'f13',n:'Mint authority revoked?',g:'Wallet cleanliness',gate:true},
-  {k:'f14',n:'Freeze authority revoked?',g:'Wallet cleanliness',gate:true},
-  {k:'f15',n:'LP burned / locked?',g:'Wallet cleanliness',gate:true},
-  {k:'f16',n:'Sniper / bundle at launch',g:'Wallet cleanliness'},
-  {k:'f17',n:'Insider-cluster linkage',g:'Wallet cleanliness'},
-  {k:'f18',n:'Price trend',g:'Momentum'},
-  {k:'f19',n:'Market-cap lifecycle stage',g:'Momentum'},
-  {k:'f20',n:'Narrative heat',g:'Momentum'}
+  {k:'f1',n:'Mention velocity',g:'Social',d:'Rate of new mentions vs the token’s baseline — is chatter accelerating? Source: X-data API.'},
+  {k:'f2',n:'Poster quality',g:'Social',d:'Follower count + account age of who is posting (cached per account/day). Source: X-data.'},
+  {k:'f3',n:'KOL / smart-account involvement',g:'Social',d:'Are known KOLs / labelled smart wallets posting or buying it? Source: X-data + wallet labels.'},
+  {k:'f4',n:'Engagement authenticity',g:'Social',d:'Organic vs botted engagement (bot-detection on likes/replies). Source: X-data.'},
+  {k:'f5',n:'Dev account credibility',g:'Social',d:'Track record + age of the deployer’s socials. Source: X-data.'},
+  {k:'f6',n:'Liquidity depth',g:'On-chain health',live:true,d:'USD depth of the deepest real pool — can you actually exit? Log-scaled $3k→$1M. Source: DexScreener.'},
+  {k:'f7',n:'Real volume + trend',g:'On-chain health',live:true,d:'24h volume blended with acceleration (1h run-rate vs 24h). Source: DexScreener.'},
+  {k:'f8',n:'Buy/sell pressure',g:'On-chain health',live:true,d:'Share of buys vs sells over 24h (>50% = net buying). Source: DexScreener txns.'},
+  {k:'f9',n:'Holder count growth',g:'On-chain health',d:'New holders added over time. Needs historical holder snapshots.'},
+  {k:'f10',n:'Holder concentration (top-10%)',g:'On-chain health',live:true,d:'Top-10 RETAIL holders’ supply % (pools/CEX excluded). Lower = healthier. Source: RPC largest-accounts.'},
+  {k:'f11',n:'Token age',g:'On-chain health',live:true,d:'Time since the pair launched. Older = more proven, saturating curve. Source: DexScreener.'},
+  {k:'f12',n:'Dev wallet behavior',g:'Wallet cleanliness',d:'Did the deployer sell? How much do they still hold? Needs dev-wallet trace.'},
+  {k:'f13',n:'Mint authority revoked?',g:'Wallet cleanliness',gate:true,live:true,d:'Can the deployer mint new supply? If live → auto-reject for non-degen profiles. Source: RPC.'},
+  {k:'f14',n:'Freeze authority revoked?',g:'Wallet cleanliness',gate:true,live:true,d:'Can the deployer freeze your wallet? If live → auto-reject. Source: RPC.'},
+  {k:'f15',n:'LP burned / locked?',g:'Wallet cleanliness',gate:true,d:'Can the dev pull liquidity? Needs LP-token burn/lock trace.'},
+  {k:'f16',n:'Sniper / bundle at launch',g:'Wallet cleanliness',d:'Were the first buys bundled / sync-sniped? Needs launch-tx analysis.'},
+  {k:'f17',n:'Insider-cluster linkage',g:'Wallet cleanliness',live:true,d:'Are top holders funded from one source (a faked “smart-money” cluster)? Source: funding-lineage trace (/api/funding).'},
+  {k:'f18',n:'Price trend',g:'Momentum',live:true,d:'24h price change mapped to 0–100 (50 = flat). Source: DexScreener.'},
+  {k:'f19',n:'Market-cap lifecycle stage',g:'Momentum',live:true,d:'Where on the pump→decay curve (by mcap band). Source: DexScreener.'},
+  {k:'f20',n:'Narrative heat',g:'Momentum',d:'Is this token’s category hot right now? Reads the Brain’s live regime state.'}
 ];
 var GROUPS=[['Social','expensive · scored last'],['On-chain health','cheap · pre-filter'],['Wallet cleanliness','cheap'],['Momentum','cheap']];
 
 /* ---------- 10 archetypes (group emphasis + boosted factors) ---------- */
 var ARCH=[
- {id:'degen',name:'Degen Aper',dial:88,desc:'Social + momentum heavy, safety light. Lives for the early pump.',g:{Social:90,'On-chain health':40,'Wallet cleanliness':25,Momentum:95},boost:['f1','f3','f18','f20']},
- {id:'conservative',name:'Conservative Hunter',dial:22,desc:'Liquidity + wallet-cleanliness heavy, social light. Survival first.',g:{Social:35,'On-chain health':90,'Wallet cleanliness':95,Momentum:45},boost:['f6','f10','f12','f15']},
- {id:'smart',name:'Smart-Money Follower',dial:55,desc:'Reacts to genuine net-positive wallets and KOL involvement.',g:{Social:60,'On-chain health':65,'Wallet cleanliness':80,Momentum:55},boost:['f3','f12','f17']},
- {id:'narrative',name:'Narrative Rider',dial:70,desc:'Rotates into whatever category is hot right now.',g:{Social:85,'On-chain health':55,'Wallet cleanliness':45,Momentum:80},boost:['f1','f20','f18']},
- {id:'safety',name:'Safety Maximalist',dial:10,desc:'Every gate strict, cleanliness maxed. Avoids rugs above all.',g:{Social:30,'On-chain health':85,'Wallet cleanliness':100,Momentum:30},boost:['f12','f15']},
- {id:'sniper',name:'Early Sniper',dial:78,desc:'Young tokens, clean launches, enough liquidity to exit.',g:{Social:55,'On-chain health':60,'Wallet cleanliness':60,Momentum:75},boost:['f11','f16','f6']},
- {id:'momentum',name:'Momentum Trader',dial:66,desc:'Volume, buy pressure and price trend over everything.',g:{Social:45,'On-chain health':70,'Wallet cleanliness':50,Momentum:95},boost:['f7','f8','f18']},
- {id:'insider',name:'Insider Watcher',dial:44,desc:'Watches dev + insider clusters; their first sell is the exit.',g:{Social:50,'On-chain health':60,'Wallet cleanliness':85,Momentum:50},boost:['f12','f17','f5']},
- {id:'balanced',name:'Balanced',dial:50,desc:'Even weights across all four groups. A sane default.',g:{Social:60,'On-chain health':60,'Wallet cleanliness':60,Momentum:60},boost:[]},
- {id:'whale',name:'Liquidity Whale',dial:34,desc:'Only deep, liquid markets with healthy holder spread.',g:{Social:30,'On-chain health':90,'Wallet cleanliness':70,Momentum:55},boost:['f6','f7','f10']}
+ {id:'degen',name:'Degen Aper',dial:88,desc:'Social + momentum heavy, safety light. Lives for the early pump.',g:{Social:90,'On-chain health':40,'Wallet cleanliness':25,Momentum:95},boost:['f1','f3','f18','f20'],
+   buy:'Fresh launch spiking on social + momentum — jumps in early, before the crowd.',sell:'Sells into the first big pump: takes 2–3× fast, hard time-stop if it stalls.',freq:'Very high',hold:'Minutes–hours'},
+ {id:'conservative',name:'Conservative Hunter',dial:22,desc:'Liquidity + wallet-cleanliness heavy, social light. Survival first.',g:{Social:35,'On-chain health':90,'Wallet cleanliness':95,Momentum:45},boost:['f6','f10','f12','f15'],
+   buy:'Only established, deep-liquidity, clean tokens — and only on a pullback.',sell:'Scales out in thirds at +30% / +60% / +100%; wide stop, lets winners breathe.',freq:'Low',hold:'Days–weeks'},
+ {id:'smart',name:'Smart-Money Follower',dial:55,desc:'Reacts to genuine net-positive wallets and KOL involvement.',g:{Social:60,'On-chain health':65,'Wallet cleanliness':80,Momentum:55},boost:['f3','f12','f17'],
+   buy:'When labelled net-positive (smart-money) wallets accumulate into the token.',sell:'Mirrors them out — exits as they distribute, or on the first insider sell.',freq:'Medium',hold:'Hours–days'},
+ {id:'narrative',name:'Narrative Rider',dial:70,desc:'Rotates into whatever category is hot right now.',g:{Social:85,'On-chain health':55,'Wallet cleanliness':45,Momentum:80},boost:['f1','f20','f18'],
+   buy:'Tokens in the currently-hot narrative (the Brain’s regime says the category is bid).',sell:'Out when the narrative cools — mention velocity rolls over or regime flips.',freq:'Medium',hold:'Hours–days'},
+ {id:'safety',name:'Safety Maximalist',dial:10,desc:'Every gate strict, cleanliness maxed. Avoids rugs above all.',g:{Social:30,'On-chain health':85,'Wallet cleanliness':100,Momentum:30},boost:['f12','f15'],
+   buy:'Only after EVERY rug gate passes + LP burned/locked + low concentration.',sell:'Patient, gradual exit; prioritises never getting rugged over squeezing the top.',freq:'Low',hold:'Days'},
+ {id:'sniper',name:'Early Sniper',dial:78,desc:'Young tokens, clean launches, enough liquidity to exit.',g:{Social:55,'On-chain health':60,'Wallet cleanliness':60,Momentum:75},boost:['f11','f16','f6'],
+   buy:'Snipes the first minutes of clean launches that already have exitable liquidity.',sell:'Takes profit in fast tranches; bails immediately if the launch looks bundled/sniped.',freq:'Very high',hold:'Minutes'},
+ {id:'momentum',name:'Momentum Trader',dial:66,desc:'Volume, buy pressure and price trend over everything.',g:{Social:45,'On-chain health':70,'Wallet cleanliness':50,Momentum:95},boost:['f7','f8','f18'],
+   buy:'Strong, rising volume + positive price trend + net buy pressure.',sell:'Rides with a trailing stop; exits the moment momentum breaks.',freq:'Medium–high',hold:'Hours'},
+ {id:'insider',name:'Insider Watcher',dial:44,desc:'Watches dev + insider clusters; their first sell is the exit.',g:{Social:50,'On-chain health':60,'Wallet cleanliness':85,Momentum:50},boost:['f12','f17','f5'],
+   buy:'When dev/insider clusters quietly accumulate (early, ahead of the crowd).',sell:'HARD exit on the first insider sell — no exceptions, no hoping.',freq:'Medium',hold:'Hours–days'},
+ {id:'balanced',name:'Balanced',dial:50,desc:'Even weights across all four groups. A sane default.',g:{Social:60,'On-chain health':60,'Wallet cleanliness':60,Momentum:60},boost:[],
+   buy:'A solid all-round composite on a mild dip — no single obsession.',sell:'Scales out at targets with a moderate trailing stop.',freq:'Medium',hold:'Hours–days'},
+ {id:'whale',name:'Liquidity Whale',dial:34,desc:'Only deep, liquid markets with healthy holder spread.',g:{Social:30,'On-chain health':90,'Wallet cleanliness':70,Momentum:55},boost:['f6','f7','f10'],
+   buy:'Only deep-liquidity tokens, on mean-reversion dips — larger size, fewer bets.',sell:'Patient; trims into strength back toward the range.',freq:'Low',hold:'Days'}
 ];
 function archOf(id){for(var i=0;i<ARCH.length;i++)if(ARCH[i].id===id)return ARCH[i];return ARCH[8];}
 function factorWeight(a,f){var w=a.g[f.g]||50;if(a.boost.indexOf(f.k)>=0)w=Math.min(100,w+12);return w;}
@@ -507,11 +518,24 @@ function renderArchbar(){
     return '<div class="arch '+(STATE.arch===a.id?'active':'')+'" onclick="selectArch(\''+a.id+'\')">'+a.name+'</div>';
   }).join('');
 }
+function factorName(k){for(var i=0;i<FACTORS.length;i++)if(FACTORS[i].k===k)return FACTORS[i].n;return k;}
 function selectArch(id){STATE.arch=id;var a=archOf(id);renderArchbar();
   document.getElementById('archName').textContent=a.name;
   document.getElementById('archDesc').textContent=a.desc;
   document.getElementById('archDial').textContent=a.dial+' / 100';
   document.getElementById('dial').value=a.dial;onDial(a.dial);
+  var watches=(a.boost&&a.boost.length)?a.boost.map(factorName).join(' · '):'all factors evenly';
+  document.getElementById('archStrategy').innerHTML=
+    '<div class="klabel" style="margin:6px 0 8px">trading strategy</div>'
+    +'<div style="display:flex;flex-direction:column;gap:7px;font-size:13px;line-height:1.45">'
+    +'<div><span class="badge b-ok" style="vertical-align:middle">BUY</span> '+escapeHtml(a.buy)+'</div>'
+    +'<div><span class="badge b-dirty" style="vertical-align:middle">SELL</span> '+escapeHtml(a.sell)+'</div>'
+    +'</div>'
+    +'<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">'
+    +'<span class="limit" style="padding:8px 10px"><span class="klabel">frequency</span><div style="font-weight:700;font-size:13px">'+escapeHtml(a.freq)+'</div></span>'
+    +'<span class="limit" style="padding:8px 10px"><span class="klabel">typical hold</span><div style="font-weight:700;font-size:13px">'+escapeHtml(a.hold)+'</div></span>'
+    +'<span class="limit" style="padding:8px 10px;flex:1;min-width:160px"><span class="klabel">watches most</span><div style="font-weight:600;font-size:11.5px">'+escapeHtml(watches)+'</div></span>'
+    +'</div>';
   renderFactors();
 }
 function renderFactors(){
@@ -521,9 +545,12 @@ function renderFactors(){
     FACTORS.filter(function(f){return f.g===gr[0]}).forEach(function(f){
       var w=factorWeight(a,f);
       var gate=f.gate?'<span class="badge b-gate">gate</span>':'';
-      html+='<div class="factor'+(f.gate?' gated':'')+'"><div class="fn">'+f.n+' '+gate+'</div>'
-        +'<div class="fbar"><i style="width:'+(f.gate?100:w)+'%"></i></div>'
-        +'<div class="fw">'+(f.gate?'GATE':w)+'</div></div>';
+      var status=f.live?'<span class="badge b-ok" style="font-size:8px;padding:1px 6px">live</span>':'<span class="badge b-prev" style="font-size:8px;padding:1px 6px">soon</span>';
+      html+='<div class="factor'+(f.gate?' gated':'')+'" style="align-items:start">'
+        +'<div class="fn" style="display:block">'+f.n+' '+gate+status
+        +'<div class="faint" style="font-size:10.5px;font-weight:400;text-transform:none;letter-spacing:0;margin-top:3px;line-height:1.4">'+f.d+'</div></div>'
+        +'<div class="fbar" style="margin-top:5px"><i style="width:'+(f.gate?100:w)+'%"></i></div>'
+        +'<div class="fw" style="margin-top:5px">'+(f.gate?'GATE':w)+'</div></div>';
     });
     html+='</div>';
   });
