@@ -179,7 +179,6 @@ footer.site b{color:var(--coral)}
         <button data-view="configure">Configure</button>
         <button data-view="discover">Discover</button>
         <button data-view="intel">Intel</button>
-        <button data-view="safety">Safety</button>
         <button data-view="roadmap">Roadmap</button>
       </nav>
       <a href="/radar" style="font-size:12px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;padding:9px 13px;border-radius:8px;color:var(--coral);align-self:center" title="Roki Radar">Radar &#8599;</a>
@@ -188,7 +187,6 @@ footer.site b{color:var(--coral)}
         <option value="configure">Configure</option>
         <option value="discover">Discover</option>
         <option value="intel">Intel</option>
-        <option value="safety">Safety</option>
         <option value="roadmap">Roadmap</option>
       </select>
       <div class="spacer"></div>
@@ -363,36 +361,6 @@ footer.site b{color:var(--coral)}
         <div><div class="klabel">graduate &amp; kill</div><p style="font-size:13.5px;color:var(--ink-soft);margin:4px 0 12px">A signal stays at small test size until it clears a sample-count + expectancy bar. Drifts net-negative → cut it.</p>
         <div class="klabel">regime-aware</div><p style="font-size:13.5px;color:var(--ink-soft);margin:4px 0 0">Rolling stats read the current market regime; weights shift with it. Used mostly on <b>defense</b> — dialing every bot's aggression down when conditions turn hostile.</p></div>
       </div>
-    </div>
-  </section>
-
-  <!-- SAFETY -->
-  <section class="view" id="view-safety">
-    <h1>Non-custodial &amp; safe</h1>
-    <p class="muted" style="margin:0 0 14px;font-size:14px">The bot trades on a separate wallet you fund — never your main wallet — and the platform itself cannot move your money.</p>
-
-    <div class="grid" style="grid-template-columns:1fr 1fr">
-      <div class="card"><h3>How custody works</h3><p class="sub">enclave signing + policy engine</p>
-        <ul style="margin:0;padding-left:18px;font-size:13.5px;color:var(--ink-soft)">
-          <li>A fresh per-bot trading wallet; you fund it from your main wallet</li>
-          <li>The key lives in a secure hardware enclave; the bot gets <i>signatures</i>, never the raw key — so it can run 24/7</li>
-          <li>Policy: may sign swaps through the DEX router (Jupiter) only; may <b>not</b> transfer funds anywhere except your registered withdrawal address</li>
-          <li>You can withdraw or revoke anytime</li>
-        </ul>
-      </div>
-      <div class="card"><h3>Circuit breakers</h3><p class="sub">limits you set, enforced server-side</p>
-        <ul style="margin:0;padding-left:18px;font-size:13.5px;color:var(--ink-soft)">
-          <li>Kill switch — stop all trading instantly</li>
-          <li>Daily loss limit — auto-halt past a threshold</li>
-          <li>Per-position + slippage caps from your risk dial</li>
-          <li>DENY rules override ALLOW as hard circuit-breakers</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="card mt16"><h3>Faith-conscious &amp; honest</h3>
-      <div class="disclaim" style="margin-bottom:10px"><span class="tick good"></span><span>Built on the ROKI ecosystem's halal-conscious principles: no gambling mechanics, no pay-to-win. The product is framed as a risk-posture <b>execution tool</b>, not a guaranteed money-maker.</span></div>
-      <div class="disclaim"><span class="tick mid"></span><span>Every config is a risk/reward choice: "take every profit" caps upside and bleeds fees; "let it ride" risks giving it back. The bot executes <i>your</i> posture without emotion. Nothing here is financial advice, and crypto trading can lose money.</span></div>
     </div>
   </section>
 
