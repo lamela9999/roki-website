@@ -176,6 +176,7 @@ footer.site b{color:var(--coral)}
       <nav class="navlinks" id="nav">
         <button data-view="overview" class="active">Overview</button>
         <button data-view="configure">Configure</button>
+        <button data-view="discover">Discover</button>
         <button data-view="intel">Intel</button>
         <button data-view="safety">Safety</button>
         <button data-view="roadmap">Roadmap</button>
@@ -296,6 +297,17 @@ footer.site b{color:var(--coral)}
     </div>
   </section>
 
+  <!-- DISCOVER -->
+  <section class="view" id="view-discover">
+    <h1>Live discovery <span class="badge b-ok" style="vertical-align:middle">real · on-chain</span></h1>
+    <p class="muted" style="margin:0 0 6px;font-size:14px">Mode A on a live trending universe — every token scored and ranked through your selected archetype's weights + hard gates. Change the archetype in <a href="#" onclick="show('configure');return false" style="text-decoration:underline">Configure</a> and the ranking shifts.</p>
+    <div class="flex gap8 wrap" style="margin:12px 0 16px;align-items:center">
+      <span class="badge b-soft" id="boardArch">balanced weights</span>
+      <button class="btn primary small" onclick="runDiscoverBoard(true)">Refresh ranking</button>
+    </div>
+    <div id="boardResult"></div>
+  </section>
+
   <!-- INTEL -->
   <section class="view" id="view-intel">
     <h1>The intelligence</h1>
@@ -391,6 +403,7 @@ function show(v){
   document.querySelectorAll('.view').forEach(function(s){s.classList.remove('active')});
   document.getElementById('view-'+v).classList.add('active');
   document.querySelectorAll('#nav button').forEach(function(b){b.classList.toggle('active',b.dataset.view===v)});
+  if(v==='discover')maybeLoadBoard();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 document.getElementById('nav').addEventListener('click',function(e){if(e.target.dataset.view)show(e.target.dataset.view);});
@@ -585,6 +598,36 @@ function renderScore(d){
     +'<div class="disclaim mt16"><span class="tick '+(d.gates.rejected?'bad':(c>=45?'good':'mid'))+'"></span><span>'+escapeHtml(d.verdict)+'</span></div>'
     +fhtml
     +'<div class="note"><span class="tick mid"></span> Greyed factors (social, holder-growth, dev behavior, LP lock, sniper, insider-cluster, narrative) need paid data or the Brain — excluded from the composite, not faked.</div></div>';
+}
+
+/* ---------- live discovery board (Mode A, real /api/discoverboard) ---------- */
+var boardLoaded=false;
+function usdShort(v){v=v||0;return v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?Math.round(v/1e3)+'k':Math.round(v);}
+function maybeLoadBoard(){var el=document.getElementById('boardArch');if(el)el.textContent=archName(STATE.arch)+' weights';if(!boardLoaded)runDiscoverBoard();}
+function runDiscoverBoard(){
+  var box=document.getElementById('boardResult');boardLoaded=true;
+  document.getElementById('boardArch').textContent=archName(STATE.arch)+' weights';
+  box.innerHTML='<div class="disclaim"><span class="dot"></span><span>Scanning the live trending universe through the <b>'+escapeHtml(archName(STATE.arch))+'</b> profile…</span></div>';
+  withTimeout(fetch('/api/discoverboard?archetype='+STATE.arch),25000)
+    .then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||('failed '+r.status));return d;});})
+    .then(function(d){if(d.error)throw new Error(d.error);box.innerHTML=renderBoard(d);})
+    .catch(function(e){boardLoaded=false;box.innerHTML='<div class="disclaim"><span class="tick mid"></span><span><b>Live discovery runs on the deployed backend.</b> Once <span class="mono">/api/discoverboard</span> is live (Helius key set in Cloudflare), this ranks real trending tokens through your archetype. <span class="faint">('+escapeHtml(e&&e.message||'')+')</span></span></div>';});
+}
+function boardColor(s){return s>=70?'var(--green)':s>=45?'var(--yellow)':'var(--coral)';}
+function renderBoard(d){
+  var rows=d.results.map(function(r,i){
+    var c=r.composite,col=r.rejected?'var(--coral)':boardColor(c==null?0:c);
+    var badge=r.rejected?' <span class="badge b-gate">gated</span>':'';
+    return '<div style="display:grid;grid-template-columns:26px 1fr 78px 70px 56px;align-items:center;gap:8px;border-bottom:1px solid var(--hairline);padding:9px 0">'
+      +'<div class="mono faint">'+(i+1)+'</div>'
+      +'<div><b>$'+escapeHtml(r.symbol)+'</b>'+badge+'<div class="faint mono" style="font-size:10px">'+escapeHtml(r.name).slice(0,26)+' &middot; '+(r.market.ageDays!=null?r.market.ageDays+'d':'?')+'</div></div>'
+      +'<div class="mono" style="font-size:12px;text-align:right">$'+usdShort(r.market.mcap)+'<div class="faint" style="font-size:9px">mcap</div></div>'
+      +'<div class="mono" style="font-size:12px;text-align:right">$'+usdShort(r.market.liq)+'<div class="faint" style="font-size:9px">liq</div></div>'
+      +'<div class="mono" style="font-size:19px;font-weight:700;text-align:right;color:'+col+'">'+(c==null?'—':c)+'</div></div>';
+  }).join('');
+  return '<div class="card"><div class="row wrap" style="margin-bottom:10px"><div><h3 style="margin:0">Ranked &middot; '+escapeHtml(archName(d.archetype))+'</h3><p class="sub" style="margin:4px 0 0">'+d.scanned+' trending tokens scored live</p></div><span class="badge b-prev">cheap factors</span></div>'
+    +rows
+    +'<div class="note"><span class="tick mid"></span> Universe = live DexScreener trending. Social + Brain factors pending; drill into any token in <a href="/radar" style="text-decoration:underline">Radar</a> for holder concentration + clusters.</div></div>';
 }
 
 /* ---------- init ---------- */
