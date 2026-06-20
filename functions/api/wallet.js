@@ -52,48 +52,35 @@ export async function onRequestGet({ request, env }) {
     }
     let tokens = Object.keys(byMint).map((mint) => ({ mint, amount: byMint[mint] }));
 
-    // Price the holdings via DexScreener (batched, up to 30 mints/call). Include WSOL to value SOL.
-    const priceMints = [WSOL, ...tokens.map((t) => t.mint)].slice(0, 30);
-    const priceOf = {};
-    const symOf = {};
-    const dexGet = async (u) => { for (let i = 0; i < 3; i++) { try { const r = await fetch(u); if (r.ok) return await r.json(); } catch (e) { /* retry */ } await new Promise((res) => setTimeout(res, 400)); } return null; };
+    // Price via Helius getAssetBatch — reliable (key-authed, one call) and it only prices
+    // real tokens. Scam/junk tokens return no price → naturally excluded, so the portfolio
+    // total can't be inflated by manipulated thin-pool prices.
+    const ids = [WSOL, ...tokens.map((t) => t.mint)].slice(0, 1000);
+    const priceOf = {}, symOf = {};
     try {
-      const dr = await dexGet(`https://api.dexscreener.com/latest/dex/tokens/${priceMints.join(',')}`);
-      for (const p of (dr && dr.pairs) || []) {
-        const m = p.baseToken && p.baseToken.address;
-        const liq = (p.liquidity && p.liquidity.usd) || 0;
-        if (m && (priceOf[m] === undefined || liq > (priceOf[m]._liq || 0))) {
-          priceOf[m] = { price: parseFloat(p.priceUsd) || 0, _liq: liq, _vol: (p.volume && p.volume.h24) || 0 };
-          symOf[m] = (p.baseToken.symbol || '').replace(/^\$/, '');
-        }
+      const assets = await rpc('getAssetBatch', { ids, options: { showFungible: true } });
+      for (const a of assets || []) {
+        if (!a || !a.id) continue;
+        const ti = a.token_info || {};
+        const pp = ti.price_info && ti.price_info.price_per_token;
+        if (pp != null) priceOf[a.id] = pp;
+        symOf[a.id] = (a.content && a.content.metadata && a.content.metadata.symbol) || ti.symbol || null;
       }
-    } catch (e) { /* pricing is best-effort */ }
+    } catch (e) { /* pricing best-effort */ }
 
-    // Only trust a price if the pair has real liquidity — thin pools give garbage prices
-    // that would inflate the portfolio with phantom value.
-    // A token only gets a USD value if its pair has real liquidity AND real 24h volume —
-    // scam tokens fake price and liquidity, so the volume bar + a realizable-value cap
-    // (you can't exit more than the pool holds) kill phantom millions.
-    const MIN_LIQ_USD = 10000, MIN_VOL_USD = 5000;
     tokens = tokens.map((t) => {
-      const pr = priceOf[t.mint];
-      const liquid = pr && pr._liq >= MIN_LIQ_USD && pr._vol >= MIN_VOL_USD;
-      const price = liquid ? pr.price : null;
-      const raw = price != null ? price * t.amount : null;
-      // Realizable value: can't exit more than the pool depth or ~a day's volume.
-      const realizable = raw != null ? Math.min(raw, pr._liq, pr._vol) : null;
+      const price = priceOf[t.mint] != null ? priceOf[t.mint] : null;
       return {
         mint: t.mint,
         symbol: symOf[t.mint] || null,
         amount: t.amount,
         priceUsd: price,
-        valueUsd: realizable,
-        capped: raw != null && realizable < raw,
+        valueUsd: price != null ? price * t.amount : null,
       };
     });
     tokens.sort((a, b) => (b.valueUsd || 0) - (a.valueUsd || 0));
 
-    const solPrice = priceOf[WSOL] ? priceOf[WSOL].price : null;
+    const solPrice = priceOf[WSOL] != null ? priceOf[WSOL] : null;
     const solUsd = solPrice != null ? solPrice * sol : null;
     const portfolioUsd = (solUsd || 0) + tokens.reduce((s, t) => s + (t.valueUsd || 0), 0);
 
@@ -104,7 +91,7 @@ export async function onRequestGet({ request, env }) {
       tokenCount: tokens.length,
       portfolioUsd,
       tokens: tokens.slice(0, 12),
-      source: 'helius+dexscreener',
+      source: 'helius',
       ts: Date.now(),
     }, 200, { 'cache-control': 'public, max-age=30' });
   } catch (e) {
