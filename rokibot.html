@@ -782,6 +782,7 @@ function renderPlan(d){
     +'<div style="text-align:right"><div class="mono" style="font-size:24px;font-weight:700;color:'+col+'">'+escapeHtml(d.action)+'</div><div class="klabel">conf '+d.confidence+'</div></div></div>'
     +plan+modeBStrat(d)
     +'<div class="disclaim mt16"><span class="tick mid"></span><span><b>Live read:</b> '+escapeHtml(d.reasons.join(' '))+'</span></div>'
+    +'<div class="flex gap8 wrap" style="margin-top:14px;align-items:center"><button class="btn small" style="opacity:.6;cursor:not-allowed" disabled>▶ Auto-trade this — coming</button><span class="faint" style="font-size:11px">Executing needs the bot\'s own wallet (Turnkey) + your deposit + the 24/7 engine — not built yet. This is the plan only.</span></div>'
     +'<div class="note"><span class="tick mid"></span> Paper plan — not financial advice, no execution. Smart-money flow (Layer 1) is the intended primary signal and is pending.</div></div>';
 }
 
