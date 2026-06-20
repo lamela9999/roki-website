@@ -270,6 +270,19 @@ footer.site b{color:var(--coral)}
       <div id="scoreResult" class="mt16"></div>
     </div>
 
+    <div class="card" style="margin-bottom:16px">
+      <h3>Mode B — position plan <span class="badge b-ok">real · on-chain</span></h3>
+      <p class="sub">paper buy / sell / hold plan for one token, sized by your risk dial (<span id="planRisk">50</span>/100)</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <div style="flex:1;min-width:260px;display:flex;align-items:center;gap:10px;background:var(--paper);border:1.5px solid var(--ink);border-radius:11px;padding:0 14px;height:48px;box-shadow:var(--shadow)">
+          <span class="faint mono">mint</span>
+          <input id="planMint" placeholder="paste a token you want to trade…" spellcheck="false" style="flex:1;background:none;border:0;outline:0;color:var(--ink);font-size:14px;font-family:var(--mono)"/>
+        </div>
+        <button class="btn primary" onclick="planToken()">Plan</button>
+      </div>
+      <div id="planResult" class="mt16"></div>
+    </div>
+
     <div class="grid" style="grid-template-columns:1fr 1fr">
       <div class="card">
         <h3>Risk dial</h3><p class="sub">one number → concrete limits</p>
@@ -431,6 +444,7 @@ function onDial(v){
   document.getElementById('lSlip').textContent=m.slip.toFixed(1)+'%';
   document.getElementById('lLiq').textContent=usd(m.minLiq);
   document.getElementById('lStop').textContent=m.stop+'%';
+  var pr=document.getElementById('planRisk');if(pr)pr.textContent=v;
 }
 
 /* ---------- 20 factors ---------- */
@@ -628,6 +642,34 @@ function renderBoard(d){
   return '<div class="card"><div class="row wrap" style="margin-bottom:10px"><div><h3 style="margin:0">Ranked &middot; '+escapeHtml(archName(d.archetype))+'</h3><p class="sub" style="margin:4px 0 0">'+d.scanned+' trending tokens scored live</p></div><span class="badge b-prev">cheap factors</span></div>'
     +rows
     +'<div class="note"><span class="tick mid"></span> Universe = live DexScreener trending. Social + Brain factors pending; drill into any token in <a href="/radar" style="text-decoration:underline">Radar</a> for holder concentration + clusters.</div></div>';
+}
+
+/* ---------- Mode B — position plan (real /api/positionplan) ---------- */
+function actionColor(a){return a==='ACCUMULATE'?'var(--green)':(a==='AVOID'||a==='EXIT')?'var(--coral)':a==='TRIM'?'var(--orange)':'var(--blue)';}
+function planToken(){
+  var m=document.getElementById('planMint').value.trim();var box=document.getElementById('planResult');
+  if(!m){box.innerHTML='';return;}
+  box.innerHTML='<div class="disclaim"><span class="dot"></span><span>Planning '+escapeHtml(shorten(m))+' at risk '+STATE.dial+'/100…</span></div>';
+  withTimeout(fetch('/api/positionplan?mint='+encodeURIComponent(m)+'&risk='+STATE.dial),20000)
+   .then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||('failed '+r.status));return d;});})
+   .then(function(d){if(d.error)throw new Error(d.error);box.innerHTML=renderPlan(d);})
+   .catch(function(e){box.innerHTML='<div class="disclaim"><span class="tick mid"></span><span><b>Live planning runs on the deployed backend.</b> Once <span class="mono">/api/positionplan</span> is live (Helius key set), this reads live price action + order flow + lifecycle for any token. <span class="faint">('+escapeHtml(e&&e.message||'')+')</span></span></div>';});
+}
+function renderPlan(d){
+  var col=actionColor(d.action),pl=d.plan;
+  var plan=pl?('<div class="limits" style="margin-top:12px">'
+    +'<div class="limit"><div class="klabel">position</div><div class="n">'+pl.positionPct+'%</div></div>'
+    +'<div class="limit"><div class="klabel">stop-loss</div><div class="n">'+pl.stopLossPct+'%</div></div>'
+    +'<div class="limit"><div class="klabel">slippage</div><div class="n">'+pl.slippagePct+'%</div></div>'
+    +(pl.takeProfit?'<div class="limit"><div class="klabel">take-profit</div><div class="n mono" style="font-size:13px">$'+pl.takeProfit+'</div></div>':'')
+    +'</div>'):'';
+  return '<div class="card" style="border-color:'+col+';box-shadow:3px 3px 0 '+col+'"><div class="row wrap">'
+    +'<div><div style="font-size:18px;font-weight:700">'+escapeHtml(d.market.name)+' <span class="muted mono" style="font-size:13px">$'+escapeHtml(d.market.symbol)+'</span> <span class="badge b-soft">'+escapeHtml(d.assetClass)+'</span></div>'
+    +'<div class="faint mono" style="font-size:12px">$'+d.market.priceUsd+' &middot; 1h '+d.market.h1+'% &middot; 24h '+d.market.h24+'% &middot; liq $'+usdShort(d.market.liq)+'</div></div>'
+    +'<div style="text-align:right"><div class="mono" style="font-size:24px;font-weight:700;color:'+col+'">'+escapeHtml(d.action)+'</div><div class="klabel">conf '+d.confidence+'</div></div></div>'
+    +plan
+    +'<div class="disclaim mt16"><span class="tick mid"></span><span>'+escapeHtml(d.reasons.join(' '))+'</span></div>'
+    +'<div class="note"><span class="tick mid"></span> Paper plan — not financial advice, no execution. Smart-money flow (Layer 1) is the intended primary signal and is pending.</div></div>';
 }
 
 /* ---------- init ---------- */

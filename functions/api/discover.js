@@ -9,7 +9,7 @@
 // bundle, insider-cluster (see /api/funding), narrative heat. Pending factors are returned
 // as available:false and excluded from the composite — never faked.
 
-import { json, preflight } from './_utils.js';
+import { json, preflight, pickPair } from './_utils.js';
 
 export const onRequestOptions = () => preflight();
 
@@ -90,10 +90,8 @@ export async function onRequestGet({ request, env }) {
       rpc('getTokenSupply', [mint]).catch(() => null),
     ]);
 
-    const pairs = ((dex && dex.pairs) || []).filter((p) => p.chainId === 'solana');
-    if (!pairs.length) return json({ error: 'No Solana trading pair found for this mint.' }, 200);
-    pairs.sort((a, b) => ((b.liquidity && b.liquidity.usd) || 0) - ((a.liquidity && a.liquidity.usd) || 0));
-    const p = pairs[0];
+    const p = pickPair(dex && dex.pairs, mint);
+    if (!p) return json({ error: 'No Solana trading pair found for this mint.' }, 200);
 
     const info = acct && acct.value && acct.value.data && acct.value.data.parsed && acct.value.data.parsed.info;
     const mintAuth = info ? info.mintAuthority !== null : null;

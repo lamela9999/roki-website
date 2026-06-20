@@ -39,3 +39,24 @@ export function tierFor(score) {
   if (score >= 100) return 'Adept';
   return 'Beginner';
 }
+
+// Pick the best DexScreener pair for a mint. The /tokens/{mint} endpoint returns every pair
+// the mint touches (incl. ones where it's the QUOTE), and occasionally a deep pool is
+// MISQUOTED (wrong price → phantom mcap / absurd % change). So: keep only pairs where the
+// mint is the BASE token, drop pools whose price disagrees with the median (outliers), then
+// take the deepest-liquidity survivor. Returns null if none.
+export function pickPair(rawPairs, mint) {
+  const pairs = (rawPairs || []).filter(
+    (p) => p && p.chainId === 'solana' && p.baseToken && p.baseToken.address === mint && parseFloat(p.priceUsd) > 0
+  );
+  if (!pairs.length) return null;
+  const prices = pairs.map((p) => parseFloat(p.priceUsd)).sort((a, b) => a - b);
+  const median = prices[Math.floor(prices.length / 2)];
+  let kept = pairs.filter((p) => {
+    const pr = parseFloat(p.priceUsd);
+    return pr >= median / 3 && pr <= median * 3;
+  });
+  if (!kept.length) kept = pairs;
+  kept.sort((a, b) => ((b.liquidity && b.liquidity.usd) || 0) - ((a.liquidity && a.liquidity.usd) || 0));
+  return kept[0];
+}

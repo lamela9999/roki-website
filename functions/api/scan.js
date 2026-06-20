@@ -4,7 +4,7 @@
 // is NEVER sent to the browser. Returns real market + safety + top-holder concentration.
 // Entity clustering & funding-tree trace are the next phase (heavier transaction-graph work).
 
-import { json, preflight } from './_utils.js';
+import { json, preflight, pickPair } from './_utils.js';
 
 export const onRequestOptions = () => preflight();
 
@@ -46,9 +46,7 @@ export async function onRequestGet({ request, env }) {
     ]);
 
     // --- market (DexScreener: pick deepest-liquidity Solana pair) ---
-    const pairs = ((dex && dex.pairs) || []).filter((p) => p.chainId === 'solana')
-      .sort((a, b) => ((b.liquidity && b.liquidity.usd) || 0) - ((a.liquidity && a.liquidity.usd) || 0));
-    const p = pairs[0];
+    const p = pickPair(dex && dex.pairs, mint);
     const market = p ? {
       name: (p.baseToken && p.baseToken.name) || 'Unknown token',
       symbol: ((p.baseToken && p.baseToken.symbol) || '?').replace(/^\$/, ''),

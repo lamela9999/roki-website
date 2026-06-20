@@ -8,7 +8,7 @@
 // Holder concentration / funding-lineage are per-token heavy — use /api/scan & /api/funding
 // to drill into a specific result.
 
-import { json, preflight } from './_utils.js';
+import { json, preflight, pickPair } from './_utils.js';
 
 export const onRequestOptions = () => preflight();
 
@@ -78,10 +78,8 @@ export async function onRequestGet({ request, env }) {
     const factorWeight = (f) => arch.g[f.g] || 50;
     const rows = universe.map((mint, i) => {
       const dr = pairsArr[i];
-      const pairs = ((dr && dr.pairs) || []).filter((p) => p.chainId === 'solana');
-      if (!pairs.length) return null;
-      pairs.sort((a, b) => ((b.liquidity && b.liquidity.usd) || 0) - ((a.liquidity && a.liquidity.usd) || 0));
-      const p = pairs[0];
+      const p = pickPair(dr && dr.pairs, mint);
+      if (!p) return null;
       const info = accInfos && accInfos.value && accInfos.value[i] && accInfos.value[i].data && accInfos.value[i].data.parsed && accInfos.value[i].data.parsed.info;
       const mintAuth = info ? info.mintAuthority !== null : null;
       const freezeAuth = info ? info.freezeAuthority !== null : null;
