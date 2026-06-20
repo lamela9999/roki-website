@@ -7,7 +7,7 @@
 // only see recent funding (labeled accordingly). This is the cheap, bounded trace; the deep
 // transfer-graph version lives in the Python engine (roki-radar/src).
 
-import { json, preflight } from './_utils.js';
+import { json, preflight, solRpc } from './_utils.js';
 
 export const onRequestOptions = () => preflight();
 
@@ -28,29 +28,16 @@ export async function onRequestGet({ request, env }) {
   const mint = (new URL(request.url).searchParams.get('mint') || '').trim();
   if (!MINT_RE.test(mint)) return json({ error: "That doesn't look like a Solana mint address." }, 400);
 
-  const KEY = env.HELIUS_API_KEY;
+  const KEY = env.HELIUS_API_KEY; // funding needs Helius enhanced-tx (no free equivalent)
   if (!KEY) return json({ error: 'Forensic backend not configured (missing Helius key).' }, 503);
-  const RPC = `https://mainnet.helius-rpc.com/?api-key=${KEY}`;
 
-  const rpc = async (method, params) => {
-    const r = await fetch(RPC, {
-      method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
-    });
-    const j = await r.json();
-    if (j.error) throw new Error(`${method}: ${j.error.message || 'rpc error'}`);
-    return j.result;
-  };
-
-  const rpcRetry = async (method, params) => {
-    try { return await rpc(method, params); }
-    catch (e) { await new Promise((r) => setTimeout(r, 700)); return rpc(method, params); }
-  };
+  // RPC via shared free-first helper (retries getTokenLargestAccounts on empty result).
+  const rpc = (method, params) => solRpc(method, params, env);
 
   try {
-    const largest = await rpcRetry('getTokenLargestAccounts', [mint]);
+    const largest = await rpc('getTokenLargestAccounts', [mint]).catch(() => null);
     const accts = ((largest && largest.value) || []).slice(0, 20);
-    if (!accts.length) return json({ mint, error: 'No holders found for this mint.' }, 200);
+    if (!accts.length) return json({ mint, error: 'Top-holder data temporarily unavailable for this mint — retry in a moment.', holdersAnalyzed: 0 }, 200);
 
     const taInfos = await rpc('getMultipleAccounts', [accts.map((a) => a.address), { encoding: 'jsonParsed' }]);
     let holders = accts.map((a, i) => {
