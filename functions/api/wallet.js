@@ -58,18 +58,36 @@ export async function onRequestGet({ request, env }) {
     const solUsd = solPrice != null ? solPrice * sol : null;
     const portfolioUsd = (solUsd || 0) + tokens.reduce((s, t) => s + (t.valueUsd || 0), 0);
 
-    // Resolve symbols for the displayed holdings (Jupiter price has none) — one free DexScreener call.
+    // Resolve token NAMES + symbols for the displayed holdings. Helius getAssetBatch returns
+    // on-chain metadata for ANY SPL token (even unpriced junk); DexScreener fills any gaps.
     const top = tokens.slice(0, 12);
     if (top.length) {
-      try {
-        const ds = await fetch('https://api.dexscreener.com/latest/dex/tokens/' + top.map((t) => t.mint).join(',')).then((r) => (r.ok ? r.json() : null));
-        const symOf = {};
-        for (const p of (ds && ds.pairs) || []) {
-          const m = p.baseToken && p.baseToken.address;
-          if (m && !symOf[m]) symOf[m] = (p.baseToken.symbol || '').replace(/^\$/, '');
-        }
-        top.forEach((t) => { if (symOf[t.mint]) t.symbol = symOf[t.mint]; });
-      } catch (e) { /* symbols best-effort */ }
+      const meta = {};
+      if (env.HELIUS_API_KEY) {
+        try {
+          const r = await fetch(`https://mainnet.helius-rpc.com/?api-key=${env.HELIUS_API_KEY}`, {
+            method: 'POST', headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getAssetBatch', params: { ids: top.map((t) => t.mint), options: { showFungible: true } } }),
+          });
+          const j = await r.json();
+          for (const a of (j && j.result) || []) {
+            if (!a || !a.id) continue;
+            const ti = a.token_info || {}; const md = (a.content && a.content.metadata) || {};
+            meta[a.id] = { sym: md.symbol || ti.symbol || null, name: md.name || null };
+          }
+        } catch (e) { /* */ }
+      }
+      const missing = top.filter((t) => !meta[t.mint] || !meta[t.mint].sym).map((t) => t.mint);
+      if (missing.length) {
+        try {
+          const ds = await fetch('https://api.dexscreener.com/latest/dex/tokens/' + missing.join(',')).then((r) => (r.ok ? r.json() : null));
+          for (const p of (ds && ds.pairs) || []) {
+            const m = p.baseToken && p.baseToken.address;
+            if (m) { meta[m] = meta[m] || {}; if (!meta[m].sym) meta[m].sym = (p.baseToken.symbol || '').replace(/^\$/, ''); if (!meta[m].name) meta[m].name = p.baseToken.name || null; }
+          }
+        } catch (e) { /* */ }
+      }
+      top.forEach((t) => { const m = meta[t.mint]; if (m) { t.symbol = m.sym || t.symbol; t.name = m.name || null; } });
     }
 
     return json({
