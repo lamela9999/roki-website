@@ -293,7 +293,8 @@ footer.site b{color:var(--coral)}
   <!-- BOARDS -->
   <section class="view" id="view-boards">
     <h1 style="font-size:24px;margin:0 0 6px">Leaderboards</h1>
-    <p class="muted" style="margin:0 0 18px;font-size:14px">Ranked at the <b>entity</b> level on noise-corrected plus-minus. We always show raw, n, and adjusted together so three lucky trades can't top the board.</p>
+    <p class="muted" style="margin:0 0 14px;font-size:14px">Ranked at the <b>entity</b> level on noise-corrected plus-minus. We always show raw, n, and adjusted together so three lucky trades can't top the board.</p>
+    <div id="liveTraders" style="margin-bottom:20px"></div>
     <div class="boardtabs" id="boardtabs"></div>
     <div class="card" style="padding:0;overflow:hidden"><div id="boardTable"></div></div>
     <div class="note"><span class="tick good"></span> <span id="boardNote"></span></div>
@@ -708,6 +709,25 @@ var BOARDS=[['smart_money','Smart money','ranks adj plus-minus among long-hold w
  ['rising','Rising','recency-weighted current form'],
  ['bag_worker','Bag worker','dumps on its own callers - dirty, excluded from alpha'],
  ['alpha_callers','Alpha callers','clean plus-minus on called tokens that survived']];
+function loadLiveTraders(){
+ var box=document.getElementById('liveTraders');if(!box)return;
+ if(!(STATE.live&&LIVE&&LIVE.mint)){box.innerHTML='<div class="disclaim"><span class="tick mid"></span><span>Scan a live token (Scan tab) to see its <b>real recent traders</b> ranked by net SOL flow. The boards below are illustrative entity-level examples.</span></div>';return;}
+ var sym=LIVE.symbol||'?';
+ box.innerHTML='<div class="disclaim"><span class="dot"></span><span>Loading live traders on <b>$'+escapeHtml(sym)+'</b>…</span></div>';
+ withTimeout(fetch('/api/smartmoney?mint='+encodeURIComponent(LIVE.mint)),25000)
+  .then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||('failed '+r.status));return d;});})
+  .then(function(d){if(d.error)throw new Error(d.error);box.innerHTML=renderLiveTraders(d,sym);})
+  .catch(function(e){box.innerHTML='<div class="disclaim"><span class="tick mid"></span><span>Live trader board needs the deployed backend. <span class="faint">('+escapeHtml(e&&e.message||'')+')</span></span></div>';});
+}
+function renderLiveTraders(d,sym){
+ if(!d.traders||!d.traders.length)return '<div class="disclaim"><span class="tick mid"></span><span>No recent swap activity found for $'+escapeHtml(sym)+'.</span></div>';
+ var rows=d.traders.slice(0,8).map(function(t,i){
+   return '<tr><td class="mono faint">'+(i+1)+'</td><td class="mono">'+shorten(t.addr)+(t.closed?'':' <span class="badge b-class">open</span>')+'</td><td class="num muted">'+t.trades+'</td><td class="num '+(t.netSol>=0?'pos':'neg')+'">'+(t.netSol>=0?'+':'')+t.netSol+'</td></tr>';
+ }).join('');
+ return '<div class="card" style="padding:0;overflow:hidden"><div style="padding:14px 16px;border-bottom:1.5px solid var(--ink)"><b>Live traders &middot; $'+escapeHtml(sym)+'</b> <span class="muted" style="font-size:12px">— net SOL flow over '+escapeHtml(d.window||'recent swaps')+'</span></div>'
+   +'<table><thead><tr><th>#</th><th>trader</th><th class="num">trades</th><th class="num">net SOL</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+   +'<div class="note"><span class="tick mid"></span> Recent SOL flow per trader on this token (not lifetime PnL). "open" = bought without selling in-window. Real, via Helius.</div>';
+}
 function renderBoardTabs(){
  document.getElementById('boardtabs').innerHTML=BOARDS.map(function(b){return '<button class="'+(STATE.board===b[0]?'active':'')+'" onclick="setBoard(\''+b[0]+'\')">'+b[1]+'</button>';}).join('');
  document.getElementById('boardNote').textContent=BOARDS.filter(function(b){return b[0]===STATE.board})[0][2];
@@ -809,7 +829,7 @@ function show(view){
  document.getElementById('view-'+view).classList.add('active');
  document.querySelectorAll('#nav button').forEach(function(b){b.classList.toggle('active',b.dataset.view===view)});
  if(view==='entities')renderEntities();
- if(view==='boards'){renderBoardTabs();renderBoard();}
+ if(view==='boards'){renderBoardTabs();renderBoard();loadLiveTraders();}
  var mn=document.getElementById('mobnav');if(mn)mn.value=view;
  window.scrollTo({top:0,behavior:'smooth'});
 }
