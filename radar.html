@@ -82,6 +82,7 @@ header.top{position:sticky;top:0;z-index:30;background:var(--cream);padding:16px
   font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:9px 14px;border-radius:8px;cursor:pointer}
 .navlinks button:hover{background:rgba(20,17,15,.07)}
 .navlinks button.active{color:var(--cream);background:var(--ink)}
+.mobnav{display:none;font-family:var(--sans);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.06em;border:1.5px solid var(--ink);border-radius:8px;background:var(--paper);color:var(--ink);padding:8px 10px;margin-left:8px}
 .spacer{flex:1}
 .pill-live{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:800;letter-spacing:.14em;
   color:var(--muted);text-transform:uppercase;border:1.5px solid var(--ink);background:var(--paper);padding:6px 11px;border-radius:999px}
@@ -218,7 +219,7 @@ footer.site b{color:var(--coral)}
 .hidden{display:none}
 .disclaim{background:var(--cream);border:1.5px solid var(--ink);border-radius:10px;padding:11px 14px;
   font-size:12.5px;color:var(--ink-soft);display:flex;gap:9px;align-items:center}
-@media(max-width:720px){.scanhead{grid-template-columns:1fr}.hero h1{font-size:34px}.navlinks{display:none}}
+@media(max-width:720px){.scanhead{grid-template-columns:1fr}.hero h1{font-size:34px}.navlinks{display:none}.mobnav{display:inline-block}}
 </style>
 </head>
 <body>
@@ -242,6 +243,13 @@ footer.site b{color:var(--coral)}
         <button data-view="about">About</button>
       </nav>
       <a href="/rokibot" style="font-size:12px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;padding:9px 13px;border-radius:8px;color:var(--coral);align-self:center" title="ROKI Bot">Bot &#8599;</a>
+      <select id="mobnav" class="mobnav" onchange="show(this.value)" aria-label="Navigate sections">
+        <option value="scan">Scan</option>
+        <option value="entities">Entities</option>
+        <option value="boards">Leaderboards</option>
+        <option value="wallet">Wallet</option>
+        <option value="about">About</option>
+      </select>
       <div class="spacer"></div>
       <div class="pill-live"><span class="dot"></span> read-only</div>
     </div>
@@ -728,9 +736,21 @@ function realWalletLookup(a,box){
  box.innerHTML=loadingCard(a);
  withTimeout(fetch('/api/wallet?addr='+encodeURIComponent(a)),20000).then(function(r){
    return r.json().then(function(d){if(!r.ok)throw new Error(d.error||('lookup failed ('+r.status+')'));return d;});
- }).then(function(d){box.innerHTML=renderRealWallet(d);}).catch(function(err){
+ }).then(function(d){
+   box.innerHTML=renderRealWallet(d)+'<div id="wsProfile" class="mt16"></div>';
+   withTimeout(fetch('/api/walletscore?addr='+encodeURIComponent(a)),20000).then(function(r){return r.ok?r.json():null;}).then(function(w){
+     var el=document.getElementById('wsProfile');if(el&&w&&!w.error)el.innerHTML=renderWalletScore(w);
+   }).catch(function(){});
+ }).catch(function(err){
    box.innerHTML='<div class="disclaim"><span class="tick mid"></span><span><b>Live wallet lookup runs on the deployed backend.</b> Once <span class="mono">/api/wallet</span> is live (Helius key set in Cloudflare), it resolves real SOL balance &amp; token holdings for any wallet. Meanwhile, try an example wallet above to see the entity view. <span class="faint">('+escapeHtml(err&&err.message||'')+')</span></span></div>';
  });
+}
+function renderWalletScore(w){
+ var smart=w.label.indexOf('smart')>=0,neg=w.label.indexOf('negative')>=0;
+ var lab=smart?'b-clean':neg?'b-dirty':'b-class';
+ return '<div class="card"><div class="row wrap"><div><div class="klabel">trader profile &middot; smart-money read</div><div style="margin-top:5px"><span class="badge '+lab+'">'+escapeHtml(w.label)+'</span> <span class="muted mono" style="font-size:11px">conf '+w.confidence+'</span></div></div>'
+  +'<div class="mono" style="font-size:12px;text-align:right">'+w.swaps+' swaps &middot; <span class="'+(w.realizedSol>=0?'pos':'neg')+'">'+(w.realizedSol>=0?'+':'')+w.realizedSol+' SOL</span>'+(w.winRate!=null?' &middot; '+Math.round(w.winRate*100)+'% win':'')+'</div></div>'
+  +'<div class="note"><span class="tick mid"></span> '+escapeHtml(w.note)+'</div></div>';
 }
 function runWallet(){
  var a=document.getElementById('walletInput').value.trim();
@@ -760,6 +780,7 @@ function show(view){
  document.querySelectorAll('#nav button').forEach(function(b){b.classList.toggle('active',b.dataset.view===view)});
  if(view==='entities')renderEntities();
  if(view==='boards'){renderBoardTabs();renderBoard();}
+ var mn=document.getElementById('mobnav');if(mn)mn.value=view;
  window.scrollTo({top:0,behavior:'smooth'});
 }
 function setLens(l){STATE.lens=l;renderLensbar();renderScan();}

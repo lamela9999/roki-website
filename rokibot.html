@@ -47,6 +47,7 @@ header.top{position:sticky;top:0;z-index:30;background:var(--cream);padding:16px
 .navlinks button{font-family:var(--sans);background:none;border:0;color:var(--ink-soft);font-size:12px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;padding:9px 13px;border-radius:8px;cursor:pointer}
 .navlinks button:hover{background:rgba(20,17,15,.07)}
 .navlinks button.active{color:var(--cream);background:var(--ink)}
+.mobnav{display:none;font-family:var(--sans);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.06em;border:1.5px solid var(--ink);border-radius:8px;background:var(--paper);color:var(--ink);padding:8px 10px;margin-left:8px}
 
 /* buttons */
 .btn{font-family:var(--sans);cursor:pointer;border-radius:9px;font-weight:800;font-size:12px;letter-spacing:.13em;text-transform:uppercase;padding:0 18px;height:46px;border:1.5px solid var(--ink);background:var(--paper);color:var(--ink);transition:transform .12s,box-shadow .12s,background .15s;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
@@ -157,7 +158,7 @@ footer.site{border-top:1.5px solid var(--ink);margin-top:30px;padding:22px 0;col
 footer.site b{color:var(--coral)}
 .pill-live{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;border:1.5px solid var(--ink);background:var(--paper);padding:6px 10px;border-radius:999px}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
-@media(max-width:760px){.navlinks{display:none}.hero h1{font-size:34px}.factor{grid-template-columns:150px 1fr 34px}}
+@media(max-width:760px){.navlinks{display:none}.mobnav{display:inline-block}.hero h1{font-size:34px}.factor{grid-template-columns:150px 1fr 34px}}
 </style>
 </head>
 <body>
@@ -182,6 +183,14 @@ footer.site b{color:var(--coral)}
         <button data-view="roadmap">Roadmap</button>
       </nav>
       <a href="/radar" style="font-size:12px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;padding:9px 13px;border-radius:8px;color:var(--coral);align-self:center" title="Roki Radar">Radar &#8599;</a>
+      <select id="mobnav" class="mobnav" onchange="show(this.value)" aria-label="Navigate sections">
+        <option value="overview">Overview</option>
+        <option value="configure">Configure</option>
+        <option value="discover">Discover</option>
+        <option value="intel">Intel</option>
+        <option value="safety">Safety</option>
+        <option value="roadmap">Roadmap</option>
+      </select>
       <div class="spacer"></div>
       <button class="btn primary small" id="connectBtn" onclick="connectWallet()">Connect wallet</button>
     </div>
@@ -325,6 +334,7 @@ footer.site b{color:var(--coral)}
   <section class="view" id="view-intel">
     <h1>The intelligence</h1>
     <p class="muted" style="margin:0 0 14px;font-size:14px">A shared brain runs once, centrally; every bot reads from it. The edge is <b>whose</b> action you react to — and not getting faked out by manufactured "smart money."</p>
+    <div id="regimePanel" style="margin-bottom:18px"></div>
 
     <div class="card">
       <h3>Wallet labeling — the moat</h3><p class="sub">classify wallets, follow funding lineage</p>
@@ -417,6 +427,8 @@ function show(v){
   document.getElementById('view-'+v).classList.add('active');
   document.querySelectorAll('#nav button').forEach(function(b){b.classList.toggle('active',b.dataset.view===v)});
   if(v==='discover')maybeLoadBoard();
+  if(v==='intel')maybeLoadRegime();
+  var mn=document.getElementById('mobnav');if(mn)mn.value=v;
   window.scrollTo({top:0,behavior:'smooth'});
 }
 document.getElementById('nav').addEventListener('click',function(e){if(e.target.dataset.view)show(e.target.dataset.view);});
@@ -642,6 +654,34 @@ function renderBoard(d){
   return '<div class="card"><div class="row wrap" style="margin-bottom:10px"><div><h3 style="margin:0">Ranked &middot; '+escapeHtml(archName(d.archetype))+'</h3><p class="sub" style="margin:4px 0 0">'+d.scanned+' trending tokens scored live</p></div><span class="badge b-prev">cheap factors</span></div>'
     +rows
     +'<div class="note"><span class="tick mid"></span> Universe = live DexScreener trending. Social + Brain factors pending; drill into any token in <a href="/radar" style="text-decoration:underline">Radar</a> for holder concentration + clusters.</div></div>';
+}
+
+/* ---------- The Brain — live regime (real /api/regime) ---------- */
+var regimeLoaded=false;
+function maybeLoadRegime(){if(!regimeLoaded)loadRegime();}
+function loadRegime(){
+  var box=document.getElementById('regimePanel');regimeLoaded=true;
+  box.innerHTML='<div class="disclaim"><span class="dot"></span><span>Reading the live market regime from the trending universe…</span></div>';
+  withTimeout(fetch('/api/regime'),20000)
+   .then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||('failed '+r.status));return d;});})
+   .then(function(d){if(d.error)throw new Error(d.error);box.innerHTML=renderRegime(d);})
+   .catch(function(e){regimeLoaded=false;box.innerHTML='<div class="disclaim"><span class="tick mid"></span><span><b>Live regime runs on the deployed backend.</b> Once <span class="mono">/api/regime</span> is live, this reads the current market regime from the trending universe. <span class="faint">('+escapeHtml(e&&e.message||'')+')</span></span></div>';});
+}
+function renderRegime(d){
+  var s=d.stats,r=d.regime;
+  var moodCol=r.mood.indexOf('hostile')>=0?'var(--coral)':r.mood.indexOf('greedy')>=0?'var(--green)':'var(--yellow)';
+  var delta=r.aggressionDelta,deltaTxt=(delta>0?'+':'')+delta+' aggression';
+  return '<div class="card" style="border-color:'+moodCol+';box-shadow:3px 3px 0 '+moodCol+'">'
+    +'<div class="row wrap"><div><h3 style="margin:0">Live regime <span class="badge b-ok">real · the Brain</span></h3><p class="sub" style="margin:4px 0 0">snapshot over '+d.sampled+' trending tokens</p></div>'
+    +'<div style="text-align:right"><div class="mono" style="font-size:17px;font-weight:700;color:'+moodCol+'">'+escapeHtml(r.mood)+'</div><div class="klabel">'+escapeHtml(r.tempo)+'</div></div></div>'
+    +'<div class="limits" style="margin-top:12px">'
+    +'<div class="limit"><div class="klabel">median 24h</div><div class="n">'+(s.medianChange24!=null?s.medianChange24+'%':'—')+'</div></div>'
+    +'<div class="limit"><div class="klabel">buy flow</div><div class="n">'+(s.medianBuyRatio!=null?Math.round(s.medianBuyRatio*100)+'%':'—')+'</div></div>'
+    +'<div class="limit"><div class="klabel">median age</div><div class="n">'+(s.medianAgeDays!=null?s.medianAgeDays+'d':'—')+'</div></div>'
+    +'<div class="limit"><div class="klabel">rug-gated</div><div class="n">'+(s.pctGated!=null?Math.round(s.pctGated*100)+'%':'—')+'</div></div>'
+    +'<div class="limit"><div class="klabel">defense</div><div class="n" style="color:'+(delta<0?'var(--coral)':'var(--green-ink)')+'">'+deltaTxt+'</div></div>'
+    +'</div>'
+    +'<div class="disclaim mt16"><span class="tick mid"></span><span>'+escapeHtml(d.narrative)+'</span></div></div>';
 }
 
 /* ---------- Mode B — position plan (real /api/positionplan) ---------- */
