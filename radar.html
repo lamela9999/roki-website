@@ -280,12 +280,8 @@ footer.site b{color:var(--coral)}
   <!-- ENTITIES -->
   <section class="view" id="view-entities">
     <div class="row" style="margin-bottom:6px">
-      <div><h1 style="font-size:24px;margin:0">Resolved entities</h1>
-      <p class="muted" style="margin:6px 0 0;font-size:14px">Wallets merged by the six pairwise signals, combined with a noisy-OR. Every merge shows its confidence and the signals that produced it.</p></div>
-    </div>
-    <div class="lensbar" style="margin-top:18px">
-      <div class="disclaim" style="width:100%"><span class="tick good"></span>
-      <span>Tier rule: edges &ge; 0.85 union-find merge as a <b>self</b> entity; 0.50&ndash;0.85 Louvain communities as <b>collusion</b>. Self vs collusion is then decided by independence, not edge strength alone.</span></div>
+      <div><h1 style="font-size:24px;margin:0">Who's really behind it</h1>
+      <p class="muted" style="margin:6px 0 0;font-size:14px">We map the top holders and check if wallets that look separate were secretly funded by the same source — the tell that one person is hiding behind many wallets to fake organic demand. Scan a token first.</p></div>
     </div>
     <div id="entityList" class="mt16"></div>
   </section>
@@ -499,19 +495,41 @@ async function fetchRealToken(mint){
  tok.baseRisk=liveBaseRisk(tok,p.pairCreatedAt);
  return tok;
 }
-function narrateLive(t,score){
- var s=t.safety;var parts=[];
- if(s.mintAuth&&s.freezeAuth)parts.push('both mint and freeze authority are still live — the deployer can inflate supply or freeze wallets');
- else if(s.mintAuth)parts.push('mint authority is still live, so supply can be inflated');
- else if(s.freezeAuth)parts.push('freeze authority is still live, so transfers can be frozen');
- else if(s.mintAuth===false&&s.freezeAuth===false)parts.push('mint and freeze authority are both revoked');
- if(t.liq<25000)parts.push('liquidity is thin ('+usd(t.liq)+'), so exits move price hard');
- else parts.push(usd(t.liq)+' of liquidity');
- if(t.hasHolders){var net=t.holders.top10-(t.holders.pooledPct||0);if(net>0.5)parts.push('the top 10 non-pooled accounts control '+pct(net)+' of supply — highly concentrated');else parts.push('top-10 holders are '+pct(t.holders.top10)+' of supply (pools included)');}
+function narrateLive(t,score,lens){
+ var s=t.safety||{};
  var price=t.priceUsd<0.01?t.priceUsd.toExponential(2):t.priceUsd.toFixed(4);
- var lead='<b>'+escapeHtml(t.name)+' ($'+escapeHtml(t.symbol)+')</b> is live at $'+price+', '+usd(t.mcap)+' market cap, '+t.age+' old on '+escapeHtml(t.dex)+'. ';
- var verdict=score>=75?'High-risk on the basics we can read — treat with caution.':score>=50?'Mixed posture — size accordingly.':score>=25?'Reasonable on the readable basics.':'Clean on the safety basics we can read.';
- return lead+(parts.length?'Right now '+parts.join('; ')+'. ':'')+verdict+' This is the live market &amp; safety read; coordination/entity analysis needs the forensic backend. Probabilistic, not certainty.';
+ var head='<b>'+escapeHtml(t.name)+' ($'+escapeHtml(t.symbol)+')</b> &middot; $'+price+' &middot; '+usd(t.mcap)+' mcap &middot; '+t.age+' old. ';
+ var net=t.hasHolders?(t.holders.top10-(t.holders.pooledPct||0)):null;
+ var young=/[mh]$/.test(t.age||''); // ends in minutes/hours = very new
+ var body,L=lens||'rug_auditor';
+ if(L==='sniper_hunter'){
+   var a=[];
+   if(net!=null)a.push((net>0.5?'⚠ ':net>0.3?'~ ':'✓ ')+'the top 10 real holders control '+pct(net)+' of supply'+(net>0.5?' — concentrated enough to coordinate a dump':''));
+   else a.push('holder concentration didn\'t load this scan — retry');
+   a.push(young?'⚠ brand-new launch — sniper/bundle risk is highest right now':'past the initial launch window');
+   body='<b>Coordinated launch / snipers?</b> '+a.join('; ')+'. Open the <b>Entities</b> tab to check if top wallets were funded by the same source.';
+ } else if(L==='long_term_holder'){
+   var b=[];
+   b.push((t.liq>=100000?'✓ ':t.liq>=25000?'~ ':'⚠ ')+usd(t.liq)+' liquidity'+(t.liq<25000?' — thin, hard to exit a real position':''));
+   b.push(/d$/.test(t.age||'')?'✓ established ('+t.age+' old)':'⚠ young ('+t.age+'), unproven');
+   if(net!=null)b.push(net>0.5?'⚠ supply concentrated in few hands':'✓ reasonably spread out');
+   body='<b>Safe to hold a while?</b> '+b.join('; ')+'.';
+ } else if(L==='copy_scout'){
+   var c=[];
+   if(net!=null)c.push('top-10 concentration '+pct(net));
+   c.push('open the <b>Leaderboards</b> tab to see this token\'s real recent traders ranked by net SOL — that\'s who to consider following');
+   body='<b>Anyone here worth copying?</b> '+c.join('; ')+'. Click a wallet on the bubble map to see its other holdings.';
+ } else { // rug_auditor (default)
+   var d=[];
+   if(s.mintAuth||s.freezeAuth)d.push('⚠ '+[s.mintAuth?'mint':'',s.freezeAuth?'freeze':''].filter(Boolean).join(' & ')+' authority still LIVE — the deployer can rug');
+   else if(s.mintAuth===false&&s.freezeAuth===false)d.push('✓ mint & freeze authority revoked');
+   if(s.lpLockedPct!=null)d.push((s.lpLockedPct>=80?'✓ ':s.lpLockedPct>5?'~ ':'⚠ ')+s.lpLockedPct.toFixed(0)+'% of liquidity locked/burned');
+   if(s.rugScore!=null)d.push('RugCheck risk '+(s.rugScore<=20?'low':s.rugScore<=50?'medium':'HIGH')+' ('+s.rugScore+'/100)'+(s.topRisk?', top flag: '+escapeHtml(s.topRisk):''));
+   if(t.liq<25000)d.push('⚠ thin liquidity ('+usd(t.liq)+')');
+   body='<b>Can it rug you?</b> '+d.join('; ')+'.';
+ }
+ var tail=score>=75?' <b>Overall: high risk.</b>':score>=50?' Overall: mixed — size carefully.':score>=25?' Overall: reasonable on the basics.':' Overall: clean on what we can read.';
+ return head+body+tail+' <span class="faint">Probabilistic, not certainty.</span>';
 }
 
 /* Map the /api/scan payload (server-side Helius) into the render model. */
@@ -631,7 +649,7 @@ function panelByKey(t,key){
      return '<div class="card"><h3>Holder bubble map</h3><p class="sub">top holders</p><div class="disclaim"><span class="tick mid"></span><span>The top-holder list came back empty from the RPC just now (common for very-large-holder tokens). The <b>Entities</b> tab retries it with the full funding-lineage trace — open it, or re-run the scan.</span></div></div>';
    }
    if(!t.entities||!t.entities.length)return '';
-   return renderDemoBubbleMap(t)+'<div class="card"><h3>Top entities</h3><p class="sub">'+t.entities.length+' resolved &middot; ordered by supply</p>'+t.entities.map(entityCard).join('')+'</div>';}
+   return renderDemoBubbleMap(t)+'<div class="note"><span class="tick mid"></span> Sample map — scan a real token to map its actual holders and shared-funder clusters.</div>';}
  return '';
 }
 
@@ -639,7 +657,7 @@ function renderScan(){
  var t=curTok();var lens=LENSES[STATE.lens];
  var score=lensRiskScore(t,STATE.lens);var tier=tierOf(score);
  var top=(t.entities&&t.entities.length)?t.entities.slice().sort(function(a,b){return b.supply-a.supply})[0]:null;
- var verdict=t.live?narrateLive(t,score):(lens.lead(t,top)+' '+narrate(t,score));
+ var verdict=t.live?narrateLive(t,score,STATE.lens):(lens.lead(t,top)+' '+narrate(t,score));
  var meta=shorten(t.mint)+' &middot; mcap '+usd(t.mcap)+' &middot; liq '+usd(t.liq)+' &middot; '+t.age+' old'+(t.live?(' &middot; '+escapeHtml(t.dex)):'');
  var confLine=t.live
    ? '<span class="conf"><span class="tick good"></span> live on-chain read &middot; market via DexScreener · authority via Solana RPC</span>'
@@ -690,8 +708,7 @@ function renderEntities(){
    return;
  }
  document.getElementById('entityList').innerHTML=renderDemoBubbleMap(t)
-  +'<div class="row wrap" style="margin-bottom:14px;gap:10px"><div class="muted" style="font-size:13.5px">Showing entities for <b style="color:var(--text)">$'+escapeHtml(t.symbol)+'</b> &middot; '+t.entities.length+' resolved</div></div>'
-  +t.entities.map(entityCard).join('');
+  +'<div class="note"><span class="tick mid"></span> This is a <b>sample</b> map of $'+escapeHtml(t.symbol)+' (demo). Scan a real token in the Scan tab to map its actual holders and detect shared-funder clusters.</div>';
 }
 function renderDemoBubbleMap(t){
  var list=[],funders=[];
@@ -818,23 +835,26 @@ function bmDetail(spec,n,id){
 }
 function renderFundingClusters(d,t){
  var clusters=(d.sharedFunders||[]);
- var head='<div class="row wrap" style="margin-bottom:12px;gap:10px"><div class="muted" style="font-size:13.5px">Funding-lineage trace for <b style="color:var(--text)">$'+escapeHtml(t.symbol||'?')+'</b> &middot; '+d.holdersAnalyzed+' top retail holders &middot; '+escapeHtml(d.window||'')+'</div></div>';
- var stats='<div class="card"><div class="stats" style="border-top:0;padding-top:0">'
-  +'<div class="stat"><div class="n mono">'+clusters.length+'</div><div class="l">shared-funder clusters</div></div>'
-  +'<div class="stat"><div class="n mono">'+(d.freshCount||0)+'</div><div class="l">fresh wallets (&lt;14d)</div></div>'
-  +'<div class="stat"><div class="n mono">'+(d.genesisCount||0)+'/'+d.holdersAnalyzed+'</div><div class="l">genesis-level traces</div></div>'
-  +'</div>';
+ var n=d.holdersAnalyzed||0;
+ var verdict,tick,msg;
  if(clusters.length){
-   stats+='<div class="mt16">'+clusters.map(function(c){
-     return '<div class="entity"><div class="top"><div><span class="badge b-coll">shared funder</span> <span class="muted" style="font-size:13px">'+c.count+' holders from one source</span>'
+   tick='bad';verdict=clusters.length+' hidden cluster'+(clusters.length>1?'s':'')+' found';
+   msg='Several of the top holders were funded by the <b>same wallet</b> — a strong sign one person is hiding behind multiple wallets to fake organic demand (a sybil cluster), not real distribution.';
+ } else {
+   tick='good';verdict='No hidden clusters — holders look independent';
+   msg='We traced where the top '+n+' holders got their money and found <b>no shared funding source</b> between them — they look like genuinely different people, which is the healthy case.';
+ }
+ var card='<div class="card"><div class="row wrap" style="margin-bottom:8px"><div><h3 style="margin:0">'+verdict+'</h3><p class="sub" style="margin:4px 0 0">funding check &middot; top '+n+' holders of $'+escapeHtml(t.symbol||'?')+'</p></div><span class="badge '+(clusters.length?'b-dirty':'b-clean')+'">'+(clusters.length?'cluster found':'looks clean')+'</span></div>'
+   +'<div class="disclaim"><span class="tick '+tick+'"></span><span>'+msg+'</span></div>';
+ if(clusters.length){
+   card+='<div class="mt16">'+clusters.map(function(c){
+     return '<div class="entity"><div class="top"><div><span class="badge b-dirty">same funder</span> <span class="muted" style="font-size:13px">'+c.count+' top holders funded by one wallet</span>'
        +'<div class="members" style="margin-top:8px"><span class="wchip">funder '+shorten(c.funder)+'</span>'+c.holders.map(function(h){return '<span class="wchip">'+shorten(h)+'</span>';}).join('')+'</div></div></div></div>';
    }).join('')+'</div>';
-   stats+='<div class="note"><span class="tick bad"></span> Multiple top holders funded by the same wallet — a manufactured-cluster / sybil tell, not organic distribution.</div>';
- } else {
-   stats+='<div class="disclaim mt16"><span class="tick good"></span><span>No shared funder found across the analyzed top holders in this window — no obvious manufactured cluster. (Note: highly active wallets show only recent funding; deep genesis tracing is a backend job.)</span></div>';
  }
- stats+='</div>';
- return renderBubbleMap(t,d)+head+stats;
+ if(d.freshCount)card+='<div class="note"><span class="tick mid"></span> '+d.freshCount+' of the top '+n+' are brand-new wallets (&lt;14 days old) — normal for a fresh launch, worth noting on older tokens.</div>';
+ card+='</div>';
+ return renderBubbleMap(t,d)+card;
 }
 
 /* boards */
