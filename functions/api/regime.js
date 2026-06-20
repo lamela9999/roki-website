@@ -27,7 +27,11 @@ export async function onRequestGet({ request, env }) {
       if (b && b.chainId === 'solana' && b.tokenAddress && !seen.has(b.tokenAddress)) { seen.add(b.tokenAddress); mints.push(b.tokenAddress); }
     }
     const universe = mints.slice(0, 16);
-    if (!universe.length) return json({ error: 'No trending tokens available right now.' }, 200);
+    const KV = env.ZEN_KV; // reuse the project KV namespace to cache the last-good regime
+    if (!universe.length) {
+      if (KV) { const cached = await KV.get('radar:regime', 'json').catch(() => null); if (cached) return json({ ...cached, stale: true }, 200, { 'cache-control': 'public, max-age=60' }); }
+      return json({ error: 'No trending tokens available right now — retry shortly.' }, 200);
+    }
 
     const [pairsArr, accInfos] = await Promise.all([
       Promise.all(universe.map((m) => dexGet(`https://api.dexscreener.com/latest/dex/tokens/${m}`))),
@@ -76,7 +80,7 @@ export async function onRequestGet({ request, env }) {
         : `Mixed regime — no strong directional edge. Trade selectively at flat size.`)
       + (fresh ? ' Universe skews very fresh (median age <2d): launch-sniper signals matter, rug-gates matter more.' : '');
 
-    return json({
+    const result = {
       sampled: counted,
       stats: {
         medianAgeDays: medAge != null ? Math.round(medAge) : null,
@@ -90,7 +94,9 @@ export async function onRequestGet({ request, env }) {
       narrative,
       note: 'On-demand snapshot from the live trending universe. A production Brain tracks these as a moving window + per-signal performance table to make weights regime-aware over time.',
       source: 'helius+dexscreener', ts: Date.now(),
-    }, 200, { 'cache-control': 'public, max-age=120' });
+    };
+    if (KV) await KV.put('radar:regime', JSON.stringify(result), { expirationTtl: 600 }).catch(() => {});
+    return json(result, 200, { 'cache-control': 'public, max-age=120' });
   } catch (e) {
     return json({ error: e.message || 'Regime read failed.' }, 502);
   }
