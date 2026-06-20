@@ -620,8 +620,10 @@ function panelByKey(t,key){
  if(key==='safety')return safetyPanel(t);
  if(key==='funding'){ if(t.live)return fundingPlaceholder(); return t.funding?fundingPanel(t):forensicNote('Funding-tree trace'); }
  if(key==='entities'){
+   if(t.live&&t.holders&&t.holders.list&&t.holders.list.length)
+     return renderBubbleMap(t,null)+'<div class="note" style="margin-top:-6px"><span class="tick mid"></span> Open the <b>Entities</b> tab for the full funding-lineage trace — it adds the red shared-funder cluster links.</div>';
    if(t.forensicPending||!t.entities||!t.entities.length)return forensicNote('Entity resolution &amp; clustering');
-   var top=t.entities.map(entityCard).join('');return '<div class="card"><h3>Top entities</h3><p class="sub">'+t.entities.length+' resolved &middot; ordered by supply</p>'+top+'</div>';}
+   return renderDemoBubbleMap(t)+'<div class="card"><h3>Top entities</h3><p class="sub">'+t.entities.length+' resolved &middot; ordered by supply</p>'+t.entities.map(entityCard).join('')+'</div>';}
  return '';
 }
 
