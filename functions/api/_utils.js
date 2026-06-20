@@ -59,16 +59,23 @@ export async function solRpc(method, params, env) {
   else if (method === 'getTokenAccountsByOwner') order = [MB, helius];    // PN blocks
   else order = [PN, MB, helius];                                          // cheap/high-volume → free first
   order = order.filter(Boolean);
+  // getTokenLargestAccounts intermittently returns an EMPTY list even on a healthy paid node —
+  // treat empty as retryable so holder concentration doesn't silently collapse to 0.
+  const isLargest = method === 'getTokenLargestAccounts';
+  const maxAttempts = isLargest ? 5 : 2;
   let lastErr = 'no rpc available';
   for (const url of order) {
-    for (let attempt = 0; attempt < 2; attempt++) {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
         const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }) });
         if (r.status === 429 || r.status === 403) { lastErr = `${url.split('/')[2]} ${r.status}`; break; } // blocked/limited → next node
         const j = await r.json();
         if (j.error) { lastErr = j.error.message || 'rpc error'; break; }
+        if (isLargest && !(j.result && j.result.value && j.result.value.length)) {
+          lastErr = 'empty largestAccounts'; await new Promise((res) => setTimeout(res, 250)); continue; // retry same node
+        }
         return j.result;
-      } catch (e) { lastErr = String((e && e.message) || e); } // transient → retry same node once
+      } catch (e) { lastErr = String((e && e.message) || e); await new Promise((res) => setTimeout(res, 200)); }
     }
   }
   throw new Error(`${method} failed (${lastErr})`);
