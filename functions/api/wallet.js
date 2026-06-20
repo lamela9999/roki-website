@@ -58,14 +58,28 @@ export async function onRequestGet({ request, env }) {
     const solUsd = solPrice != null ? solPrice * sol : null;
     const portfolioUsd = (solUsd || 0) + tokens.reduce((s, t) => s + (t.valueUsd || 0), 0);
 
+    // Resolve symbols for the displayed holdings (Jupiter price has none) — one free DexScreener call.
+    const top = tokens.slice(0, 12);
+    if (top.length) {
+      try {
+        const ds = await fetch('https://api.dexscreener.com/latest/dex/tokens/' + top.map((t) => t.mint).join(',')).then((r) => (r.ok ? r.json() : null));
+        const symOf = {};
+        for (const p of (ds && ds.pairs) || []) {
+          const m = p.baseToken && p.baseToken.address;
+          if (m && !symOf[m]) symOf[m] = (p.baseToken.symbol || '').replace(/^\$/, '');
+        }
+        top.forEach((t) => { if (symOf[t.mint]) t.symbol = symOf[t.mint]; });
+      } catch (e) { /* symbols best-effort */ }
+    }
+
     return json({
       addr,
       sol,
       solUsd,
       tokenCount: tokens.length,
       portfolioUsd,
-      tokens: tokens.slice(0, 12),
-      source: 'free: publicnode/mainnet-beta + jupiter',
+      tokens: top,
+      source: 'free: publicnode/mainnet-beta + jupiter + dexscreener',
       ts: Date.now(),
     }, 200, { 'cache-control': 'public, max-age=30' });
   } catch (e) {
