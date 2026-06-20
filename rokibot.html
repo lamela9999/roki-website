@@ -341,6 +341,7 @@ footer.site b{color:var(--coral)}
     <div class="card">
       <h3>Wallet labeling — the moat</h3><p class="sub">classify wallets, follow funding lineage</p>
       <div class="disclaim" style="margin:0 0 12px"><span class="tick mid"></span><span><b>Live vs planned, honestly:</b> today "smart money" is computed <b>on demand</b> — for any wallet/token we pull its recent swaps and score it by <b>realized SOL profit + win-rate over closed trades</b> (live now in Radar's Wallet lookup &amp; Leaderboards, and funding-cluster detection). There is <b>no precomputed global list of smart wallets yet</b> — a maintained, PnL-ranked wallet database that catches fake clusters across the whole chain is the centralized <b>Brain</b> (backend phase, not built). The four categories below are the model the Brain will apply at scale.</span></div>
+      <div id="smLive" style="margin:0 0 16px"></div>
       <div class="label-grid">
         <div class="lab signal"><h4>Smart money <span class="badge b-ok">signal</span></h4><p>Consistent net-positive realized PnL. A buy here is real signal.</p></div>
         <div class="lab"><h4>Insiders / devs <span class="badge b-warn">mixed</span></h4><p>Linked to creation/early funding. Accumulation = signal; first sell = hardest exit trigger.</p></div>
@@ -401,6 +402,7 @@ function show(v){
   document.getElementById('view-'+v).classList.add('active');
   document.querySelectorAll('#nav button').forEach(function(b){b.classList.toggle('active',b.dataset.view===v)});
   if(v==='discover')maybeLoadBoard();
+  if(v==='intel')loadSmartWallets();
   if(v==='intel')maybeLoadRegime();
   var mn=document.getElementById('mobnav');if(mn)mn.value=v;
   window.scrollTo({top:0,behavior:'smooth'});
@@ -679,7 +681,7 @@ function renderBoard(d){
     var badge=r.rejected?' <span class="badge b-gate">gated</span>':(pick?' <span class="badge b-ok">BUY</span>':'');
     return '<div onclick="boardDetail(\''+r.mint+'\')" title="See the factor breakdown" style="cursor:pointer;display:grid;grid-template-columns:26px 1fr 78px 70px 56px;align-items:center;gap:8px;border-bottom:1px solid var(--hairline);padding:9px 0;'+(pick?'background:rgba(37,230,132,.08);border-left:3px solid var(--green);padding-left:8px':'')+'">'
       +'<div class="mono faint">'+(i+1)+'</div>'
-      +'<div><b>$'+escapeHtml(r.symbol)+'</b>'+badge+'<div class="faint mono" style="font-size:10px">'+escapeHtml(r.name).slice(0,26)+' &middot; '+(r.market.ageDays!=null?r.market.ageDays+'d':'?')+'</div></div>'
+      +'<div><b>$'+escapeHtml(r.symbol)+'</b>'+badge+'<div class="faint mono" style="font-size:10px">'+escapeHtml(r.name).slice(0,20)+' &middot; '+(r.market.ageDays!=null?r.market.ageDays+'d':'?')+' &middot; <span style="cursor:pointer" title="copy contract address" onclick="event.stopPropagation();copyCA(\''+r.mint+'\',this)">'+r.mint.slice(0,4)+'..'+r.mint.slice(-4)+' &#x2398;</span></div></div>'
       +'<div class="mono" style="font-size:12px;text-align:right">$'+usdShort(r.market.mcap)+'<div class="faint" style="font-size:9px">mcap</div></div>'
       +'<div class="mono" style="font-size:12px;text-align:right">$'+usdShort(r.market.liq)+'<div class="faint" style="font-size:9px">liq</div></div>'
       +'<div class="mono" style="font-size:19px;font-weight:700;text-align:right;color:'+col+'">'+(c==null?'—':c)+'</div></div>';
@@ -792,6 +794,31 @@ function initGate(){
   var chip=document.getElementById('gateChip');if(chip)chip.textContent='$ROKI gate · paused';
   var pb=document.getElementById('previewBtn');if(pb)pb.textContent='Open config →';
   setGate('<span class="tick good"></span> Open access for now — no $ROKI required. Connect to track your balance, or jump straight to <a href="#" onclick="show(\'configure\');return false" style="text-decoration:underline">Configure</a>.');
+}
+
+/* ---------- live smart-money finder (real /api/smartwallets) ---------- */
+function copyCA(txt,el){if(!txt)return;try{navigator.clipboard.writeText(txt);}catch(e){}if(el){var o=el.innerHTML;el.innerHTML='copied &#x2713;';setTimeout(function(){el.innerHTML=o;},1100);}}
+var smLoaded=false;
+function loadSmartWallets(){
+  var box=document.getElementById('smLive'); if(!box||smLoaded)return; smLoaded=true;
+  box.innerHTML='<div class="disclaim"><span class="dot"></span><span>Scanning the trending tokens for net-positive wallets…</span></div>';
+  withTimeout(fetch('/api/smartwallets'),30000).then(function(r){return r.json();})
+   .then(function(d){if(d.error){smLoaded=false;throw new Error(d.error);}box.innerHTML=renderSmartWallets(d);})
+   .catch(function(e){smLoaded=false;box.innerHTML='<div class="disclaim"><span class="tick mid"></span><span>Live smart-money scan runs on the deployed backend. <span class="faint">('+escapeHtml(e&&e.message||'')+')</span></span></div>';});
+}
+function renderSmartWallets(d){
+  if(!d.wallets||!d.wallets.length)return '<div class="disclaim"><span class="tick mid"></span><span>No clearly net-positive wallets in this trending batch right now — retry shortly.</span></div>';
+  var rows=d.wallets.map(function(w,i){
+    var col=w.netSol>=0?'#0F7A45':'#B02A2A';
+    var b=w.label==='smart money'?'b-ok':w.label==='net-positive'?'b-soft':'b-gate';
+    return '<div style="display:grid;grid-template-columns:22px 1fr 96px;align-items:center;gap:8px;border-bottom:1px solid var(--hairline);padding:8px 0">'
+      +'<div class="mono faint">'+(i+1)+'</div>'
+      +'<div><span class="mono" style="cursor:pointer" title="copy address" onclick="copyCA(\''+w.addr+'\',this)">'+w.addr.slice(0,4)+'..'+w.addr.slice(-4)+' &#x2398;</span> <span class="badge '+b+'">'+w.label+'</span><div class="faint mono" style="font-size:10px">traded: '+w.tokens.map(escapeHtml).join(', ')+'</div></div>'
+      +'<div class="mono" style="text-align:right;font-weight:700;color:'+col+'">'+(w.netSol>=0?'+':'')+w.netSol+' SOL</div></div>';
+  }).join('');
+  return '<div class="card" style="margin:0"><div class="row wrap" style="margin-bottom:8px"><div><h3 style="margin:0">Smart money — found right now</h3><p class="sub" style="margin:4px 0 0">net SOL across trending tokens: '+d.scannedTokens.map(escapeHtml).join(', ')+'</p></div><span class="badge b-ok">live</span></div>'
+    +rows
+    +'<div class="note"><span class="tick mid"></span> Real wallets trading the current trending tokens, ranked by net SOL (recent-window proxy, not lifetime PnL). Click an address to copy. The chain-wide maintained list is the Brain (backend).</div></div>';
 }
 
 /* ---------- init ---------- */
