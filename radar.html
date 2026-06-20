@@ -422,7 +422,7 @@ function escapeHtml(s){return String(s).replace(/[&<>]/g,function(c){return {'&'
 function withTimeout(p,ms){return Promise.race([p,new Promise(function(_,rej){setTimeout(function(){rej(new Error('Request timed out — the chain or DexScreener was slow. Try again.'));},ms);})]);}
 function ageFrom(ms){if(!ms)return '?';var s=(Date.now()-ms)/1000;if(s>=86400)return Math.floor(s/86400)+'d';if(s>=3600)return Math.floor(s/3600)+'h';return Math.max(1,Math.floor(s/60))+'m';}
 function loadingCard(v){return '<div class="card"><div class="flex center gap12"><span class="dot"></span><div><div style="font-weight:800;text-transform:uppercase;letter-spacing:.06em;font-size:13px">Scanning on-chain…</div><div class="faint mono" style="font-size:12px">'+shorten(v)+' &middot; DexScreener + Solana RPC</div></div></div></div>';}
-function forensicNote(what){return '<div class="card"><h3>'+what+'</h3><p class="sub">forensic layer</p><div class="disclaim"><span class="tick mid"></span><span><b>'+what+'</b> runs on the Helius-powered backend (Phase 2), which isn\'t live yet. The market &amp; safety data above is real, pulled on-chain just now.</span></div></div>';}
+function forensicNote(what){return '<div class="card"><h3>'+what+'</h3><p class="sub">forensic layer</p><div class="disclaim"><span class="tick mid"></span><span><b>'+what+'</b> runs on a <b>live</b> Solana mint — scan a real token (Scan tab) and it computes on-chain. Demo tokens show worked examples.</span></div></div>';}
 var FUNDING_CACHE={};
 function fundingPlaceholder(){return '<div class="card" id="liveFunding"><h3>Funding-tree trace</h3><p class="sub">backward trace &middot; top holders</p><div class="note"><span class="dot"></span> tracing top-holder funding on-chain…</div></div>';}
 function fundingUnavailable(msg){return '<div class="card"><h3>Funding-tree trace</h3><p class="sub">forensic layer &middot; backend</p><div class="disclaim"><span class="tick mid"></span><span>Funding trace needs the Helius backend (set <span class="mono">HELIUS_API_KEY</span> in Cloudflare). '+(msg?('<span class="faint">'+escapeHtml(msg)+'</span>'):'')+'</span></div></div>';}
@@ -525,7 +525,7 @@ function apiToModel(d){
    symbol:(m.symbol||'?'),name:m.name||'Unknown token',mint:d.mint,
    mcap:m.mcap||0,liq:m.liq||0,priceUsd:m.priceUsd||0,vol24:m.vol24||0,dex:m.dex||'dex',
    age:ageFrom(ageMs),
-   safety:{mintAuth:d.safety?d.safety.mintAuth:null,freezeAuth:d.safety?d.safety.freezeAuth:null,lpLocked:null,lpBurned:null,lpHolders:null},
+   safety:{mintAuth:d.safety?d.safety.mintAuth:null,freezeAuth:d.safety?d.safety.freezeAuth:null,lpLockedPct:d.safety?d.safety.lpLockedPct:null,rugScore:d.safety?d.safety.rugScore:null,topRisk:d.safety?d.safety.topRisk:null},
    entities:[],funding:null
  };
  tok.baseRisk=liveBaseRisk(tok,ageMs);
@@ -579,13 +579,17 @@ function gaugeSVG(score){
 function safetyPanel(t){
  var s=t.safety;
  function cell(lab,ok,val){var cls=ok==null?'mid':(ok?'good':'bad');return '<div class="safe"><div class="klabel">'+lab+'</div><div class="v"><span class="tick '+cls+'"></span>'+val+'</div></div>';}
- return '<div class="card"><h3>Safety panel</h3><p class="sub">mint &amp; LP posture</p><div class="safegrid">'
-  +cell('mint authority',s.mintAuth==null?null:!s.mintAuth,s.mintAuth==null?'unknown':(s.mintAuth?'live (risk)':'revoked'))
-  +cell('freeze authority',s.freezeAuth==null?null:!s.freezeAuth,s.freezeAuth==null?'unknown':(s.freezeAuth?'live (risk)':'revoked'))
-  +cell('LP locked',s.lpLocked,s.lpLocked==null?'unknown':(s.lpLocked?'yes':'no'))
-  +cell('LP burned',s.lpBurned,s.lpBurned==null?'unknown':(s.lpBurned?'yes':'no'))
-  +cell('LP holders',s.lpHolders==null?null:s.lpHolders>5,s.lpHolders==null?'unknown':(s.lpHolders+(s.lpHolders<=3?' (thin)':'')))
-  +'</div></div>';
+ var cells=cell('mint authority',s.mintAuth==null?null:!s.mintAuth,s.mintAuth==null?'unknown':(s.mintAuth?'live (risk)':'revoked'))
+  +cell('freeze authority',s.freezeAuth==null?null:!s.freezeAuth,s.freezeAuth==null?'unknown':(s.freezeAuth?'live (risk)':'revoked'));
+ // LP locked/burned — live tokens get a real % from RugCheck; demo tokens use their booleans
+ if(s.lpLockedPct!=null) cells+=cell('LP locked/burned',s.lpLockedPct>=80?true:(s.lpLockedPct>5?null:false),s.lpLockedPct.toFixed(0)+'% locked');
+ else if(s.lpLocked!=null) cells+=cell('LP locked',s.lpLocked,s.lpLocked?'yes':'no')+cell('LP burned',s.lpBurned==null?null:s.lpBurned,s.lpBurned==null?'unknown':(s.lpBurned?'yes':'no'));
+ else cells+=cell('LP locked/burned',null,'unknown');
+ // RugCheck risk score (live) or LP holder count (demo)
+ if(s.rugScore!=null) cells+=cell('RugCheck risk',s.rugScore<=20?true:(s.rugScore<=50?null:false),(s.rugScore<=20?'low':(s.rugScore<=50?'medium':'high'))+' ('+s.rugScore+'/100)');
+ else if(s.lpHolders!=null) cells+=cell('LP holders',s.lpHolders>5,s.lpHolders+(s.lpHolders<=3?' (thin)':''));
+ if(s.topRisk) cells+=cell('top risk flag',/danger/i.test(s.topRisk)?false:null,escapeHtml(s.topRisk));
+ return '<div class="card"><h3>Safety panel</h3><p class="sub">mint &amp; LP posture'+(s.lpLockedPct!=null||s.rugScore!=null?' &middot; RugCheck':'')+'</p><div class="safegrid">'+cells+'</div></div>';
 }
 function fundingPanel(t){
  var f=t.funding,o=f.origins;
@@ -620,11 +624,13 @@ function panelByKey(t,key){
  if(key==='safety')return safetyPanel(t);
  if(key==='funding'){ if(t.live)return fundingPlaceholder(); return t.funding?fundingPanel(t):forensicNote('Funding-tree trace'); }
  if(key==='entities'){
-   if(t.live&&t.holders&&t.holders.available===false)
-     return '<div class="card"><h3>Holder bubble map</h3><p class="sub">top holders</p><div class="note"><span class="tick mid"></span> '+escapeHtml(t.holders.reason||'Top-holder data temporarily unavailable from the RPC — re-run the scan in a moment.')+'</div></div>';
-   if(t.live&&t.holders&&t.holders.list&&t.holders.list.length)
-     return renderBubbleMap(t,null)+'<div class="note" style="margin-top:-6px"><span class="tick mid"></span> Open the <b>Entities</b> tab for the full funding-lineage trace — it adds the red shared-funder cluster links.</div>';
-   if(t.forensicPending||!t.entities||!t.entities.length)return forensicNote('Entity resolution &amp; clustering');
+   if(t.live){
+     if(t.holders&&t.holders.list&&t.holders.list.length)
+       return renderBubbleMap(t,null)+'<div class="note" style="margin-top:-6px"><span class="tick mid"></span> Open the <b>Entities</b> tab for the full funding-lineage trace — it adds the red shared-funder cluster links.</div>';
+     // live, but the RPC returned an empty top-holder list this call (common for mega-holder tokens) — the backend IS live, just retry
+     return '<div class="card"><h3>Holder bubble map</h3><p class="sub">top holders</p><div class="disclaim"><span class="tick mid"></span><span>The top-holder list came back empty from the RPC just now (common for very-large-holder tokens). The <b>Entities</b> tab retries it with the full funding-lineage trace — open it, or re-run the scan.</span></div></div>';
+   }
+   if(!t.entities||!t.entities.length)return '';
    return renderDemoBubbleMap(t)+'<div class="card"><h3>Top entities</h3><p class="sub">'+t.entities.length+' resolved &middot; ordered by supply</p>'+t.entities.map(entityCard).join('')+'</div>';}
  return '';
 }

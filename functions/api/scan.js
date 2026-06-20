@@ -27,11 +27,13 @@ export async function onRequestGet({ request, env }) {
   const rpc = (method, params) => solRpc(method, params, env);
 
   try {
-    const [dex, acct, largest, supply] = await Promise.all([
+    const [dex, acct, largest, supply, rug] = await Promise.all([
       fetch(`https://api.dexscreener.com/latest/dex/tokens/${mint}`).then((r) => r.json()).catch(() => null),
       rpc('getAccountInfo', [mint, { encoding: 'jsonParsed' }]),
       rpc('getTokenLargestAccounts', [mint]).catch(() => null),
       rpc('getTokenSupply', [mint]).catch(() => null),
+      // RugCheck (free) → real LP locked/burned % + risk score
+      fetch(`https://api.rugcheck.xyz/v1/tokens/${mint}/report/summary`).then((r) => (r.ok ? r.json() : null)).catch(() => null),
     ]);
 
     // --- market (DexScreener: pick deepest-liquidity Solana pair) ---
@@ -50,11 +52,15 @@ export async function onRequestGet({ request, env }) {
     // --- safety (authority + supply) ---
     const info = acct && acct.value && acct.value.data && acct.value.data.parsed && acct.value.data.parsed.info;
     const total = Number(supply && supply.value && supply.value.amount) || 0;
+    const topRisk = rug && rug.risks && rug.risks[0];
     const safety = {
       mintAuth: info ? (info.mintAuthority !== null) : null,
       freezeAuth: info ? (info.freezeAuthority !== null) : null,
       supply: total,
       decimals: (supply && supply.value && supply.value.decimals) ?? (info && info.decimals) ?? null,
+      lpLockedPct: rug && rug.lpLockedPct != null ? +rug.lpLockedPct.toFixed(1) : null, // % of LP locked/burned (RugCheck)
+      rugScore: rug && rug.score_normalised != null ? rug.score_normalised : null,       // 0-100, higher = riskier
+      topRisk: topRisk ? (topRisk.name + (topRisk.level ? ' (' + topRisk.level + ')' : '')) : null,
     };
 
     // --- holders (top accounts → owners → concentration) ---
