@@ -667,19 +667,31 @@ function renderEntities(){
    // Live-scanned token → run the real funding-lineage / shared-funder cluster trace.
    var box=document.getElementById('entityList');
    if(t.live&&t.mint){
-     box.innerHTML='<div class="disclaim"><span class="dot"></span><span>Tracing funding lineage of <b>$'+escapeHtml(t.symbol||'?')+'</b>\'s top holders for shared-funder clusters…</span></div>';
+     // Map renders instantly from the scan's holders; the funding trace then adds red cluster links.
+     box.innerHTML=renderBubbleMap(t,null)+'<div class="disclaim"><span class="dot"></span><span>Tracing funding lineage of <b>$'+escapeHtml(t.symbol||'?')+'</b>\'s top holders for shared-funder clusters…</span></div>';
      withTimeout(fetch('/api/funding?mint='+encodeURIComponent(t.mint)),30000)
       .then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||('failed '+r.status));return d;});})
       .then(function(d){if(d.error)throw new Error(d.error);box.innerHTML=renderFundingClusters(d,t);})
-      .catch(function(e){box.innerHTML=forensicNote('Funding-lineage cluster trace')+'<div class="note"><span class="tick mid"></span> ('+escapeHtml(e&&e.message||'')+')</div>';});
+      .catch(function(e){box.innerHTML=renderBubbleMap(t,null)+'<div class="note"><span class="tick mid"></span> Funding trace unavailable ('+escapeHtml(e&&e.message||'')+') — bubble map shows ownership only.</div>';});
      return;
    }
    box.innerHTML=forensicNote('Entity resolution &amp; clustering')
     +'<div class="note"><span class="tick mid"></span> Scan a live mint to run the real funding-lineage trace. Demo tokens show worked clustering examples.</div>';
    return;
  }
- document.getElementById('entityList').innerHTML='<div class="row wrap" style="margin-bottom:14px;gap:10px"><div class="muted" style="font-size:13.5px">Showing entities for <b style="color:var(--text)">$'+escapeHtml(t.symbol)+'</b> &middot; '+t.entities.length+' resolved</div></div>'
+ document.getElementById('entityList').innerHTML=renderDemoBubbleMap(t)
+  +'<div class="row wrap" style="margin-bottom:14px;gap:10px"><div class="muted" style="font-size:13.5px">Showing entities for <b style="color:var(--text)">$'+escapeHtml(t.symbol)+'</b> &middot; '+t.entities.length+' resolved</div></div>'
   +t.entities.map(entityCard).join('');
+}
+function renderDemoBubbleMap(t){
+ var list=[],funders=[];
+ (t.entities||[]).forEach(function(e,ei){
+   var per=(e.supply||0)/Math.max(1,(e.members||[]).length);
+   (e.members||[]).forEach(function(m){list.push({owner:m,pct:per,label:e.type==='collusion'?'cluster':(e.classification||null)});});
+   if(e.type==='collusion'&&(e.members||[]).length>=2)funders.push({funder:'cluster-'+(e.id||ei),count:e.members.length,holders:e.members.slice()});
+ });
+ if(!list.length)return '';
+ return renderBubbleMap({symbol:t.symbol,mint:t.mint||'',holders:{list:list}},{sharedFunders:funders});
 }
 /* ---------- bubble map (self-contained force graph; no libs) ---------- */
 function bmColor(label,inCluster){
