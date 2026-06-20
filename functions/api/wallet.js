@@ -63,7 +63,7 @@ export async function onRequestGet({ request, env }) {
         const m = p.baseToken && p.baseToken.address;
         const liq = (p.liquidity && p.liquidity.usd) || 0;
         if (m && (priceOf[m] === undefined || liq > (priceOf[m]._liq || 0))) {
-          priceOf[m] = { price: parseFloat(p.priceUsd) || 0, _liq: liq };
+          priceOf[m] = { price: parseFloat(p.priceUsd) || 0, _liq: liq, _vol: (p.volume && p.volume.h24) || 0 };
           symOf[m] = (p.baseToken.symbol || '').replace(/^\$/, '');
         }
       }
@@ -71,22 +71,24 @@ export async function onRequestGet({ request, env }) {
 
     // Only trust a price if the pair has real liquidity — thin pools give garbage prices
     // that would inflate the portfolio with phantom value.
-    const MIN_LIQ_USD = 2000;
+    // A token only gets a USD value if its pair has real liquidity AND real 24h volume —
+    // scam tokens fake price and liquidity, so the volume bar + a realizable-value cap
+    // (you can't exit more than the pool holds) kill phantom millions.
+    const MIN_LIQ_USD = 10000, MIN_VOL_USD = 5000;
     tokens = tokens.map((t) => {
       const pr = priceOf[t.mint];
-      const liquid = pr && pr._liq >= MIN_LIQ_USD;
+      const liquid = pr && pr._liq >= MIN_LIQ_USD && pr._vol >= MIN_VOL_USD;
       const price = liquid ? pr.price : null;
-      // Realizable value: you can't exit more than the pool holds. Caps phantom value from
-      // scam tokens with manipulated prices in thin pools.
       const raw = price != null ? price * t.amount : null;
-      const valueUsd = raw != null ? Math.min(raw, pr._liq) : null;
+      // Realizable value: can't exit more than the pool depth or ~a day's volume.
+      const realizable = raw != null ? Math.min(raw, pr._liq, pr._vol) : null;
       return {
         mint: t.mint,
         symbol: symOf[t.mint] || null,
         amount: t.amount,
         priceUsd: price,
-        valueUsd,
-        capped: raw != null && raw > pr._liq,
+        valueUsd: realizable,
+        capped: raw != null && realizable < raw,
       };
     });
     tokens.sort((a, b) => (b.valueUsd || 0) - (a.valueUsd || 0));
