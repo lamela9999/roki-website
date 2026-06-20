@@ -45,7 +45,7 @@ export async function onRequestGet({ request, env }) {
 
   // Free-first RPC, Helius fallback. Works keyless for cheap calls.
   const rpc = (method, params) => solRpc(method, params, env);
-  const dexGet = async (u) => { for (let i = 0; i < 2; i++) { try { const r = await fetch(u); if (r.ok) return await r.json(); } catch (e) { /**/ } } return null; };
+  const dexGet = async (u) => { for (let i = 0; i < 4; i++) { try { const r = await fetch(u); if (r.ok) return await r.json(); } catch (e) { /**/ } await new Promise((res) => setTimeout(res, 300)); } return null; };
 
   try {
     // 1) universe: boosted/trending Solana tokens
