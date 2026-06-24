@@ -837,7 +837,7 @@ function renderSmartWallets(d){
 }
 
 /* ---------- THE LAB: viewer for the 24/7 server-side bot competition ---------- */
-var LAB=null, labTimer=null, LAB_OPEN=null;
+var LAB=null, labTimer=null, LAB_OPEN=null, LAB_FULL={};
 function lm(v){v=Math.round(v||0);var s=v<0?'-':'';return s+'$'+Math.abs(v).toLocaleString('en-US');}
 function fmtCap(v){v=+v||0;if(v>=1e9)return '$'+(v/1e9).toFixed(2)+'B';if(v>=1e6)return '$'+(v/1e6).toFixed(2)+'M';if(v>=1e3)return '$'+(v/1e3).toFixed(0)+'K';return '$'+Math.round(v);}
 function fmtPx(p){p=+p||0;if(p<=0)return '$0';if(p>=1)return '$'+p.toFixed(3);if(p>=0.001)return '$'+p.toFixed(5);return '$'+p.toPrecision(2);}
@@ -906,7 +906,10 @@ function labDetail(b){
       +'<div class="faint mono" style="font-size:10px">now · '+fmtCap(p.mcapNow)+' mcap · '+fmtPx(p.nowPrice)+'</div>'
       +'</div>';
   }).join(''):'<div class="faint" style="font-size:11px">holding cash — no open positions</div>';
-  var log=b.log.length?b.log.map(function(t){
+  var fullT=LAB_FULL[b.id];
+  var trd=fullT?fullT.trades:(b.log||[]);
+  var totT=fullT?fullT.trades.length:(b.logTotal||(b.log?b.log.length:0));
+  var log=trd.length?trd.map(function(t){
     if(t.side==='BUY'){
       var sig=(t.sources&&t.sources.length)?t.sources.map(function(s){return LAB_SRC[s]||s;}).join(', '):(LAB_SRC[t.src]||t.src||'');
       return '<div style="border-bottom:1px solid var(--hairline);padding:6px 0">'
@@ -923,7 +926,8 @@ function labDetail(b){
       +'<div class="faint mono" style="font-size:10px">token moved '+(t.movePct>=0?'+':'')+t.movePct+'% → you netted '+(t.pnlPct>=0?'+':'')+t.pnlPct+'% after '+t.slipPct+'% slippage + '+t.feePct+'% fee · '+lm(t.usdIn)+' → '+lm(t.proceeds)+'</div>'
       +'</div>';
   }).join(''):'<div class="faint" style="font-size:11px">no trades yet</div>';
-  var jour=b.history.length?b.history.map(function(h){
+  var jourArr=(fullT&&fullT.history&&fullT.history.length)?fullT.history:b.history;
+  var jour=jourArr.length?jourArr.map(function(h){
     var diffs='';
     if(h.before&&h.after){var parts=[];if(h.before.threshold!==h.after.threshold)parts.push('bar '+h.before.threshold+'→'+h.after.threshold);if(h.before.tp!==h.after.tp)parts.push('TP '+h.before.tp+'→'+h.after.tp+'%');if(h.before.sl!==h.after.sl)parts.push('SL '+h.before.sl+'→'+h.after.sl+'%');if(h.before.posPct!==h.after.posPct)parts.push('size '+Math.round(h.before.posPct*100)+'→'+Math.round(h.after.posPct*100)+'%');if(parts.length)diffs='<div class="mono faint" style="font-size:10px;margin-top:2px">'+parts.join(' · ')+'</div>';}
     var meta=h.wr!=null?('win rate '+h.wr+'% · '+h.trades+' trades · day P/L '+(h.realizedDay>=0?'+':'')+lm(h.realizedDay)):'';
@@ -932,11 +936,13 @@ function labDetail(b){
   return '<div style="background:var(--paper);border:1.5px solid var(--ink);border-radius:8px;padding:12px;margin:2px 0 12px">'
     +hunt+strat
     +'<div class="klabel" style="margin:10px 0 3px">open positions</div>'+pos
-    +'<div class="klabel" style="margin:12px 0 3px">recent trades <span class="faint" style="text-transform:none">(✓ good · ✗ mistake)</span></div>'+log
+    +'<div class="klabel" style="margin:12px 0 3px">trade history — '+totT+' total <span class="faint" style="text-transform:none">(✓ good · ✗ mistake)'+(fullT?'':' · loading full ledger…')+'</span></div>'
+    +'<div style="max-height:360px;overflow:auto;border:1px solid var(--hairline);border-radius:6px;padding:0 8px">'+log+'</div>'
     +'<div class="klabel" style="margin:14px 0 3px">📓 learning journal <span class="faint" style="text-transform:none">— what it changed, day by day</span></div>'+jour
     +'</div>';
 }
-function labToggle(id){LAB_OPEN=LAB_OPEN===id?null:id;labRender();}
+function labToggle(id){if(LAB_OPEN===id){LAB_OPEN=null;labRender();return;}LAB_OPEN=id;labRender();if(!LAB_FULL[id])labLoadFull(id);}
+function labLoadFull(id){withTimeout(fetch('/api/lab?bot='+encodeURIComponent(id)).then(function(r){return r.json();}),30000).then(function(d){if(d&&d.trades){LAB_FULL[id]={trades:d.trades,history:d.history||[],totalClosed:d.totalClosed};if(LAB_OPEN===id)labRender();}}).catch(function(){});}
 function labRender(){
   var box=document.getElementById('labBody');if(!box||!LAB)return;
   var grand=LAB.bots.reduce(function(s,b){return s+b.equity;},0);

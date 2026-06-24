@@ -13,7 +13,8 @@ import { json, preflight, pickPair, solRpc, jupPrices, buildUniverse } from './_
 
 export const onRequestOptions = () => preflight();
 
-const V = 5;                       // bump to wipe + reinitialise state
+const V = 5;                       // schema version. Bumping does NOT wipe — migrate() preserves
+                                   // all trades/history/balances. Add field defaults there instead.
 const START = 2000;                // each wallet starts here
 const GRAD = START * 10;           // 10× → graduate (champion)
 const BUST = START * 0.10;         // lose 90% → bust (dead)
@@ -21,7 +22,10 @@ const TICK_MS = 10 * 60 * 1000;    // minimum spacing between ticks
 const DAY_MS = 24 * 60 * 60 * 1000;
 const FEE = 0.99;                  // 1% taker fee each side
 const POOL = 48;                   // candidate tokens fetched per tick (batched, multi-source)
-const TRADES_KEEP = 50, EQUITY_KEEP = 300, HISTORY_KEEP = 200;
+// Full lifetime ledger — keep thousands of trades so the history is "from day one", never a
+// rolling window. (10 bots × 4000 trades × ~0.25KB ≈ 10MB, well under the 25MB KV value cap.)
+const TRADES_KEEP = 4000, EQUITY_KEEP = 1500, HISTORY_KEEP = 400;
+const LOG_PREVIEW = 40; // recent trades sent in the leaderboard payload; full ledger via ?bot=
 const KVKEY = 'radar:lab';
 
 const BOTS = [
@@ -133,6 +137,40 @@ function freshState(nowTs) {
   const bots = {};
   BOTS.forEach((b) => { bots[b.id] = freshWallet(b.dial); });
   return { v: V, startedTs: nowTs, lastTickTs: 0, tick: 0, day: 0, lastLearnDay: 0, season: 1, ticking: 0, bots };
+}
+// Bring an older saved state up to the current schema WITHOUT ever discarding trades, history,
+// positions or balances. Version changes migrate (fill in any missing fields with defaults);
+// they never wipe. This is what keeps the ledger permanent across engine updates.
+function migrate(state, nowTs) {
+  if (!state || typeof state !== 'object' || !state.bots) return freshState(nowTs);
+  BOTS.forEach((b) => {
+    let w = state.bots[b.id];
+    if (!w || typeof w !== 'object') { state.bots[b.id] = freshWallet(b.dial); return; }
+    if (!Array.isArray(w.trades)) w.trades = [];
+    if (!Array.isArray(w.history)) w.history = [];
+    if (!Array.isArray(w.equity)) w.equity = [];
+    if (!w.params || typeof w.params !== 'object') w.params = baseParams(b.dial);
+    if (w.cash == null) w.cash = START;
+    if (!w.positions || typeof w.positions !== 'object') w.positions = {};
+    if (w.realized == null) w.realized = 0;
+    if (w.wins == null) w.wins = 0;
+    if (w.losses == null) w.losses = 0;
+    if (w.peak == null) w.peak = Math.max(START, w.cash);
+    if (w.status == null) w.status = 'active';
+    if (w.lives == null) w.lives = 1;
+    if (w.dayWins == null) w.dayWins = 0;
+    if (w.dayLosses == null) w.dayLosses = 0;
+    if (w.dayRealized == null) w.dayRealized = 0;
+    if (w.dayTrades == null) w.dayTrades = 0;
+  });
+  if (state.startedTs == null) state.startedTs = nowTs;
+  if (state.tick == null) state.tick = 0;
+  if (state.day == null) state.day = 0;
+  if (state.lastLearnDay == null) state.lastLearnDay = 0;
+  if (state.season == null) state.season = 1;
+  if (state.lastTickTs == null) state.lastTickTs = 0;
+  state.v = V; // mark migrated; data preserved
+  return state;
 }
 
 function totalEquity(w) {
@@ -430,7 +468,8 @@ function publicState(state, nowTs) {
       params: { threshold: w.params.threshold, tp: w.params.tp, sl: w.params.sl, posPct: Math.round(w.params.posPct * 100), slip: +(w.params.slip * 100).toFixed(1) },
       baseParams: baseParams(b.dial),
       profile: { capMin: PROFILE[b.id].capMin, capMax: PROFILE[b.id].capMax, liqMin: PROFILE[b.id].liqMin, hold: PROFILE[b.id].hold, label: PROFILE[b.id].label },
-      log: w.trades.slice(0, 30), history: w.history.slice(0, 60), equityCurve: w.equity.slice(-120),
+      log: w.trades.slice(0, LOG_PREVIEW), logTotal: w.trades.length, totalClosed: w.wins + w.losses,
+      history: w.history.slice(0, 60), historyTotal: w.history.length, equityCurve: w.equity.slice(-120),
     };
   }).sort((a, c) => c.equity - a.equity);
 
@@ -449,10 +488,19 @@ export async function onRequestGet({ request, env }) {
   if (!KV) return json({ error: 'Lab needs KV storage (ZEN_KV) — not bound.' }, 503);
   const url = new URL(request.url);
   const peek = url.searchParams.get('peek');
+  const botId = url.searchParams.get('bot'); // request ONE bot's full lifetime trade ledger
   const nowTs = Date.now();
 
   let state = await KV.get(KVKEY, 'json').catch(() => null);
-  if (!state || state.v !== V) state = freshState(nowTs);
+  state = state ? migrate(state, nowTs) : freshState(nowTs); // migrate, never wipe
+
+  // full-ledger fetch for a single bot (no advancing) — used when a bot is expanded in the UI
+  if (botId) {
+    const w = state.bots[botId];
+    if (!w) return json({ error: 'unknown bot' }, 404);
+    const b = BOTS.find((x) => x.id === botId) || { name: botId };
+    return json({ id: botId, name: b.name, trades: w.trades || [], history: w.history || [], wins: w.wins, losses: w.losses, realized: Math.round(w.realized || 0), totalClosed: (w.wins || 0) + (w.losses || 0), ts: nowTs }, 200, { 'cache-control': 'no-store' });
+  }
 
   let advanced = false;
   const pastDue = (nowTs - (state.lastTickTs || 0)) >= TICK_MS;
