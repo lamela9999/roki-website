@@ -61,8 +61,19 @@ const SRC_BONUS = {
   trending: { narrative: 5, degen: 4, momentum: 3 },
   fresh: { sniper: 7, degen: 5 },
 };
-const SRC_RANK = ['volume-spike', 'accumulation', 'trending', 'fresh', 'boosted', 'volume', 'new-boost'];
+const SRC_RANK = ['volume-spike', 'accumulation', 'trending', 'fresh', 'boosted', 'volume', 'new-boost', 'profile'];
 const primarySrc = (sources) => { for (const s of SRC_RANK) if (sources && sources.indexOf(s) >= 0) return s; return (sources && sources[0]) || 'trending'; };
+// Derive activity signals straight from the DexScreener pair (works from CF even when the
+// GeckoTerminal trending/volume feeds don't): a volume-spike = last hour running well above
+// the 24h average pace; accumulation = steady positive drift with buy-side pressure.
+function deriveTags(p) {
+  const v = p.volume || {}, pc = p.priceChange || {}, tx = p.txns || {};
+  const h1 = +v.h1 || 0, h24v = +v.h24 || 0, tags = [];
+  if (h24v > 0 && h1 >= 2500 && (h1 * 24) / h24v >= 2.2) tags.push('volume-spike');
+  const h6c = +pc.h6 || 0, pd = +pc.h24 || 0, t6 = tx.h6 || {}, buys = +t6.buys || 0, sells = +t6.sells || 0;
+  if (tags.indexOf('volume-spike') < 0 && pd >= 2 && pd <= 60 && h6c >= 0 && (buys + sells) > 0 && buys / (buys + sells) >= 0.55) tags.push('accumulation');
+  return tags;
+}
 
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 const logScore = (v, lo, hi) => (!v || v <= 0) ? 0 : clamp(Math.round(((Math.log10(v) - Math.log10(lo)) / (Math.log10(hi) - Math.log10(lo))) * 100), 0, 100);
@@ -137,7 +148,8 @@ async function scanUniverse(env, nowTs) {
       priceTrend: chg != null ? clamp(Math.round(50 + chg), 0, 100) : null,
       lifecycle: mcap > 0 ? (mcap < 50000 ? 30 : mcap < 1e6 ? 70 : mcap < 1e7 ? 85 : 60) : null,
     };
-    const sources = srcOf[mint] || [];
+    const sources = (srcOf[mint] || []).slice();
+    deriveTags(p).forEach((t) => { if (sources.indexOf(t) < 0) sources.push(t); });
     const scores = {};
     for (const a in ARCH) {
       let wsum = 0, vsum = 0;

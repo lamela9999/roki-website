@@ -143,9 +143,10 @@ export async function buildUniverse() {
   const out = new Map(); // mint -> Set(sources)
   const add = (mint, src) => { if (!mint || QUOTE_MINTS.has(mint)) return; const s = out.get(mint) || new Set(); s.add(src); out.set(mint, s); };
 
-  const [bt, bl, tr, vol, np] = await Promise.all([
+  const [bt, bl, prof, tr, vol, np] = await Promise.all([
     get('https://api.dexscreener.com/token-boosts/top/v1'),
     get('https://api.dexscreener.com/token-boosts/latest/v1'),
+    get('https://api.dexscreener.com/token-profiles/latest/v1'),
     get('https://api.geckoterminal.com/api/v2/networks/solana/trending_pools?page=1', gtH),
     get('https://api.geckoterminal.com/api/v2/networks/solana/pools?sort=h24_volume_usd_desc&page=1', gtH),
     get('https://api.geckoterminal.com/api/v2/networks/solana/new_pools?page=1', gtH),
@@ -153,6 +154,7 @@ export async function buildUniverse() {
 
   for (const b of bt || []) if (b && b.chainId === 'solana' && b.tokenAddress) add(b.tokenAddress, 'boosted');
   for (const b of bl || []) if (b && b.chainId === 'solana' && b.tokenAddress) add(b.tokenAddress, 'new-boost');
+  for (const b of prof || []) if (b && b.chainId === 'solana' && b.tokenAddress) add(b.tokenAddress, 'profile');
 
   const mintOf = (p) => { const id = p && p.relationships && p.relationships.base_token && p.relationships.base_token.data && p.relationships.base_token.data.id; return id ? String(id).replace(/^solana_/, '') : null; };
   const derived = (p) => {

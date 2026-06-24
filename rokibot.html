@@ -839,11 +839,11 @@ function renderSmartWallets(d){
 /* ---------- THE LAB: viewer for the 24/7 server-side bot competition ---------- */
 var LAB=null, labTimer=null, LAB_OPEN=null;
 function lm(v){v=Math.round(v||0);var s=v<0?'-':'';return s+'$'+Math.abs(v).toLocaleString('en-US');}
-var LAB_SRC={'volume-spike':'⚡ spike','accumulation':'📈 accumulation','trending':'🔥 trending','fresh':'🌱 new','boosted':'📣 boosted','volume':'📊 high volume','new-boost':'📣 boosted'};
+var LAB_SRC={'volume-spike':'⚡ spike','accumulation':'📈 accumulation','trending':'🔥 trending','fresh':'🌱 new','boosted':'📣 boosted','volume':'📊 high volume','new-boost':'📣 boosted','profile':'📋 listed'};
 function labSrcTag(src){if(!src)return '';var l=LAB_SRC[src]||src;return ' <span class="faint" style="font-size:9px;border:1px solid var(--hairline);border-radius:4px;padding:0 3px">'+l+'</span>';}
 function labUniverseLine(u){
   if(!u||!u.tags)return '';
-  var order=['volume-spike','accumulation','trending','fresh','volume','boosted','new-boost'];
+  var order=['volume-spike','accumulation','trending','fresh','volume','boosted','new-boost','profile'];
   var byLabel={},seq=[];
   order.forEach(function(k){if(u.tags[k]){var l=LAB_SRC[k]||k;if(byLabel[l]==null){byLabel[l]=0;seq.push(l);}byLabel[l]+=u.tags[k];}});
   var parts=seq.map(function(l){return byLabel[l]+' '+l;});
