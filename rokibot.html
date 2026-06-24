@@ -337,7 +337,7 @@ footer.site b{color:var(--coral)}
   <!-- PAPER BOT -->
   <section class="view" id="view-paperbot">
     <h1>The Lab <span class="badge b-ok" style="vertical-align:middle"><span id="labLiveDot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#0F7A45;margin-right:5px;vertical-align:middle"></span>always live</span></h1>
-    <p class="muted" style="margin:0 0 14px;font-size:14px"><b>10 archetype bots, each a $2,000 demo wallet, trading the live Solana market 24/7 — even when nobody's watching.</b> They run on a server, not in your browser. Each round they scan a broad live universe — <b>volume spikes, activity surges, fresh launches, steady accumulation</b> and trending tokens (not just paid promos). Every day each bot reviews its own trades, learns a lesson, and adjusts its own strategy — and we keep the full day-by-day journal of how it changed. A bot that hits <b>10× ($20k)</b> graduates 🏆; one that loses <b>90%</b> busts 💀. Watch which archetype actually makes money — that's the one worth copying. <span class="faint">No real money, no wallet, ever.</span></p>
+    <p class="muted" style="margin:0 0 14px;font-size:14px"><b>10 archetype bots, each a $2,000 demo wallet, trading the live Solana market 24/7 — even when nobody's watching.</b> They run on a server, not in your browser. Each round the radar <b>calls dozens of projects</b> — from <b>$10k micro-caps to tens-of-millions</b> — rating each on volume spikes, fresh launches, accumulation, momentum and reawakenings. <b>Every archetype hunts a different lane</b>: degens & snipers chase micro-cap launches, momentum rides the movers, whales & conservatives wait for the few deep, established names. Each day every bot reviews its own trades, learns a lesson, and adjusts its own strategy — kept in a full day-by-day journal. A bot that hits <b>10× ($20k)</b> graduates 🏆; one that loses <b>90%</b> busts 💀. Watch which archetype actually makes money — that's the one worth copying. <span class="faint">No real money, no wallet, ever.</span></p>
     <div class="flex gap8 wrap" style="margin:0 0 16px;align-items:center">
       <button class="btn small" id="labRefresh" onclick="labFetch(false)">↻ Refresh now</button>
       <span class="faint mono" style="font-size:12px" id="labStatus">loading…</span>
@@ -863,6 +863,26 @@ function labSpark(curve){
   return '<svg width="'+W+'" height="'+H+'" style="display:block"><line x1="0" y1="'+zy+'" x2="'+W+'" y2="'+zy+'" stroke="var(--hairline)" stroke-dasharray="3 3"/><polyline points="'+pts+'" fill="none" stroke="'+col+'" stroke-width="1.6"/></svg>';
 }
 function labDrift(cur,base){var d=cur-base;if(d===0)return '<span class="faint">=</span>';return '<span class="faint">'+(d>0?'▲':'▼')+'</span>';}
+function labDex(mint){return 'https://dexscreener.com/solana/'+mint;}
+function labCalls(calls,idName){
+  if(!calls||!calls.length)return '';
+  var rows=calls.map(function(c){
+    var tagH=(c.tags||[]).map(function(t){return labSrcTag(t);}).join('');
+    var who=(c.interested||[]).map(function(id){return '<span class="faint" style="font-size:10px;border:1px solid var(--hairline);border-radius:4px;padding:0 3px">'+escapeHtml(idName[id]||id)+'</span>';}).join(' ');
+    var pcCol=c.pc24>=0?'#0F7A45':'#B02A2A';
+    return '<div style="border-bottom:1px solid var(--hairline);padding:7px 0">'
+      +'<div style="display:flex;gap:6px;align-items:baseline;flex-wrap:wrap">'
+      +'<a href="'+labDex(c.mint)+'" target="_blank" rel="noopener" style="font-weight:700;text-decoration:none">$'+escapeHtml(c.symbol||'?')+' ↗</a>'+tagH
+      +'<span style="flex:1"></span>'
+      +'<span class="mono faint" style="font-size:11px">'+fmtCap(c.mcap)+' · '+(c.ageDays!=null?c.ageDays+'d':'?')+' · <span style="color:'+pcCol+'">'+(c.pc24>=0?'+':'')+c.pc24+'%</span></span> <span class="mono" style="font-weight:700;min-width:24px;text-align:right">'+c.rating+'</span>'
+      +'<span class="wchip mono" style="font-size:9px;cursor:pointer" onclick="copyCA(\''+c.mint+'\',this)">copy CA</span></div>'
+      +(who?'<div style="margin-top:2px;font-size:11px"><span class="faint">wanted by:</span> '+who+'</div>':'<div class="faint" style="font-size:10px;margin-top:2px">no archetype interested right now</div>')
+      +'</div>';
+  }).join('');
+  return '<div class="card" style="margin-top:16px"><h3>📡 Live calls — what the radar is rating now</h3>'
+    +'<div class="note" style="margin:0 0 6px"><span class="faint">every project the radar surfaced this round · market cap · age · 24h move · best-fit <b>rating</b> (0–100) · which archetypes want it. Each bot only buys calls that fit its own lane (cap band + signal). Click a ticker to open the chart.</span></div>'
+    +rows+'</div>';
+}
 function labStatusBadge(b){
   if(b.status==='graduated')return '<span class="badge" style="background:#FBE7A1;border-color:#B8860B;color:#7a5b00">🏆 10× champion</span>';
   if(b.status==='busted')return '<span class="badge" style="background:#F3D6D2;border-color:#B02A2A;color:#8a1f1f">💀 busted</span>';
@@ -870,6 +890,7 @@ function labStatusBadge(b){
 }
 function labDetail(b){
   var P=b.params,BP=b.baseParams,bpos=Math.round(BP.posPct*100);
+  var hunt=b.profile?'<div style="background:var(--paper);border:1px solid var(--hairline);border-radius:6px;padding:7px 9px;margin:6px 0;font-size:11px"><b>🎯 Hunts:</b> '+escapeHtml(b.profile.label)+' · market caps <b>'+fmtCap(b.profile.capMin)+'–'+fmtCap(b.profile.capMax)+'</b> · min liquidity '+fmtCap(b.profile.liqMin)+' · holds up to <b>'+b.profile.hold+' rounds</b></div>':'';
   var strat='<div style="background:var(--cream);border:1.5px solid var(--ink);border-radius:8px;padding:10px;margin:6px 0">'
     +'<div class="klabel" style="margin-bottom:6px">its strategy right now <span class="faint" style="text-transform:none">(vs the profile it started with)</span></div>'
     +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;font-size:12px">'
@@ -909,7 +930,7 @@ function labDetail(b){
     return '<div style="border-left:2px solid var(--ink);padding:4px 0 4px 8px;margin:6px 0"><div style="font-size:11px"><b>Day '+h.day+'</b> — '+escapeHtml(h.headline||'')+'</div>'+(meta?'<div class="faint" style="font-size:10px">'+meta+'</div>':'')+'<div class="faint" style="font-size:11px;margin-top:2px">'+h.changes.map(function(c){return '· '+escapeHtml(c);}).join('<br>')+'</div>'+diffs+'</div>';
   }).join(''):'<div class="faint" style="font-size:11px">no lessons yet — the first lesson lands after day 1.</div>';
   return '<div style="background:var(--paper);border:1.5px solid var(--ink);border-radius:8px;padding:12px;margin:2px 0 12px">'
-    +strat
+    +hunt+strat
     +'<div class="klabel" style="margin:10px 0 3px">open positions</div>'+pos
     +'<div class="klabel" style="margin:12px 0 3px">recent trades <span class="faint" style="text-transform:none">(✓ good · ✗ mistake)</span></div>'+log
     +'<div class="klabel" style="margin:14px 0 3px">📓 learning journal <span class="faint" style="text-transform:none">— what it changed, day by day</span></div>'+jour
@@ -945,7 +966,8 @@ function labRender(){
     +'<div class="note" style="margin:0 0 8px;font-size:11px"><span class="faint"><b>“buys ≥N”</b> = a token must score at least N/100 on that bot\'s checklist before it buys. The bot raises it when it\'s losing (gets pickier), lowers it when winning. Every trade shows entry/exit market cap, time, and the real slippage + fee haircut so you can verify it against the chart.</span></div>'
     +rows
     +'<div class="note"><span class="tick mid"></span> Each bot is a $'+LAB.start.toLocaleString()+' paper wallet hunting a broad live universe — volume spikes, activity surges, fresh launches, accumulation + trending — with its own archetype + risk profile (slippage + 1% fee modeled). Momentum/degen lean into spikes; whales/conservatives prefer quiet accumulation. It runs on the server 24/7 and adapts daily. The archetype at the top is the one this market is currently rewarding — that’s the read for which style to copy on a real wallet. Paper only; no funds, no signing.</div></div>';
-  box.innerHTML=head+lead;
+  var idName={};LAB.bots.forEach(function(b){idName[b.id]=b.name.split(' ')[0];});
+  box.innerHTML=head+lead+labCalls(LAB.calls,idName);
 }
 function labFetch(advance){
   var st=document.getElementById('labStatus');if(st)st.textContent='refreshing…';
