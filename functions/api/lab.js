@@ -13,7 +13,7 @@ import { json, preflight, pickPair, solRpc, jupPrices, buildUniverse } from './_
 
 export const onRequestOptions = () => preflight();
 
-const V = 3;                       // bump to wipe + reinitialise state
+const V = 4;                       // bump to wipe + reinitialise state
 const START = 2000;                // each wallet starts here
 const GRAD = START * 10;           // 10× → graduate (champion)
 const BUST = START * 0.10;         // lose 90% → bust (dead)
@@ -160,34 +160,61 @@ async function scanUniverse(env, nowTs) {
       if (rejected && c != null) c = Math.min(c, 12);
       scores[a] = { c, r: rejected };
     }
-    out.push({ mint, symbol: ((p.baseToken && p.baseToken.symbol) || '?').replace(/^\$/, ''), name: (p.baseToken && p.baseToken.name) || 'Unknown', price, mcap, scores, sources, src: primarySrc(sources) });
+    out.push({ mint, symbol: ((p.baseToken && p.baseToken.symbol) || '?').replace(/^\$/, ''), name: (p.baseToken && p.baseToken.name) || 'Unknown', price, mcap, liq, scores, sources, src: primarySrc(sources) });
   });
   return out;
 }
 
-function buy(w, mint, price, symbol, tick, src) {
+// price impact from finite pool depth: a trade worth `usd` against `liq` liquidity moves the
+// price against you ~ the fraction of the pool you take (capped). On top of the archetype's
+// base spread/MEV assumption. This is why you never get the full mid-price round-trip back.
+const impactOf = (usd, liq) => (liq > 0 ? Math.min(0.10, usd / liq) : 0.10);
+
+function buy(w, mint, price, symbol, tick, ctx) {
   const p = w.params;
   const total = totalEquity(w);
   const usd = Math.max(20, Math.round(total * p.posPct));
   if (w.cash < usd) return;
-  const eff = price * (1 + p.slip);
-  const qty = (usd * FEE) / eff;
+  const liq = ctx.liq || 0;
+  const impact = impactOf(usd, liq);
+  const slip = p.slip + impact;               // total slippage = base spread + price impact
+  const eff = price * (1 + slip);             // effective fill price (worse than mid)
+  const qty = (usd * FEE) / eff;              // tokens received after 1% fee
   w.cash -= usd;
-  w.positions[mint] = { symbol, entry: eff, usdIn: usd, qty, last: price, tick, src };
-  w.trades.unshift({ tick, side: 'BUY', symbol, mint, usd, src });
+  w.positions[mint] = {
+    symbol, mid: price, entry: eff, usdIn: usd, qty, last: price, tick, ts: ctx.ts,
+    mcapIn: ctx.mcap || 0, liqIn: liq, src: ctx.src, sources: ctx.sources || [], scoreIn: ctx.score, barIn: p.threshold,
+    baseSlip: p.slip, slipIn: slip,
+  };
+  w.trades.unshift({
+    tick, ts: ctx.ts, side: 'BUY', symbol, mint, usd, src: ctx.src, sources: ctx.sources || [],
+    score: ctx.score, bar: p.threshold, price, mcap: ctx.mcap || 0, qty, liq, slipPct: +(slip * 100).toFixed(2),
+  });
   if (w.trades.length > TRADES_KEEP) w.trades.pop();
 }
-function sell(w, mint, price, reason, tick) {
+function sell(w, mint, price, reason, tick, ts, liqNow) {
   const pos = w.positions[mint]; if (!pos) return;
-  const eff = price * (1 - w.params.slip);
-  const proceeds = pos.qty * eff * FEE;
-  w.cash += proceeds;
+  const liq = liqNow > 0 ? liqNow : (pos.liqIn || 0);
+  const grossUsd = pos.qty * price;                   // mid-value of the bag right now
+  const impact = impactOf(grossUsd, liq);
+  const slip = (pos.baseSlip || w.params.slip) + impact;
+  const eff = price * (1 - slip);                     // effective exit price (worse than mid)
+  const proceeds = pos.qty * eff * FEE;               // cash back after slippage + 1% fee
   const pnl = proceeds - pos.usdIn;
-  const pnlPct = (proceeds / pos.usdIn - 1) * 100;
+  const netPct = (proceeds / pos.usdIn - 1) * 100;    // what you ACTUALLY made
+  const movePct = pos.mid > 0 ? (price / pos.mid - 1) * 100 : 0; // raw token price move (mid->mid)
+  const mcapOut = pos.mid > 0 ? Math.round(pos.mcapIn * (price / pos.mid)) : pos.mcapIn;
+  w.cash += proceeds;
   w.realized += pnl;
   if (pnl >= 0) { w.wins++; w.dayWins++; } else { w.losses++; w.dayLosses++; }
   w.dayRealized += pnl; w.dayTrades++;
-  w.trades.unshift({ tick, side: 'SELL', symbol: pos.symbol, mint, usd: proceeds, pnl: +pnl.toFixed(2), pnlPct: +pnlPct.toFixed(1), reason });
+  w.trades.unshift({
+    tick, ts, side: 'SELL', symbol: pos.symbol, mint, reason,
+    usdIn: Math.round(pos.usdIn), proceeds: +proceeds.toFixed(2), pnl: +pnl.toFixed(2), pnlPct: +netPct.toFixed(1),
+    movePct: +movePct.toFixed(1), entryPrice: pos.mid, exitPrice: price, mcapIn: pos.mcapIn, mcapOut,
+    qty: pos.qty, slipPct: +(slip * 100).toFixed(2), feePct: 1, heldTicks: tick - pos.tick,
+    tsIn: pos.ts || null, src: pos.src, scoreIn: pos.scoreIn, barIn: pos.barIn,
+  });
   if (w.trades.length > TRADES_KEEP) w.trades.pop();
   delete w.positions[mint];
 }
@@ -260,10 +287,11 @@ async function advance(state, env, nowTs) {
       const price = priceOf(m);
       if (price == null || !(price > 0)) continue;
       pos.last = price;
+      const liqNow = (uScore[m] && uScore[m].liq) || 0;
       const up = (price / pos.entry - 1) * 100;
-      if (up >= p.tp) sell(w, m, price, 'take-profit +' + p.tp + '%', tick);
-      else if (up <= -p.sl) sell(w, m, price, 'stop-loss -' + p.sl + '%', tick);
-      else if (tick - pos.tick >= p.maxHold) sell(w, m, price, 'time-stop ' + p.maxHold + ' ticks', tick);
+      if (up >= p.tp) sell(w, m, price, 'take-profit', tick, nowTs, liqNow);
+      else if (up <= -p.sl) sell(w, m, price, 'stop-loss', tick, nowTs, liqNow);
+      else if (tick - pos.tick >= p.maxHold) sell(w, m, price, 'time-stop', tick, nowTs, liqNow);
     }
 
     // open new positions that clear this bot's bar
@@ -273,7 +301,8 @@ async function advance(state, env, nowTs) {
       .filter((u) => { const s = u.scores[b.id]; return s && !s.r && s.c != null && s.c >= p.threshold && !w.positions[u.mint]; })
       .sort((x, y) => y.scores[b.id].c - x.scores[b.id].c);
     for (let j = 0; j < cands.length && held < max && w.cash >= Math.max(20, totalEquity(w) * p.posPct); j++) {
-      buy(w, cands[j].mint, cands[j].price, cands[j].symbol, tick, cands[j].src);
+      const c = cands[j];
+      buy(w, c.mint, c.price, c.symbol, tick, { src: c.src, sources: c.sources, mcap: c.mcap, liq: c.liq, score: c.scores[b.id].c, ts: nowTs });
       held++;
     }
 
@@ -328,7 +357,12 @@ function publicState(state, nowTs) {
     const closed = w.wins + w.losses;
     const positions = Object.keys(w.positions).map((m) => {
       const p = w.positions[m]; const now = p.last || p.entry; const up = (now / p.entry - 1) * 100;
-      return { mint: m, symbol: p.symbol, value: Math.round(p.qty * now), upPct: +up.toFixed(1), usdIn: Math.round(p.usdIn), src: p.src || null };
+      const mcapNow = p.mid > 0 && p.mcapIn ? Math.round(p.mcapIn * (now / p.mid)) : (p.mcapIn || 0);
+      return {
+        mint: m, symbol: p.symbol, value: Math.round(p.qty * now), upPct: +up.toFixed(1), usdIn: Math.round(p.usdIn),
+        src: p.src || null, sources: p.sources || [], qty: p.qty, entryPrice: p.mid, nowPrice: now,
+        mcapIn: p.mcapIn || 0, mcapNow, tsIn: p.ts || null, scoreIn: p.scoreIn, barIn: p.barIn, slipInPct: p.slipIn != null ? +(p.slipIn * 100).toFixed(2) : null,
+      };
     }).sort((a, c) => c.value - a.value);
     return {
       id: b.id, name: b.name, dial: b.dial, status: w.status, lives: w.lives, season: state.season,

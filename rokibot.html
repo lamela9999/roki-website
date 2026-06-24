@@ -839,6 +839,10 @@ function renderSmartWallets(d){
 /* ---------- THE LAB: viewer for the 24/7 server-side bot competition ---------- */
 var LAB=null, labTimer=null, LAB_OPEN=null;
 function lm(v){v=Math.round(v||0);var s=v<0?'-':'';return s+'$'+Math.abs(v).toLocaleString('en-US');}
+function fmtCap(v){v=+v||0;if(v>=1e9)return '$'+(v/1e9).toFixed(2)+'B';if(v>=1e6)return '$'+(v/1e6).toFixed(2)+'M';if(v>=1e3)return '$'+(v/1e3).toFixed(0)+'K';return '$'+Math.round(v);}
+function fmtPx(p){p=+p||0;if(p<=0)return '$0';if(p>=1)return '$'+p.toFixed(3);if(p>=0.001)return '$'+p.toFixed(5);return '$'+p.toPrecision(2);}
+function fmtT(ts){if(!ts)return '—';try{return new Date(ts).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});}catch(e){return '—';}}
+function fmtQty(q){q=+q||0;if(q>=1e6)return (q/1e6).toFixed(2)+'M';if(q>=1e3)return (q/1e3).toFixed(1)+'K';return q.toFixed(q<1?4:1);}
 var LAB_SRC={'volume-spike':'⚡ spike','accumulation':'📈 accumulation','trending':'🔥 trending','fresh':'🌱 new','boosted':'📣 boosted','volume':'📊 high volume','new-boost':'📣 boosted','profile':'📋 listed'};
 function labSrcTag(src){if(!src)return '';var l=LAB_SRC[src]||src;return ' <span class="faint" style="font-size:9px;border:1px solid var(--hairline);border-radius:4px;padding:0 3px">'+l+'</span>';}
 function labUniverseLine(u){
@@ -874,11 +878,29 @@ function labDetail(b){
     +'<div><div class="faint">stop-loss</div><div class="mono" style="font-weight:700">-'+P.sl+'% '+labDrift(P.sl,BP.sl)+'</div><div class="faint" style="font-size:10px">started -'+BP.sl+'%</div></div>'
     +'<div><div class="faint">bet size</div><div class="mono" style="font-weight:700">'+P.posPct+'% '+labDrift(P.posPct,bpos)+'</div><div class="faint" style="font-size:10px">started '+bpos+'%</div></div>'
     +'</div>'+(b.equityCurve&&b.equityCurve.length>1?'<div style="margin-top:8px"><div class="klabel" style="margin-bottom:2px">equity (dashed = $2,000 start)</div>'+labSpark(b.equityCurve)+'</div>':'')+'</div>';
-  var pos=b.positions.length?b.positions.map(function(p){var col=p.upPct>=0?'#0F7A45':'#B02A2A';return '<div style="display:grid;grid-template-columns:1fr 60px 70px;gap:6px;font-size:11px;padding:3px 0"><span>$'+escapeHtml(p.symbol||'?')+labSrcTag(p.src)+'</span><span class="mono" style="text-align:right;color:'+col+'">'+(p.upPct>=0?'+':'')+p.upPct+'%</span><span class="mono faint" style="text-align:right">'+lm(p.value)+'</span></div>';}).join(''):'<div class="faint" style="font-size:11px">holding cash — no open positions</div>';
+  var pos=b.positions.length?b.positions.map(function(p){var col=p.upPct>=0?'#0F7A45':'#B02A2A';
+    return '<div style="border-bottom:1px solid var(--hairline);padding:6px 0">'
+      +'<div style="display:flex;gap:5px;align-items:baseline"><span style="font-weight:700">$'+escapeHtml(p.symbol||'?')+'</span>'+labSrcTag(p.src)+'<span style="flex:1"></span><span class="mono" style="color:'+col+';font-weight:700">'+(p.upPct>=0?'+':'')+p.upPct+'%</span> <span class="mono faint">'+lm(p.value)+'</span></div>'
+      +'<div class="faint mono" style="font-size:10px;margin-top:1px">bought '+fmtT(p.tsIn)+' · '+fmtCap(p.mcapIn)+' mcap · '+fmtPx(p.entryPrice)+' · '+lm(p.usdIn)+' → '+fmtQty(p.qty)+' tok'+(p.scoreIn!=null?' · scored '+p.scoreIn+'/≥'+p.barIn:'')+(p.slipInPct!=null?' · slip '+p.slipInPct+'%':'')+'</div>'
+      +'<div class="faint mono" style="font-size:10px">now · '+fmtCap(p.mcapNow)+' mcap · '+fmtPx(p.nowPrice)+'</div>'
+      +'</div>';
+  }).join(''):'<div class="faint" style="font-size:11px">holding cash — no open positions</div>';
   var log=b.log.length?b.log.map(function(t){
-    if(t.side==='BUY')return '<div style="display:grid;grid-template-columns:30px 38px 1fr 70px;gap:6px;font-size:11px;padding:3px 0"><span class="faint mono">t'+t.tick+'</span><span class="mono" style="color:var(--blue-ink)">BUY</span><span>$'+escapeHtml(t.symbol||'?')+labSrcTag(t.src)+'</span><span class="mono faint" style="text-align:right">'+lm(t.usd)+'</span></div>';
+    if(t.side==='BUY'){
+      var sig=(t.sources&&t.sources.length)?t.sources.map(function(s){return LAB_SRC[s]||s;}).join(', '):(LAB_SRC[t.src]||t.src||'');
+      return '<div style="border-bottom:1px solid var(--hairline);padding:6px 0">'
+        +'<div style="display:flex;gap:6px;align-items:baseline;font-size:11px"><span class="faint mono">'+fmtT(t.ts)+'</span><span class="mono" style="color:var(--blue-ink);font-weight:700">BUY</span><span style="font-weight:600">$'+escapeHtml(t.symbol||'?')+'</span><span style="flex:1"></span><span class="mono faint">'+lm(t.usd)+'</span></div>'
+        +'<div class="faint mono" style="font-size:10px">why: '+escapeHtml(sig)+' · scored '+t.score+' (needs ≥'+t.bar+') · '+fmtCap(t.mcap)+' mcap · '+fmtPx(t.price)+' → '+fmtQty(t.qty)+' tok · slip '+t.slipPct+'%</div>'
+        +'</div>';
+    }
     var win=t.pnl>=0;var col=win?'#0F7A45':'#B02A2A';
-    return '<div style="display:grid;grid-template-columns:30px 38px 1fr 70px;gap:6px;font-size:11px;padding:3px 0"><span class="faint mono">t'+t.tick+'</span><span class="mono" style="color:'+col+'">SELL</span><span>$'+escapeHtml(t.symbol||'?')+' <span class="faint">'+escapeHtml(t.reason||'')+'</span> '+(win?'<span style="color:#0F7A45">✓</span>':'<span style="color:#B02A2A">✗ mistake</span>')+'</span><span class="mono" style="text-align:right;color:'+col+';font-weight:700">'+(win?'+':'')+lm(t.pnl)+'</span></div>';
+    var rlabel={'take-profit':'hit take-profit','stop-loss':'hit stop-loss','time-stop':'held too long'}[t.reason]||t.reason||'';
+    var heldMin=(t.tsIn&&t.ts)?Math.max(1,Math.round((t.ts-t.tsIn)/60000)):null;
+    return '<div style="border-bottom:1px solid var(--hairline);padding:6px 0">'
+      +'<div style="display:flex;gap:6px;align-items:baseline;font-size:11px"><span class="faint mono">'+fmtT(t.ts)+'</span><span class="mono" style="color:'+col+';font-weight:700">SELL</span><span style="font-weight:600">$'+escapeHtml(t.symbol||'?')+'</span> <span class="faint">'+escapeHtml(rlabel)+'</span> '+(win?'<span style="color:#0F7A45">✓</span>':'<span style="color:#B02A2A">✗</span>')+'<span style="flex:1"></span><span class="mono" style="color:'+col+';font-weight:700">'+(win?'+':'')+lm(t.pnl)+'</span></div>'
+      +'<div class="faint mono" style="font-size:10px">bought '+fmtT(t.tsIn)+' · '+fmtCap(t.mcapIn)+' @ '+fmtPx(t.entryPrice)+' → sold · '+fmtCap(t.mcapOut)+' @ '+fmtPx(t.exitPrice)+(heldMin?' · held '+heldMin+'m':'')+'</div>'
+      +'<div class="faint mono" style="font-size:10px">token moved '+(t.movePct>=0?'+':'')+t.movePct+'% → you netted '+(t.pnlPct>=0?'+':'')+t.pnlPct+'% after '+t.slipPct+'% slippage + '+t.feePct+'% fee · '+lm(t.usdIn)+' → '+lm(t.proceeds)+'</div>'
+      +'</div>';
   }).join(''):'<div class="faint" style="font-size:11px">no trades yet</div>';
   var jour=b.history.length?b.history.map(function(h){
     var diffs='';
@@ -915,11 +937,12 @@ function labRender(){
       +'<div><b style="font-size:13px">'+escapeHtml(b.name)+'</b> <span class="faint" style="font-size:10px">risk '+b.dial+'</span> '+labStatusBadge(b)+(b.lives>1?' <span class="faint" style="font-size:10px">life '+b.lives+'</span>':'')+'<div class="faint" style="font-size:10px">'+b.openCount+' open · '+(b.winRate!=null?b.winRate+'% win · ':'')+b.trades+' closed</div></div>'
       +'<div class="mono" style="text-align:right;font-weight:700">'+lm(b.equity)+'</div>'
       +'<div class="mono" style="text-align:right;color:'+col+';font-weight:700">'+(b.pnl>=0?'+':'')+b.pnlPct+'%</div>'
-      +'<div class="mono faint" style="text-align:right;font-size:11px">'+(b.params?'bar '+b.params.threshold:'')+'</div>'
+      +'<div class="mono faint" style="text-align:right;font-size:11px">'+(b.params?'buys ≥'+b.params.threshold:'')+'</div>'
       +'</div>'+(LAB_OPEN===b.id?'<div style="grid-column:1/-1">'+labDetail(b)+'</div>':'');
   }).join('');
   var lead='<div class="card"><h3>Leaderboard — most → least profitable</h3>'
-    +'<div class="note" style="margin:0 0 6px"><span class="faint">rank · archetype · paper balance · PnL% · current entry bar &nbsp;(click any bot for its strategy, trades + learning journal)</span></div>'
+    +'<div class="note" style="margin:0 0 6px"><span class="faint">rank · archetype · paper balance · PnL% · <b>buys ≥N</b> &nbsp;(click any bot for its strategy, every trade + learning journal)</span></div>'
+    +'<div class="note" style="margin:0 0 8px;font-size:11px"><span class="faint"><b>“buys ≥N”</b> = a token must score at least N/100 on that bot\'s checklist before it buys. The bot raises it when it\'s losing (gets pickier), lowers it when winning. Every trade shows entry/exit market cap, time, and the real slippage + fee haircut so you can verify it against the chart.</span></div>'
     +rows
     +'<div class="note"><span class="tick mid"></span> Each bot is a $'+LAB.start.toLocaleString()+' paper wallet hunting a broad live universe — volume spikes, activity surges, fresh launches, accumulation + trending — with its own archetype + risk profile (slippage + 1% fee modeled). Momentum/degen lean into spikes; whales/conservatives prefer quiet accumulation. It runs on the server 24/7 and adapts daily. The archetype at the top is the one this market is currently rewarding — that’s the read for which style to copy on a real wallet. Paper only; no funds, no signing.</div></div>';
   box.innerHTML=head+lead;
