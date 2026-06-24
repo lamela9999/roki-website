@@ -635,7 +635,7 @@ function scoreToken(){
   withTimeout(fetch('/api/discover?mint='+encodeURIComponent(m)+'&archetype='+STATE.arch),20000)
     .then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||('failed '+r.status));return d;});})
     .then(function(d){if(d.error)throw new Error(d.error);box.innerHTML=renderScore(d);})
-    .catch(function(e){box.innerHTML='<div class="disclaim"><span class="tick mid"></span><span><b>Live scoring runs on the deployed backend.</b> Once <span class="mono">/api/discover</span> is live (Helius key set in Cloudflare), this scores any mint through your archetype on real on-chain data. <span class="faint">('+escapeHtml(e&&e.message||'')+')</span></span></div>';});
+    .catch(function(e){box.innerHTML='<div class="disclaim"><span class="tick mid"></span><span>Couldn\'t score that mint right now — check the address and <a href="#" onclick="scoreToken();return false" style="text-decoration:underline">try again</a>. <span class="faint">('+escapeHtml(e&&e.message||'')+')</span></span></div>';});
 }
 function renderScore(d){
   var c=d.composite,col=d.gates.rejected?'var(--coral)':gradeColor(c==null?0:c);
