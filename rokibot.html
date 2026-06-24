@@ -336,10 +336,10 @@ footer.site b{color:var(--coral)}
 
   <!-- PAPER BOT -->
   <section class="view" id="view-paperbot">
-    <h1>Paper bot <span class="badge b-ok" style="vertical-align:middle">live prices · fake money</span></h1>
-    <p class="muted" style="margin:0 0 14px;font-size:14px">The bot trades a <b>demo balance</b> on <b>real live prices</b> using your <a href="#" onclick="show('configure');return false" style="text-decoration:underline">Configure</a> archetype + risk dial — it buys tokens that clear its bar (Mode A) and sells on take-profit / stop-loss (Mode B). No real money, no wallet. Watch how it does. <span class="faint">(Runs while this tab is open; 24/7 needs the backend.)</span></p>
+    <h1>Paper bots <span class="badge b-ok" style="vertical-align:middle">10 archetypes · live prices · fake money</span></h1>
+    <p class="muted" style="margin:0 0 14px;font-size:14px"><b>10 bots race head-to-head</b> — one per archetype, each a separate <b>$1,000 demo wallet</b> with its own risk profile. Every scan, each bot finds promising trending tokens (Mode A), buys what clears its bar, and sells on take-profit / stop-loss (Mode B) — on <b>real live prices</b>, no real money. The leaderboard shows which archetype is winning; click any bot for its positions + full trade history. <span class="faint">(Runs while this tab is open; 24/7 unattended needs the backend.)</span></p>
     <div class="flex gap8 wrap" style="margin:0 0 16px;align-items:center">
-      <button class="btn primary small" id="pbToggle" onclick="pbToggle()">▶ Start trading</button>
+      <button class="btn primary small" id="pbToggle" onclick="pbToggle()">▶ Start all 10</button>
       <button class="btn small" onclick="pbStep()">Step once</button>
       <button class="btn small" onclick="pbReset()">Reset</button>
       <span class="faint" style="font-size:12px" id="pbStatus">idle</span>
@@ -839,62 +839,68 @@ function renderSmartWallets(d){
 }
 
 /* ---------- PAPER BOT: demo-balance simulator on live prices ---------- */
-var PB=null, pbTimer=null;
+var PB=null, pbTimer=null, PB_OPEN=null;
 function pbUsd(v){v=v||0;var s=v<0?'-':'';v=Math.abs(v);if(v>=1e6)return s+'$'+(v/1e6).toFixed(2)+'M';return s+'$'+v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
-function pbDefault(){return {cash:1000,start:1000,positions:{},trades:[],realized:0,wins:0,losses:0,startedTs:Date.now(),ticks:0};}
-function pbLoad(){try{PB=JSON.parse(localStorage.getItem('roki_paperbot'))||pbDefault();}catch(e){PB=pbDefault();}if(!PB.positions)PB=pbDefault();}
-function pbSave(){try{localStorage.setItem('roki_paperbot',JSON.stringify(PB));}catch(e){}}
-function pbReset(){if(!confirm('Reset the paper bot to $1,000 and clear all trades?'))return;pbStop();PB=pbDefault();pbSave();pbRender();}
-function pbStop(){if(pbTimer){clearInterval(pbTimer);pbTimer=null;}document.getElementById('pbToggle').textContent='▶ Start trading';document.getElementById('pbStatus').textContent='paused';}
-function pbToggle(){if(pbTimer){pbStop();return;}document.getElementById('pbToggle').textContent='⏸ Pause';document.getElementById('pbStatus').textContent='running · trading every 45s';pbStep();pbTimer=setInterval(pbStep,45000);}
-function pbParams(){var d=STATE.dial;var posPct=(1+d/100*24)/100;return {posPct:posPct,posSize:PB.start*posPct,maxPos:Math.max(2,Math.min(8,Math.floor(0.6/posPct))),threshold:Math.round(70-d/100*25),tp:Math.round(20+d/100*60),sl:Math.round(8+d/100*42),slip:(0.5+d/100*4.5)/100};}
+function pbWallet(){return {cash:1000,positions:{},trades:[],realized:0,wins:0,losses:0};}
+function pbDefault(){var w={};ARCH.forEach(function(a){w[a.id]=pbWallet();});return {wallets:w,startedTs:Date.now(),ticks:0};}
+function pbLoad(){try{PB=JSON.parse(localStorage.getItem('roki_paperbot_v2'))||pbDefault();}catch(e){PB=pbDefault();}if(!PB||!PB.wallets)PB=pbDefault();ARCH.forEach(function(a){if(!PB.wallets[a.id])PB.wallets[a.id]=pbWallet();});}
+function pbSave(){try{localStorage.setItem('roki_paperbot_v2',JSON.stringify(PB));}catch(e){}}
+function pbReset(){if(!confirm('Reset all 10 bots to $1,000 and clear every trade?'))return;pbStop();PB=pbDefault();pbSave();pbRender();}
+function pbStop(){if(pbTimer){clearInterval(pbTimer);pbTimer=null;}var b=document.getElementById('pbToggle');if(b)b.textContent='▶ Start all 10';var s=document.getElementById('pbStatus');if(s)s.textContent='paused';}
+function pbToggle(){if(pbTimer){pbStop();return;}document.getElementById('pbToggle').textContent='⏸ Pause all';document.getElementById('pbStatus').textContent='running · scanning every 45s';pbStep();pbTimer=setInterval(pbStep,45000);}
+function pbParams(dial){var d=dial;var posPct=(1+d/100*24)/100;return {posSize:1000*posPct,maxPos:Math.max(2,Math.min(8,Math.floor(0.6/posPct))),threshold:Math.round(70-d/100*25),tp:Math.round(20+d/100*60),sl:Math.round(8+d/100*42),slip:(0.5+d/100*4.5)/100};}
 async function pbStep(){
   if(!PB)pbLoad();
-  var p=pbParams();
-  document.getElementById('pbStatus').textContent='scanning…';
-  var priceOf={},infoOf={};
+  var st=document.getElementById('pbStatus');if(st)st.textContent='scanning…';
+  var priceOf={},scoreOf={};
   try{
-    var d=await withTimeout(fetch('/api/discoverboard?archetype='+STATE.arch).then(function(r){return r.json();}),30000);
-    (d.results||[]).forEach(function(r){if(r.market&&r.market.priceUsd>0){priceOf[r.mint]=r.market.priceUsd;infoOf[r.mint]={symbol:r.symbol,composite:r.composite,rejected:r.rejected};}});
-  }catch(e){document.getElementById('pbStatus').textContent='backend unavailable — retry';return;}
-  // manage open positions (price held tokens; sell on TP/SL)
-  for(var mint in PB.positions){
-    var pos=PB.positions[mint];var price=priceOf[mint];
-    if(price==null){try{var s=await withTimeout(fetch('/api/scan?mint='+encodeURIComponent(mint)).then(function(r){return r.json();}),20000);price=s&&s.market&&s.market.priceUsd;}catch(e){}}
-    if(price==null||!(price>0))continue;
-    pos.last=price;var pnlPct=(price/pos.entry-1)*100;
-    if(pnlPct>=p.tp)pbSell(mint,price,'take-profit +'+p.tp+'%');
-    else if(pnlPct<=-p.sl)pbSell(mint,price,'stop-loss -'+p.sl+'%');
-  }
-  // buy new picks that clear the bar
-  var held=Object.keys(PB.positions).length;
-  var cands=Object.keys(priceOf).filter(function(m){return infoOf[m]&&!infoOf[m].rejected&&infoOf[m].composite>=p.threshold&&!PB.positions[m];})
-    .sort(function(a,b){return infoOf[b].composite-infoOf[a].composite;});
-  for(var i=0;i<cands.length && held<p.maxPos && PB.cash>=p.posSize;i++){pbBuy(cands[i],priceOf[cands[i]],infoOf[cands[i]],p);held++;}
+    var d=await withTimeout(fetch('/api/discoverall').then(function(r){return r.json();}),30000);
+    (d.results||[]).forEach(function(r){if(r.market&&r.market.priceUsd>0){priceOf[r.mint]=r.market.priceUsd;scoreOf[r.mint]={symbol:r.symbol,scores:r.scores};}});
+  }catch(e){if(st)st.textContent='backend unavailable — retry';return;}
+  if(!Object.keys(priceOf).length){if(st)st.textContent='no trending data right now — retry';return;}
+  // price held tokens that fell out of the trending universe (bounded)
+  var need={};ARCH.forEach(function(a){var w=PB.wallets[a.id];for(var m in w.positions)if(priceOf[m]==null)need[m]=1;});
+  var extra=Object.keys(need).slice(0,8);
+  for(var i=0;i<extra.length;i++){try{var s=await withTimeout(fetch('/api/scan?mint='+encodeURIComponent(extra[i])).then(function(r){return r.json();}),20000);if(s&&s.market&&s.market.priceUsd>0)priceOf[extra[i]]=s.market.priceUsd;}catch(e){}}
+  // run all 10 wallets off the one scan
+  ARCH.forEach(function(a){
+    var w=PB.wallets[a.id];var p=pbParams(a.dial);
+    for(var m in w.positions){var pos=w.positions[m];var price=priceOf[m];if(price==null||!(price>0))continue;pos.last=price;var up=(price/pos.entry-1)*100;if(up>=p.tp)pbSell(w,m,price,'TP +'+p.tp+'%',p);else if(up<=-p.sl)pbSell(w,m,price,'SL -'+p.sl+'%',p);}
+    var held=Object.keys(w.positions).length;
+    var cands=Object.keys(priceOf).filter(function(m){var sc=scoreOf[m]&&scoreOf[m].scores&&scoreOf[m].scores[a.id];return sc&&!sc.r&&sc.c>=p.threshold&&!w.positions[m];}).sort(function(x,y){return scoreOf[y].scores[a.id].c-scoreOf[x].scores[a.id].c;});
+    for(var j=0;j<cands.length&&held<p.maxPos&&w.cash>=p.posSize;j++){pbBuy(w,cands[j],priceOf[cands[j]],scoreOf[cands[j]].symbol,p);held++;}
+  });
   PB.ticks++;pbSave();pbRender();
-  document.getElementById('pbStatus').textContent=(pbTimer?'running · ':'')+'last scan '+new Date().toLocaleTimeString();
+  if(st)st.textContent=(pbTimer?'running · ':'')+'last scan '+new Date().toLocaleTimeString();
 }
-function pbBuy(mint,price,info,p){var eff=price*(1+p.slip);var usd=p.posSize;var qty=usd*0.99/eff;PB.cash-=usd;PB.positions[mint]={symbol:info.symbol,entry:eff,usdIn:usd,qty:qty,last:price,ts:Date.now()};PB.trades.unshift({ts:Date.now(),side:'BUY',symbol:info.symbol,usd:usd,price:eff});}
-function pbSell(mint,price,reason){var pos=PB.positions[mint];if(!pos)return;var eff=price*(1-pbParams().slip);var proceeds=pos.qty*eff*0.99;PB.cash+=proceeds;var pnl=proceeds-pos.usdIn;PB.realized+=pnl;if(pnl>=0)PB.wins++;else PB.losses++;PB.trades.unshift({ts:Date.now(),side:'SELL',symbol:pos.symbol,usd:proceeds,price:eff,pnl:pnl,reason:reason});delete PB.positions[mint];}
+function pbBuy(w,mint,price,symbol,p){var eff=price*(1+p.slip);var usd=p.posSize;var qty=usd*0.99/eff;w.cash-=usd;w.positions[mint]={symbol:symbol,entry:eff,usdIn:usd,qty:qty,last:price,ts:Date.now()};w.trades.unshift({ts:Date.now(),side:'BUY',symbol:symbol,usd:usd});}
+function pbSell(w,mint,price,reason,p){var pos=w.positions[mint];if(!pos)return;var eff=price*(1-p.slip);var proceeds=pos.qty*eff*0.99;w.cash+=proceeds;var pnl=proceeds-pos.usdIn;w.realized+=pnl;if(pnl>=0)w.wins++;else w.losses++;w.trades.unshift({ts:Date.now(),side:'SELL',symbol:pos.symbol,usd:proceeds,pnl:pnl,reason:reason});delete w.positions[mint];}
+function pbTotal(w){var v=w.cash;for(var m in w.positions){var pos=w.positions[m];v+=pos.qty*(pos.last||pos.entry);}return v;}
+function pbToggleDetail(id){PB_OPEN=PB_OPEN===id?null:id;pbRender();}
+function pbDetail(w){
+  var pk=Object.keys(w.positions);
+  var pr=pk.length?pk.map(function(m){var p=w.positions[m];var now=p.last||p.entry;var up=(now/p.entry-1)*100;return '<div style="display:grid;grid-template-columns:1fr 56px 64px;gap:6px;font-size:11px;padding:3px 0"><span>$'+escapeHtml(p.symbol||'?')+'</span><span class="mono" style="text-align:right;color:'+(up>=0?'#0F7A45':'#B02A2A')+'">'+(up>=0?'+':'')+up.toFixed(0)+'%</span><span class="mono faint" style="text-align:right">'+pbUsd(p.qty*now)+'</span></div>';}).join(''):'<div class="faint" style="font-size:11px">no open positions</div>';
+  var tr=w.trades.length?w.trades.slice(0,10).map(function(t){var c=t.side==='BUY'?'var(--blue-ink)':(t.pnl>=0?'#0F7A45':'#B02A2A');return '<div style="display:grid;grid-template-columns:44px 38px 1fr 74px;gap:6px;font-size:11px;padding:3px 0"><span class="faint mono">'+new Date(t.ts).toLocaleTimeString().slice(0,5)+'</span><span class="mono" style="color:'+c+'">'+t.side+'</span><span>$'+escapeHtml(t.symbol||'?')+(t.reason?' <span class="faint">'+escapeHtml(t.reason)+'</span>':'')+'</span><span class="mono" style="text-align:right">'+(t.side==='SELL'?((t.pnl>=0?'+':'')+pbUsd(t.pnl)):pbUsd(t.usd))+'</span></div>';}).join(''):'<div class="faint" style="font-size:11px">no trades yet</div>';
+  return '<div style="background:var(--cream);border:1.5px solid var(--ink);border-radius:8px;padding:10px;margin:4px 0 10px"><div class="klabel" style="margin-bottom:3px">open positions</div>'+pr+'<div class="klabel" style="margin:8px 0 3px">recent trades</div>'+tr+'</div>';
+}
 function pbRender(){
   var box=document.getElementById('pbBody');if(!box)return;if(!PB)pbLoad();
-  var openVal=0,opos=Object.keys(PB.positions);
-  opos.forEach(function(m){var pos=PB.positions[m];openVal+=pos.qty*(pos.last||pos.entry);});
-  var total=PB.cash+openVal;var pnl=total-PB.start;var pnlPct=(pnl/PB.start)*100;
-  var closed=PB.wins+PB.losses;var wr=closed?Math.round(PB.wins/closed*100):null;
-  var col=pnl>=0?'#0F7A45':'#B02A2A';
-  var head='<div class="card" style="margin-bottom:16px"><div class="row wrap"><div>'
-    +'<div class="klabel">demo balance (paper)</div><div class="mono" style="font-size:30px;font-weight:700">'+pbUsd(total)+'</div>'
-    +'<div class="mono" style="color:'+col+';font-weight:700">'+(pnl>=0?'+':'')+pbUsd(pnl)+' ('+(pnlPct>=0?'+':'')+pnlPct.toFixed(1)+'%)</div></div>'
-    +'<div style="text-align:right" class="mono"><div>cash '+pbUsd(PB.cash)+'</div><div class="faint" style="font-size:12px">'+opos.length+' open · '+PB.trades.length+' trades · '+(wr!=null?wr+'% win ('+PB.wins+'/'+closed+')':'no closed trades')+'</div><div class="faint" style="font-size:11px">'+archName(STATE.arch)+' · risk '+STATE.dial+' · '+PB.ticks+' scans</div></div></div></div>';
-  var posRows=opos.map(function(m){var pos=PB.positions[m];var now=pos.last||pos.entry;var up=(now/pos.entry-1)*100;
-    return '<div style="display:grid;grid-template-columns:1fr 80px 70px 60px;gap:8px;border-bottom:1px solid var(--hairline);padding:8px 0;align-items:center"><div><b>$'+escapeHtml(pos.symbol||'?')+'</b> <span class="faint mono" style="font-size:10px;cursor:pointer" onclick="copyCA(\''+m+'\',this)">'+m.slice(0,4)+'..'+m.slice(-4)+' &#x2398;</span></div><div class="mono faint" style="font-size:11px;text-align:right">in '+pbUsd(pos.usdIn)+'</div><div class="mono" style="text-align:right;color:'+(up>=0?'#0F7A45':'#B02A2A')+'">'+(up>=0?'+':'')+up.toFixed(0)+'%</div><div class="mono" style="text-align:right">'+pbUsd(pos.qty*now)+'</div></div>';}).join('');
-  var positions='<div class="card" style="margin-bottom:16px"><h3>Open positions ('+opos.length+')</h3>'+(opos.length?('<div class="note" style="margin:0 0 6px"><span class="faint">token · cost · unrealized · value</span></div>'+posRows):'<p class="sub">none — the bot buys when a trending token clears its '+pbParams().threshold+'/100 bar.</p>')+'</div>';
-  var logRows=PB.trades.slice(0,14).map(function(t){var c=t.side==='BUY'?'var(--blue-ink)':(t.pnl>=0?'#0F7A45':'#B02A2A');
-    return '<div style="display:grid;grid-template-columns:62px 46px 1fr 90px;gap:8px;border-bottom:1px solid var(--hairline);padding:6px 0;font-size:12px"><span class="faint mono">'+new Date(t.ts).toLocaleTimeString().slice(0,5)+'</span><span class="mono" style="color:'+c+';font-weight:700">'+t.side+'</span><span>$'+escapeHtml(t.symbol||'?')+(t.reason?' <span class="faint" style="font-size:10px">'+escapeHtml(t.reason)+'</span>':'')+'</span><span class="mono" style="text-align:right">'+(t.side==='SELL'?((t.pnl>=0?'+':'')+pbUsd(t.pnl)):pbUsd(t.usd))+'</span></div>';}).join('');
-  var log='<div class="card"><h3>Trade log</h3>'+(PB.trades.length?logRows:'<p class="sub">no trades yet — hit Start.</p>')
-    +'<div class="note"><span class="tick mid"></span> Paper trades on live DexScreener prices (incl. slippage + 1% fee). Buys = Mode A picks clearing the bar; sells = take-profit +'+pbParams().tp+'% / stop-loss -'+pbParams().sl+'%. This is the data the Brain would learn from. Not financial advice; only runs while this tab is open.</div></div>';
-  box.innerHTML=head+positions+log;
+  var rows=ARCH.map(function(a){var w=PB.wallets[a.id];var tot=pbTotal(w);var pnl=tot-1000;var closed=w.wins+w.losses;return {a:a,w:w,tot:tot,pnl:pnl,wr:closed?Math.round(w.wins/closed*100):null,open:Object.keys(w.positions).length};}).sort(function(x,y){return y.tot-x.tot;});
+  var grand=rows.reduce(function(s,r){return s+r.tot;},0),gpnl=grand-10000;
+  var head='<div class="card" style="margin-bottom:16px"><div class="row wrap"><div><div class="klabel">10 bots · combined paper value</div><div class="mono" style="font-size:28px;font-weight:700">'+pbUsd(grand)+'</div><div class="mono" style="font-weight:700;color:'+(gpnl>=0?'#0F7A45':'#B02A2A')+'">'+(gpnl>=0?'+':'')+pbUsd(gpnl)+' ('+(gpnl/100>=0?'+':'')+(gpnl/100).toFixed(1)+'%)</div></div><div style="text-align:right"><div class="faint mono" style="font-size:11px">each started $1,000</div><div class="faint mono" style="font-size:11px">'+PB.ticks+' scans</div></div></div></div>';
+  var lead='<div class="card"><h3>Leaderboard — 10 archetypes</h3><div class="note" style="margin:0 0 4px"><span class="faint">#· archetype· balance· PnL%· win%· open  (click a row for its positions + trades)</span></div>'
+    +rows.map(function(r,i){var col=r.pnl>=0?'#0F7A45':'#B02A2A';
+      return '<div onclick="pbToggleDetail(\''+r.a.id+'\')" style="cursor:pointer;display:grid;grid-template-columns:20px 1fr 84px 70px 48px 34px;gap:6px;align-items:center;border-bottom:1px solid var(--hairline);padding:8px 0">'
+        +'<div class="mono faint">'+(i+1)+'</div>'
+        +'<div><b style="font-size:13px">'+escapeHtml(r.a.name)+'</b> <span class="faint" style="font-size:10px">risk '+r.a.dial+'</span></div>'
+        +'<div class="mono" style="text-align:right">'+pbUsd(r.tot)+'</div>'
+        +'<div class="mono" style="text-align:right;color:'+col+';font-weight:700">'+(r.pnl>=0?'+':'')+(r.pnl/10).toFixed(1)+'%</div>'
+        +'<div class="mono faint" style="text-align:right;font-size:11px">'+(r.wr!=null?r.wr+'%':'—')+'</div>'
+        +'<div class="mono faint" style="text-align:right;font-size:11px">'+r.open+'</div></div>'
+        +(PB_OPEN===r.a.id?pbDetail(r.w):'');
+    }).join('')
+    +'<div class="note"><span class="tick mid"></span> 10 bots, each a $1,000 paper wallet trading the live trending universe with its own archetype + risk profile (slippage + 1% fee modeled). This is the validation data — the configs that consistently win earn real allocation later. Runs while this tab is open; 24/7 unattended = the backend phase.</div></div>';
+  box.innerHTML=head+lead;
 }
 
 /* ---------- init ---------- */
