@@ -337,7 +337,7 @@ footer.site b{color:var(--coral)}
   <!-- PAPER BOT -->
   <section class="view" id="view-paperbot">
     <h1>The Lab <span class="badge b-ok" style="vertical-align:middle"><span id="labLiveDot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#0F7A45;margin-right:5px;vertical-align:middle"></span>always live</span></h1>
-    <p class="muted" style="margin:0 0 14px;font-size:14px"><b>10 archetype bots, each a $2,000 demo wallet, trading the live Solana market 24/7 — even when nobody's watching.</b> They run on a server, not in your browser. Every day each bot reviews its own trades, learns a lesson, and adjusts its own strategy — and we keep the full day-by-day journal of how it changed. A bot that hits <b>10× ($20k)</b> graduates 🏆; one that loses <b>90%</b> busts 💀. Watch which archetype actually makes money — that's the one worth copying. <span class="faint">No real money, no wallet, ever.</span></p>
+    <p class="muted" style="margin:0 0 14px;font-size:14px"><b>10 archetype bots, each a $2,000 demo wallet, trading the live Solana market 24/7 — even when nobody's watching.</b> They run on a server, not in your browser. Each round they scan a broad live universe — <b>volume spikes, activity surges, fresh launches, steady accumulation</b> and trending tokens (not just paid promos). Every day each bot reviews its own trades, learns a lesson, and adjusts its own strategy — and we keep the full day-by-day journal of how it changed. A bot that hits <b>10× ($20k)</b> graduates 🏆; one that loses <b>90%</b> busts 💀. Watch which archetype actually makes money — that's the one worth copying. <span class="faint">No real money, no wallet, ever.</span></p>
     <div class="flex gap8 wrap" style="margin:0 0 16px;align-items:center">
       <button class="btn small" id="labRefresh" onclick="labFetch(false)">↻ Refresh now</button>
       <span class="faint mono" style="font-size:12px" id="labStatus">loading…</span>
@@ -839,6 +839,16 @@ function renderSmartWallets(d){
 /* ---------- THE LAB: viewer for the 24/7 server-side bot competition ---------- */
 var LAB=null, labTimer=null, LAB_OPEN=null;
 function lm(v){v=Math.round(v||0);var s=v<0?'-':'';return s+'$'+Math.abs(v).toLocaleString('en-US');}
+var LAB_SRC={'volume-spike':'⚡ spike','accumulation':'📈 accumulation','trending':'🔥 trending','fresh':'🌱 new','boosted':'📣 boosted','volume':'📊 high volume','new-boost':'📣 boosted'};
+function labSrcTag(src){if(!src)return '';var l=LAB_SRC[src]||src;return ' <span class="faint" style="font-size:9px;border:1px solid var(--hairline);border-radius:4px;padding:0 3px">'+l+'</span>';}
+function labUniverseLine(u){
+  if(!u||!u.tags)return '';
+  var order=['volume-spike','accumulation','trending','fresh','volume','boosted','new-boost'];
+  var byLabel={},seq=[];
+  order.forEach(function(k){if(u.tags[k]){var l=LAB_SRC[k]||k;if(byLabel[l]==null){byLabel[l]=0;seq.push(l);}byLabel[l]+=u.tags[k];}});
+  var parts=seq.map(function(l){return byLabel[l]+' '+l;});
+  return '<div class="faint mono" style="font-size:11px;margin-top:4px">scanning '+u.n+' tokens · '+parts.join(' · ')+'</div>';
+}
 function labSpark(curve){
   if(!curve||curve.length<2)return '';
   var vs=curve.map(function(p){return p.v;});var lo=Math.min.apply(null,vs),hi=Math.max.apply(null,vs);if(hi===lo)hi=lo+1;
@@ -864,9 +874,9 @@ function labDetail(b){
     +'<div><div class="faint">stop-loss</div><div class="mono" style="font-weight:700">-'+P.sl+'% '+labDrift(P.sl,BP.sl)+'</div><div class="faint" style="font-size:10px">started -'+BP.sl+'%</div></div>'
     +'<div><div class="faint">bet size</div><div class="mono" style="font-weight:700">'+P.posPct+'% '+labDrift(P.posPct,bpos)+'</div><div class="faint" style="font-size:10px">started '+bpos+'%</div></div>'
     +'</div>'+(b.equityCurve&&b.equityCurve.length>1?'<div style="margin-top:8px"><div class="klabel" style="margin-bottom:2px">equity (dashed = $2,000 start)</div>'+labSpark(b.equityCurve)+'</div>':'')+'</div>';
-  var pos=b.positions.length?b.positions.map(function(p){var col=p.upPct>=0?'#0F7A45':'#B02A2A';return '<div style="display:grid;grid-template-columns:1fr 60px 70px;gap:6px;font-size:11px;padding:3px 0"><span>$'+escapeHtml(p.symbol||'?')+'</span><span class="mono" style="text-align:right;color:'+col+'">'+(p.upPct>=0?'+':'')+p.upPct+'%</span><span class="mono faint" style="text-align:right">'+lm(p.value)+'</span></div>';}).join(''):'<div class="faint" style="font-size:11px">holding cash — no open positions</div>';
+  var pos=b.positions.length?b.positions.map(function(p){var col=p.upPct>=0?'#0F7A45':'#B02A2A';return '<div style="display:grid;grid-template-columns:1fr 60px 70px;gap:6px;font-size:11px;padding:3px 0"><span>$'+escapeHtml(p.symbol||'?')+labSrcTag(p.src)+'</span><span class="mono" style="text-align:right;color:'+col+'">'+(p.upPct>=0?'+':'')+p.upPct+'%</span><span class="mono faint" style="text-align:right">'+lm(p.value)+'</span></div>';}).join(''):'<div class="faint" style="font-size:11px">holding cash — no open positions</div>';
   var log=b.log.length?b.log.map(function(t){
-    if(t.side==='BUY')return '<div style="display:grid;grid-template-columns:30px 38px 1fr 70px;gap:6px;font-size:11px;padding:3px 0"><span class="faint mono">t'+t.tick+'</span><span class="mono" style="color:var(--blue-ink)">BUY</span><span>$'+escapeHtml(t.symbol||'?')+'</span><span class="mono faint" style="text-align:right">'+lm(t.usd)+'</span></div>';
+    if(t.side==='BUY')return '<div style="display:grid;grid-template-columns:30px 38px 1fr 70px;gap:6px;font-size:11px;padding:3px 0"><span class="faint mono">t'+t.tick+'</span><span class="mono" style="color:var(--blue-ink)">BUY</span><span>$'+escapeHtml(t.symbol||'?')+labSrcTag(t.src)+'</span><span class="mono faint" style="text-align:right">'+lm(t.usd)+'</span></div>';
     var win=t.pnl>=0;var col=win?'#0F7A45':'#B02A2A';
     return '<div style="display:grid;grid-template-columns:30px 38px 1fr 70px;gap:6px;font-size:11px;padding:3px 0"><span class="faint mono">t'+t.tick+'</span><span class="mono" style="color:'+col+'">SELL</span><span>$'+escapeHtml(t.symbol||'?')+' <span class="faint">'+escapeHtml(t.reason||'')+'</span> '+(win?'<span style="color:#0F7A45">✓</span>':'<span style="color:#B02A2A">✗ mistake</span>')+'</span><span class="mono" style="text-align:right;color:'+col+';font-weight:700">'+(win?'+':'')+lm(t.pnl)+'</span></div>';
   }).join(''):'<div class="faint" style="font-size:11px">no trades yet</div>';
@@ -897,7 +907,7 @@ function labRender(){
     +'<div style="text-align:right"><div class="faint mono" style="font-size:11px">10 bots · $'+LAB.start.toLocaleString()+' each</div>'
     +'<div class="mono" style="font-size:11px">● '+LAB.activeCount+' trading'+(grad?' · 🏆 '+grad:'')+(bust?' · 💀 '+bust:'')+'</div>'
     +'<div class="faint mono" style="font-size:11px">running '+LAB.ageDays.toFixed(1)+' days</div></div>'
-    +'</div></div>';
+    +'</div>'+labUniverseLine(LAB.universe)+'</div>';
   var rows=LAB.bots.map(function(b,i){
     var col=b.pnl>=0?'#0F7A45':'#B02A2A';var medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'';
     return '<div onclick="labToggle(\''+b.id+'\')" style="cursor:pointer;display:grid;grid-template-columns:26px 1fr 92px 64px 78px;gap:6px;align-items:center;border-bottom:1px solid var(--hairline);padding:9px 0">'
@@ -911,7 +921,7 @@ function labRender(){
   var lead='<div class="card"><h3>Leaderboard — most → least profitable</h3>'
     +'<div class="note" style="margin:0 0 6px"><span class="faint">rank · archetype · paper balance · PnL% · current entry bar &nbsp;(click any bot for its strategy, trades + learning journal)</span></div>'
     +rows
-    +'<div class="note"><span class="tick mid"></span> Each bot is a $'+LAB.start.toLocaleString()+' paper wallet trading the live trending Solana universe with its own archetype + risk profile (slippage + 1% fee modeled). It runs on the server 24/7 and adapts daily. The archetype at the top is the one this market is currently rewarding — that’s the read for which style to copy on a real wallet. Paper only; no funds, no signing.</div></div>';
+    +'<div class="note"><span class="tick mid"></span> Each bot is a $'+LAB.start.toLocaleString()+' paper wallet hunting a broad live universe — volume spikes, activity surges, fresh launches, accumulation + trending — with its own archetype + risk profile (slippage + 1% fee modeled). Momentum/degen lean into spikes; whales/conservatives prefer quiet accumulation. It runs on the server 24/7 and adapts daily. The archetype at the top is the one this market is currently rewarding — that’s the read for which style to copy on a real wallet. Paper only; no funds, no signing.</div></div>';
   box.innerHTML=head+lead;
 }
 function labFetch(advance){

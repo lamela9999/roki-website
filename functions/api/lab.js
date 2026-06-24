@@ -9,7 +9,7 @@
 // graduates (champion, frozen); one that loses 90% busts (frozen, dead). If the field thins
 // out, a new season respawns the dead with their lessons intact. Fund-safe, read-only, paper.
 
-import { json, preflight, pickPair, solRpc, jupPrices } from './_utils.js';
+import { json, preflight, pickPair, solRpc, jupPrices, buildUniverse } from './_utils.js';
 
 export const onRequestOptions = () => preflight();
 
@@ -20,7 +20,7 @@ const BUST = START * 0.10;         // lose 90% → bust (dead)
 const TICK_MS = 10 * 60 * 1000;    // minimum spacing between ticks
 const DAY_MS = 24 * 60 * 60 * 1000;
 const FEE = 0.99;                  // 1% taker fee each side
-const UNIVERSE = 16;               // trending tokens scanned per tick
+const UNIVERSE = 20;               // candidate tokens scanned per tick (multi-source)
 const TRADES_KEEP = 50, EQUITY_KEEP = 300, HISTORY_KEEP = 200;
 const KVKEY = 'radar:lab';
 
@@ -53,6 +53,16 @@ const FACTORS = [
   { k: 'liq', g: 'On-chain health' }, { k: 'vol', g: 'On-chain health' }, { k: 'pressure', g: 'On-chain health' },
   { k: 'age', g: 'On-chain health' }, { k: 'priceTrend', g: 'Momentum' }, { k: 'lifecycle', g: 'Momentum' },
 ];
+// how much each discovery signal nudges each archetype's score (spikes suit momentum/degen,
+// quiet accumulation suits whales/conservatives) — so the broadened universe changes behaviour
+const SRC_BONUS = {
+  'volume-spike': { momentum: 8, degen: 7, sniper: 6, narrative: 5 },
+  accumulation: { whale: 8, conservative: 7, smart: 6, insider: 6, safety: 5 },
+  trending: { narrative: 5, degen: 4, momentum: 3 },
+  fresh: { sniper: 7, degen: 5 },
+};
+const SRC_RANK = ['volume-spike', 'accumulation', 'trending', 'fresh', 'boosted', 'volume', 'new-boost'];
+const primarySrc = (sources) => { for (const s of SRC_RANK) if (sources && sources.indexOf(s) >= 0) return s; return (sources && sources[0]) || 'trending'; };
 
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 const logScore = (v, lo, hi) => (!v || v <= 0) ? 0 : clamp(Math.round(((Math.log10(v) - Math.log10(lo)) / (Math.log10(hi) - Math.log10(lo))) * 100), 0, 100);
@@ -96,16 +106,12 @@ function totalEquity(w) {
 // ---- one scan of the trending universe, scored for every archetype ----
 async function scanUniverse(env, nowTs) {
   const dexGet = async (u) => { for (let i = 0; i < 3; i++) { try { const r = await fetch(u); if (r.ok) return await r.json(); } catch (e) { /**/ } await new Promise((res) => setTimeout(res, 250)); } return null; };
-  const [top, latest] = await Promise.all([
-    dexGet('https://api.dexscreener.com/token-boosts/top/v1'),
-    dexGet('https://api.dexscreener.com/token-boosts/latest/v1'),
-  ]);
-  const seen = new Set(); let mints = [];
-  for (const list of [top || [], latest || []]) for (const b of list) {
-    if (b && b.chainId === 'solana' && b.tokenAddress && !seen.has(b.tokenAddress)) { seen.add(b.tokenAddress); mints.push(b.tokenAddress); }
-  }
-  mints = mints.slice(0, UNIVERSE);
-  if (!mints.length) return null;
+  // broad, multi-source universe: boosts + trending + top-volume + new + spike/accumulation tags
+  const cand = await buildUniverse();
+  if (!cand.length) return null;
+  const picked = cand.slice(0, UNIVERSE);
+  const mints = picked.map((c) => c.mint);
+  const srcOf = {}; picked.forEach((c) => { srcOf[c.mint] = c.sources; });
 
   const [pairsArr, accInfos] = await Promise.all([
     Promise.all(mints.map((m) => dexGet(`https://api.dexscreener.com/latest/dex/tokens/${m}`))),
@@ -131,21 +137,23 @@ async function scanUniverse(env, nowTs) {
       priceTrend: chg != null ? clamp(Math.round(50 + chg), 0, 100) : null,
       lifecycle: mcap > 0 ? (mcap < 50000 ? 30 : mcap < 1e6 ? 70 : mcap < 1e7 ? 85 : 60) : null,
     };
+    const sources = srcOf[mint] || [];
     const scores = {};
     for (const a in ARCH) {
       let wsum = 0, vsum = 0;
       FACTORS.forEach((f) => { if (Vv[f.k] != null) { const w = ARCH[a][f.g] || 50; wsum += w; vsum += w * Vv[f.k]; } });
       let c = wsum ? Math.round(vsum / wsum) : null;
+      if (c != null) { let bonus = 0; sources.forEach((s) => { if (SRC_BONUS[s] && SRC_BONUS[s][a]) bonus += SRC_BONUS[s][a]; }); if (bonus) c = Math.min(100, c + bonus); }
       const rejected = gateLive && a !== 'degen';
       if (rejected && c != null) c = Math.min(c, 12);
       scores[a] = { c, r: rejected };
     }
-    out.push({ mint, symbol: ((p.baseToken && p.baseToken.symbol) || '?').replace(/^\$/, ''), name: (p.baseToken && p.baseToken.name) || 'Unknown', price, mcap, scores });
+    out.push({ mint, symbol: ((p.baseToken && p.baseToken.symbol) || '?').replace(/^\$/, ''), name: (p.baseToken && p.baseToken.name) || 'Unknown', price, mcap, scores, sources, src: primarySrc(sources) });
   });
   return out;
 }
 
-function buy(w, mint, price, symbol, tick) {
+function buy(w, mint, price, symbol, tick, src) {
   const p = w.params;
   const total = totalEquity(w);
   const usd = Math.max(20, Math.round(total * p.posPct));
@@ -153,8 +161,8 @@ function buy(w, mint, price, symbol, tick) {
   const eff = price * (1 + p.slip);
   const qty = (usd * FEE) / eff;
   w.cash -= usd;
-  w.positions[mint] = { symbol, entry: eff, usdIn: usd, qty, last: price, tick };
-  w.trades.unshift({ tick, side: 'BUY', symbol, mint, usd });
+  w.positions[mint] = { symbol, entry: eff, usdIn: usd, qty, last: price, tick, src };
+  w.trades.unshift({ tick, side: 'BUY', symbol, mint, usd, src });
   if (w.trades.length > TRADES_KEEP) w.trades.pop();
 }
 function sell(w, mint, price, reason, tick) {
@@ -214,6 +222,11 @@ async function advance(state, env, nowTs) {
   const uPrice = {}, uScore = {};
   universe.forEach((u) => { uPrice[u.mint] = u.price; uScore[u.mint] = u; });
 
+  // record what kinds of tokens this scan surfaced (for the UI)
+  const uniTags = {};
+  universe.forEach((u) => (u.sources || []).forEach((s) => { uniTags[s] = (uniTags[s] || 0) + 1; }));
+  state.universe = { n: universe.length, tags: uniTags };
+
   // price any held tokens that fell out of the trending set
   const need = new Set();
   BOTS.forEach((b) => { const w = state.bots[b.id]; for (const m in w.positions) if (uPrice[m] == null) need.add(m); });
@@ -248,7 +261,7 @@ async function advance(state, env, nowTs) {
       .filter((u) => { const s = u.scores[b.id]; return s && !s.r && s.c != null && s.c >= p.threshold && !w.positions[u.mint]; })
       .sort((x, y) => y.scores[b.id].c - x.scores[b.id].c);
     for (let j = 0; j < cands.length && held < max && w.cash >= Math.max(20, totalEquity(w) * p.posPct); j++) {
-      buy(w, cands[j].mint, cands[j].price, cands[j].symbol, tick);
+      buy(w, cands[j].mint, cands[j].price, cands[j].symbol, tick, cands[j].src);
       held++;
     }
 
@@ -303,7 +316,7 @@ function publicState(state, nowTs) {
     const closed = w.wins + w.losses;
     const positions = Object.keys(w.positions).map((m) => {
       const p = w.positions[m]; const now = p.last || p.entry; const up = (now / p.entry - 1) * 100;
-      return { mint: m, symbol: p.symbol, value: Math.round(p.qty * now), upPct: +up.toFixed(1), usdIn: Math.round(p.usdIn) };
+      return { mint: m, symbol: p.symbol, value: Math.round(p.qty * now), upPct: +up.toFixed(1), usdIn: Math.round(p.usdIn), src: p.src || null };
     }).sort((a, c) => c.value - a.value);
     return {
       id: b.id, name: b.name, dial: b.dial, status: w.status, lives: w.lives, season: state.season,
@@ -322,6 +335,7 @@ function publicState(state, nowTs) {
     startedTs: state.startedTs, ageDays: +ageDays.toFixed(2), day: state.day, season: state.season,
     tick: state.tick, lastTickTs: state.lastTickTs, start: START, grad: GRAD, bust: BUST,
     activeCount: BOTS.filter((b) => state.bots[b.id].status === 'active').length,
+    universe: state.universe || null,
     leader: bots[0] ? bots[0].id : null, bots, ts: nowTs,
   };
 }

@@ -119,3 +119,56 @@ export function pickPair(rawPairs, mint) {
   kept.sort((a, b) => ((b.liquidity && b.liquidity.usd) || 0) - ((a.liquidity && a.liquidity.usd) || 0));
   return kept[0];
 }
+
+// Quote-side tokens that show up as the "base" of a pool but aren't real candidates.
+const QUOTE_MINTS = new Set([
+  'So11111111111111111111111111111111111111112', // wSOL
+  'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // USDC
+  'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB', // USDT
+]);
+
+// Build a BROAD candidate universe from several FREE sources, so the bots don't only see paid
+// "boosted" tokens. Returns [{ mint, sources:[...] }] where sources tag WHY a token surfaced:
+//   boosted / new-boost  — DexScreener paid boosts (top + latest)
+//   trending             — GeckoTerminal trending pools (Solana)
+//   volume               — GeckoTerminal top tokens by 24h volume
+//   fresh                — GeckoTerminal brand-new pools
+//   volume-spike         — last hour running >=2.2x the 24h average pace (sudden activity)
+//   accumulation         — steady positive drift + buy-side pressure, no blow-off spike
+// GeckoTerminal is keyless & free (~30 req/min). All calls are best-effort; partial data is OK.
+export async function buildUniverse() {
+  const get = async (u, h) => { for (let i = 0; i < 3; i++) { try { const r = await fetch(u, h ? { headers: h } : undefined); if (r.ok) return await r.json(); } catch (e) { /**/ } await new Promise((s) => setTimeout(s, 250)); } return null; };
+  const gtH = { accept: 'application/json' };
+  const num = (x) => { const n = parseFloat(x); return isFinite(n) ? n : 0; };
+  const out = new Map(); // mint -> Set(sources)
+  const add = (mint, src) => { if (!mint || QUOTE_MINTS.has(mint)) return; const s = out.get(mint) || new Set(); s.add(src); out.set(mint, s); };
+
+  const [bt, bl, tr, vol, np] = await Promise.all([
+    get('https://api.dexscreener.com/token-boosts/top/v1'),
+    get('https://api.dexscreener.com/token-boosts/latest/v1'),
+    get('https://api.geckoterminal.com/api/v2/networks/solana/trending_pools?page=1', gtH),
+    get('https://api.geckoterminal.com/api/v2/networks/solana/pools?sort=h24_volume_usd_desc&page=1', gtH),
+    get('https://api.geckoterminal.com/api/v2/networks/solana/new_pools?page=1', gtH),
+  ]);
+
+  for (const b of bt || []) if (b && b.chainId === 'solana' && b.tokenAddress) add(b.tokenAddress, 'boosted');
+  for (const b of bl || []) if (b && b.chainId === 'solana' && b.tokenAddress) add(b.tokenAddress, 'new-boost');
+
+  const mintOf = (p) => { const id = p && p.relationships && p.relationships.base_token && p.relationships.base_token.data && p.relationships.base_token.data.id; return id ? String(id).replace(/^solana_/, '') : null; };
+  const derived = (p) => {
+    const a = p.attributes || {}; const v = a.volume_usd || {}; const pc = a.price_change_percentage || {}; const tx = a.transactions || {};
+    const tags = [];
+    const h1 = num(v.h1), h24 = num(v.h24);
+    if (h24 > 0 && h1 >= 2500 && (h1 * 24) / h24 >= 2.2) tags.push('volume-spike');
+    const h6 = num(pc.h6), pd = num(pc.h24); const t6 = tx.h6 || {}; const buys = num(t6.buys), sells = num(t6.sells);
+    if (!tags.length && pd >= 2 && pd <= 60 && h6 >= 0 && (buys + sells) > 0 && buys / (buys + sells) >= 0.55) tags.push('accumulation');
+    return tags;
+  };
+  const ingest = (feed, label) => { for (const p of (feed && feed.data) || []) { const m = mintOf(p); if (!m) continue; add(m, label); derived(p).forEach((t) => add(m, t)); } };
+  ingest(tr, 'trending'); ingest(vol, 'volume'); ingest(np, 'fresh');
+
+  // diversity-first ordering so spikes/accumulation/trending aren't crowded out by boosts
+  const pri = (s) => s.has('volume-spike') ? 0 : s.has('accumulation') ? 1 : s.has('trending') ? 2 : s.has('boosted') ? 3 : s.has('volume') ? 4 : 5;
+  return [...out.entries()].map(([mint, s]) => ({ mint, sources: [...s], _p: pri(s) }))
+    .sort((a, b) => a._p - b._p).map(({ mint, sources }) => ({ mint, sources }));
+}
