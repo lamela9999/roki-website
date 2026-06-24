@@ -673,7 +673,7 @@ function runDiscoverBoard(){
   withTimeout(fetch('/api/discoverboard?archetype='+STATE.arch),25000)
     .then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||('failed '+r.status));return d;});})
     .then(function(d){if(d.error)throw new Error(d.error);box.innerHTML=renderBoard(d);})
-    .catch(function(e){boardLoaded=false;box.innerHTML='<div class="disclaim"><span class="tick mid"></span><span><b>Live discovery runs on the deployed backend.</b> Once <span class="mono">/api/discoverboard</span> is live (Helius key set in Cloudflare), this ranks real trending tokens through your archetype. <span class="faint">('+escapeHtml(e&&e.message||'')+')</span></span></div>';});
+    .catch(function(e){boardLoaded=false;box.innerHTML='<div class="disclaim"><span class="tick mid"></span><span>Discovery feed is busy for a moment — <a href="#" onclick="runDiscoverBoard();return false" style="text-decoration:underline">retry now</a>, or it will refresh on its own. <span class="faint">('+escapeHtml(e&&e.message||'')+')</span></span></div>';if(!window._boardRetried){window._boardRetried=true;setTimeout(function(){window._boardRetried=false;runDiscoverBoard();},4000);}});
 }
 function boardColor(s){return s>=70?'var(--green)':s>=45?'var(--yellow)':'var(--coral)';}
 function renderBoard(d){
@@ -702,7 +702,7 @@ function renderBoard(d){
   }).join('');
   return '<div class="card"><div class="row wrap" style="margin-bottom:10px"><div><h3 style="margin:0">'+escapeHtml(archName(d.archetype))+' bot &middot; live picks</h3><p class="sub" style="margin:4px 0 0">'+d.scanned+' trending tokens scored &middot; bar moves with your risk dial</p></div><span class="badge b-prev">decision live · execution pending</span></div>'
     +banner+rows
-    +'<div class="note"><span class="tick mid"></span> Universe = live DexScreener trending. Raise the risk dial in <a href="#" onclick="show(\'configure\');return false" style="text-decoration:underline">Configure</a> to widen the buy bar. Drill any token in <a href="/radar" style="text-decoration:underline">Radar</a>.</div></div>';
+    +'<div class="note"><span class="tick mid"></span> Universe = live multi-source discovery (boosts, profiles, trending + spike/accumulation signals). Raise the risk dial in <a href="#" onclick="show(\'configure\');return false" style="text-decoration:underline">Configure</a> to widen the buy bar. Drill any token in <a href="/radar" style="text-decoration:underline">Radar</a>.</div></div>';
 }
 
 /* ---------- The Brain — live regime (real /api/regime) ---------- */

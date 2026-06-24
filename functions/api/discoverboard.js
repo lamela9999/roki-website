@@ -8,7 +8,7 @@
 // Holder concentration / funding-lineage are per-token heavy — use /api/scan & /api/funding
 // to drill into a specific result.
 
-import { json, preflight, pickPair, solRpc } from './_utils.js';
+import { json, preflight, pickPair, solRpc, buildUniverse } from './_utils.js';
 
 export const onRequestOptions = () => preflight();
 
@@ -48,36 +48,27 @@ export async function onRequestGet({ request, env }) {
   const dexGet = async (u) => { for (let i = 0; i < 4; i++) { try { const r = await fetch(u); if (r.ok) return await r.json(); } catch (e) { /**/ } await new Promise((res) => setTimeout(res, 300)); } return null; };
 
   try {
-    // 1) universe: boosted/trending Solana tokens
-    const [top, latest] = await Promise.all([
-      dexGet('https://api.dexscreener.com/token-boosts/top/v1'),
-      dexGet('https://api.dexscreener.com/token-boosts/latest/v1'),
-    ]);
-    const seen = new Set(), mints = [];
-    for (const list of [top || [], latest || []]) {
-      for (const b of list) {
-        if (b && b.chainId === 'solana' && b.tokenAddress && !seen.has(b.tokenAddress)) {
-          seen.add(b.tokenAddress); mints.push(b.tokenAddress);
-        }
-      }
-    }
-    const universe = mints.slice(0, 16);
-    const KV = env.ZEN_KV; // serve the last-good board when DexScreener's trending feed rate-limits CF
+    // 1) universe: broad multi-source candidate set (boosts + profiles + trending + spike/accum)
+    const cand = await buildUniverse();
+    const universe = cand.slice(0, 24).map((c) => c.mint);
+    const KV = env.ZEN_KV; // serve the last-good board if every discovery source rate-limits CF
     if (!universe.length) {
       if (KV) { const c = await KV.get('radar:bb:' + archId, 'json').catch(() => null); if (c) return json({ ...c, stale: true }, 200, { 'cache-control': 'public, max-age=60' }); }
-      return json({ error: 'Trending feed is rate-limited right now — retry in a moment.' }, 200);
+      return json({ error: 'Discovery feed is busy — retry in a moment.' }, 200);
     }
 
-    // 2) market data per token (parallel single-mint — reliable) + 3) authorities (1 batched RPC)
-    const [pairsArr, accInfos] = await Promise.all([
-      Promise.all(universe.map((m) => dexGet(`https://api.dexscreener.com/latest/dex/tokens/${m}`))),
+    // 2) market data, batched (≤30 mints/call) + 3) authorities (1 batched RPC)
+    const chunks = []; for (let i = 0; i < universe.length; i += 30) chunks.push(universe.slice(i, i + 30));
+    const [pairResults, accInfos] = await Promise.all([
+      Promise.all(chunks.map((ch) => dexGet('https://api.dexscreener.com/latest/dex/tokens/' + ch.join(',')))),
       rpc('getMultipleAccounts', [universe, { encoding: 'jsonParsed' }]).catch(() => null),
     ]);
+    const pairsByMint = {};
+    for (const r of pairResults) for (const p of (r && r.pairs) || []) { const m = p.baseToken && p.baseToken.address; if (m) (pairsByMint[m] = pairsByMint[m] || []).push(p); }
 
     const factorWeight = (f) => arch.g[f.g] || 50;
     const rows = universe.map((mint, i) => {
-      const dr = pairsArr[i];
-      const p = pickPair(dr && dr.pairs, mint);
+      const p = pickPair(pairsByMint[mint], mint);
       if (!p) return null;
       const info = accInfos && accInfos.value && accInfos.value[i] && accInfos.value[i].data && accInfos.value[i].data.parsed && accInfos.value[i].data.parsed.info;
       const mintAuth = info ? info.mintAuthority !== null : null;
