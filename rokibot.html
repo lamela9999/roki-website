@@ -178,7 +178,7 @@ footer.site b{color:var(--coral)}
         <button data-view="overview" class="active">Overview</button>
         <button data-view="configure">Configure</button>
         <button data-view="discover">Discover</button>
-        <button data-view="paperbot">Paper Bot</button>
+        <button data-view="paperbot">🔬 Lab</button>
         <button data-view="intel">Intel</button>
         <button data-view="roadmap">Roadmap</button>
       </nav>
@@ -187,7 +187,7 @@ footer.site b{color:var(--coral)}
         <option value="overview">Overview</option>
         <option value="configure">Configure</option>
         <option value="discover">Discover</option>
-        <option value="paperbot">Paper Bot</option>
+        <option value="paperbot">🔬 Lab</option>
         <option value="intel">Intel</option>
         <option value="roadmap">Roadmap</option>
       </select>
@@ -336,15 +336,13 @@ footer.site b{color:var(--coral)}
 
   <!-- PAPER BOT -->
   <section class="view" id="view-paperbot">
-    <h1>Paper bots <span class="badge b-ok" style="vertical-align:middle">10 archetypes · live prices · fake money</span></h1>
-    <p class="muted" style="margin:0 0 14px;font-size:14px"><b>10 bots race head-to-head</b> — one per archetype, each a separate <b>$1,000 demo wallet</b> with its own risk profile. Every scan, each bot finds promising trending tokens (Mode A), buys what clears its bar, and sells on take-profit / stop-loss (Mode B) — on <b>real live prices</b>, no real money. The leaderboard shows which archetype is winning; click any bot for its positions + full trade history. <span class="faint">(Runs while this tab is open; 24/7 unattended needs the backend.)</span></p>
+    <h1>The Lab <span class="badge b-ok" style="vertical-align:middle"><span id="labLiveDot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#0F7A45;margin-right:5px;vertical-align:middle"></span>always live</span></h1>
+    <p class="muted" style="margin:0 0 14px;font-size:14px"><b>10 archetype bots, each a $2,000 demo wallet, trading the live Solana market 24/7 — even when nobody's watching.</b> They run on a server, not in your browser. Every day each bot reviews its own trades, learns a lesson, and adjusts its own strategy — and we keep the full day-by-day journal of how it changed. A bot that hits <b>10× ($20k)</b> graduates 🏆; one that loses <b>90%</b> busts 💀. Watch which archetype actually makes money — that's the one worth copying. <span class="faint">No real money, no wallet, ever.</span></p>
     <div class="flex gap8 wrap" style="margin:0 0 16px;align-items:center">
-      <button class="btn primary small" id="pbToggle" onclick="pbToggle()">▶ Start all 10</button>
-      <button class="btn small" onclick="pbStep()">Step once</button>
-      <button class="btn small" onclick="pbReset()">Reset</button>
-      <span class="faint" style="font-size:12px" id="pbStatus">idle</span>
+      <button class="btn small" id="labRefresh" onclick="labFetch(false)">↻ Refresh now</button>
+      <span class="faint mono" style="font-size:12px" id="labStatus">loading…</span>
     </div>
-    <div id="pbBody"></div>
+    <div id="labBody"><div class="faint" style="padding:24px 0">Loading the lab…</div></div>
   </section>
 
   <!-- INTEL -->
@@ -417,7 +415,7 @@ function show(v){
   document.getElementById('view-'+v).classList.add('active');
   document.querySelectorAll('#nav button').forEach(function(b){b.classList.toggle('active',b.dataset.view===v)});
   if(v==='discover')maybeLoadBoard();
-  if(v==='paperbot'){pbLoad();pbRender();}
+  if(v==='paperbot'){labEnter();}else{labLeave();}
   if(v==='intel')loadSmartWallets();
   if(v==='intel')maybeLoadRegime();
   var mn=document.getElementById('mobnav');if(mn)mn.value=v;
@@ -838,73 +836,98 @@ function renderSmartWallets(d){
     +'<div class="note"><span class="tick mid"></span> Real wallets trading the current trending tokens, ranked by net SOL (recent-window proxy, not lifetime PnL). Click an address to copy. The chain-wide maintained list is the Brain (backend).</div></div>';
 }
 
-/* ---------- PAPER BOT: demo-balance simulator on live prices ---------- */
-var PB=null, pbTimer=null, PB_OPEN=null;
-function pbUsd(v){v=v||0;var s=v<0?'-':'';v=Math.abs(v);if(v>=1e6)return s+'$'+(v/1e6).toFixed(2)+'M';return s+'$'+v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
-function pbWallet(){return {cash:1000,positions:{},trades:[],realized:0,wins:0,losses:0};}
-function pbDefault(){var w={};ARCH.forEach(function(a){w[a.id]=pbWallet();});return {wallets:w,startedTs:Date.now(),ticks:0};}
-function pbLoad(){try{PB=JSON.parse(localStorage.getItem('roki_paperbot_v2'))||pbDefault();}catch(e){PB=pbDefault();}if(!PB||!PB.wallets)PB=pbDefault();ARCH.forEach(function(a){if(!PB.wallets[a.id])PB.wallets[a.id]=pbWallet();});}
-function pbSave(){try{localStorage.setItem('roki_paperbot_v2',JSON.stringify(PB));}catch(e){}}
-function pbReset(){if(!confirm('Reset all 10 bots to $1,000 and clear every trade?'))return;pbStop();PB=pbDefault();pbSave();pbRender();}
-function pbStop(){if(pbTimer){clearInterval(pbTimer);pbTimer=null;}var b=document.getElementById('pbToggle');if(b)b.textContent='▶ Start all 10';var s=document.getElementById('pbStatus');if(s)s.textContent='paused';}
-function pbToggle(){if(pbTimer){pbStop();return;}document.getElementById('pbToggle').textContent='⏸ Pause all';document.getElementById('pbStatus').textContent='running · scanning every 45s';pbStep();pbTimer=setInterval(pbStep,45000);}
-function pbParams(dial){var d=dial;var posPct=(1+d/100*24)/100;return {posSize:1000*posPct,maxPos:Math.max(2,Math.min(8,Math.floor(0.6/posPct))),threshold:Math.round(70-d/100*25),tp:Math.round(20+d/100*60),sl:Math.round(8+d/100*42),slip:(0.5+d/100*4.5)/100};}
-async function pbStep(){
-  if(!PB)pbLoad();
-  var st=document.getElementById('pbStatus');if(st)st.textContent='scanning…';
-  var priceOf={},scoreOf={};
-  try{
-    var d=await withTimeout(fetch('/api/discoverall').then(function(r){return r.json();}),30000);
-    (d.results||[]).forEach(function(r){if(r.market&&r.market.priceUsd>0){priceOf[r.mint]=r.market.priceUsd;scoreOf[r.mint]={symbol:r.symbol,scores:r.scores};}});
-  }catch(e){if(st)st.textContent='backend unavailable — retry';return;}
-  if(!Object.keys(priceOf).length){if(st)st.textContent='no trending data right now — retry';return;}
-  // price held tokens that fell out of the trending universe (bounded)
-  var need={};ARCH.forEach(function(a){var w=PB.wallets[a.id];for(var m in w.positions)if(priceOf[m]==null)need[m]=1;});
-  var extra=Object.keys(need).slice(0,8);
-  for(var i=0;i<extra.length;i++){try{var s=await withTimeout(fetch('/api/scan?mint='+encodeURIComponent(extra[i])).then(function(r){return r.json();}),20000);if(s&&s.market&&s.market.priceUsd>0)priceOf[extra[i]]=s.market.priceUsd;}catch(e){}}
-  // run all 10 wallets off the one scan
-  ARCH.forEach(function(a){
-    var w=PB.wallets[a.id];var p=pbParams(a.dial);
-    for(var m in w.positions){var pos=w.positions[m];var price=priceOf[m];if(price==null||!(price>0))continue;pos.last=price;var up=(price/pos.entry-1)*100;if(up>=p.tp)pbSell(w,m,price,'TP +'+p.tp+'%',p);else if(up<=-p.sl)pbSell(w,m,price,'SL -'+p.sl+'%',p);}
-    var held=Object.keys(w.positions).length;
-    var cands=Object.keys(priceOf).filter(function(m){var sc=scoreOf[m]&&scoreOf[m].scores&&scoreOf[m].scores[a.id];return sc&&!sc.r&&sc.c>=p.threshold&&!w.positions[m];}).sort(function(x,y){return scoreOf[y].scores[a.id].c-scoreOf[x].scores[a.id].c;});
-    for(var j=0;j<cands.length&&held<p.maxPos&&w.cash>=p.posSize;j++){pbBuy(w,cands[j],priceOf[cands[j]],scoreOf[cands[j]].symbol,p);held++;}
-  });
-  PB.ticks++;pbSave();pbRender();
-  if(st)st.textContent=(pbTimer?'running · ':'')+'last scan '+new Date().toLocaleTimeString();
+/* ---------- THE LAB: viewer for the 24/7 server-side bot competition ---------- */
+var LAB=null, labTimer=null, LAB_OPEN=null;
+function lm(v){v=Math.round(v||0);var s=v<0?'-':'';return s+'$'+Math.abs(v).toLocaleString('en-US');}
+function labSpark(curve){
+  if(!curve||curve.length<2)return '';
+  var vs=curve.map(function(p){return p.v;});var lo=Math.min.apply(null,vs),hi=Math.max.apply(null,vs);if(hi===lo)hi=lo+1;
+  var W=240,H=40,n=curve.length;
+  var yOf=function(val){return (H-((val-lo)/(hi-lo))*(H-4)-2);};
+  var pts=curve.map(function(p,i){return ((i/(n-1))*W).toFixed(1)+','+yOf(p.v).toFixed(1);}).join(' ');
+  var col=vs[vs.length-1]>=2000?'#0F7A45':'#B02A2A';var zy=yOf(2000).toFixed(1);
+  return '<svg width="'+W+'" height="'+H+'" style="display:block"><line x1="0" y1="'+zy+'" x2="'+W+'" y2="'+zy+'" stroke="var(--hairline)" stroke-dasharray="3 3"/><polyline points="'+pts+'" fill="none" stroke="'+col+'" stroke-width="1.6"/></svg>';
 }
-function pbBuy(w,mint,price,symbol,p){var eff=price*(1+p.slip);var usd=p.posSize;var qty=usd*0.99/eff;w.cash-=usd;w.positions[mint]={symbol:symbol,entry:eff,usdIn:usd,qty:qty,last:price,ts:Date.now()};w.trades.unshift({ts:Date.now(),side:'BUY',symbol:symbol,usd:usd});}
-function pbSell(w,mint,price,reason,p){var pos=w.positions[mint];if(!pos)return;var eff=price*(1-p.slip);var proceeds=pos.qty*eff*0.99;w.cash+=proceeds;var pnl=proceeds-pos.usdIn;w.realized+=pnl;if(pnl>=0)w.wins++;else w.losses++;w.trades.unshift({ts:Date.now(),side:'SELL',symbol:pos.symbol,usd:proceeds,pnl:pnl,reason:reason});delete w.positions[mint];}
-function pbTotal(w){var v=w.cash;for(var m in w.positions){var pos=w.positions[m];v+=pos.qty*(pos.last||pos.entry);}return v;}
-function pbToggleDetail(id){PB_OPEN=PB_OPEN===id?null:id;pbRender();}
-function pbDetail(w){
-  var pk=Object.keys(w.positions);
-  var pr=pk.length?pk.map(function(m){var p=w.positions[m];var now=p.last||p.entry;var up=(now/p.entry-1)*100;return '<div style="display:grid;grid-template-columns:1fr 56px 64px;gap:6px;font-size:11px;padding:3px 0"><span>$'+escapeHtml(p.symbol||'?')+'</span><span class="mono" style="text-align:right;color:'+(up>=0?'#0F7A45':'#B02A2A')+'">'+(up>=0?'+':'')+up.toFixed(0)+'%</span><span class="mono faint" style="text-align:right">'+pbUsd(p.qty*now)+'</span></div>';}).join(''):'<div class="faint" style="font-size:11px">no open positions</div>';
-  var tr=w.trades.length?w.trades.slice(0,10).map(function(t){var c=t.side==='BUY'?'var(--blue-ink)':(t.pnl>=0?'#0F7A45':'#B02A2A');return '<div style="display:grid;grid-template-columns:44px 38px 1fr 74px;gap:6px;font-size:11px;padding:3px 0"><span class="faint mono">'+new Date(t.ts).toLocaleTimeString().slice(0,5)+'</span><span class="mono" style="color:'+c+'">'+t.side+'</span><span>$'+escapeHtml(t.symbol||'?')+(t.reason?' <span class="faint">'+escapeHtml(t.reason)+'</span>':'')+'</span><span class="mono" style="text-align:right">'+(t.side==='SELL'?((t.pnl>=0?'+':'')+pbUsd(t.pnl)):pbUsd(t.usd))+'</span></div>';}).join(''):'<div class="faint" style="font-size:11px">no trades yet</div>';
-  return '<div style="background:var(--cream);border:1.5px solid var(--ink);border-radius:8px;padding:10px;margin:4px 0 10px"><div class="klabel" style="margin-bottom:3px">open positions</div>'+pr+'<div class="klabel" style="margin:8px 0 3px">recent trades</div>'+tr+'</div>';
+function labDrift(cur,base){var d=cur-base;if(d===0)return '<span class="faint">=</span>';return '<span class="faint">'+(d>0?'▲':'▼')+'</span>';}
+function labStatusBadge(b){
+  if(b.status==='graduated')return '<span class="badge" style="background:#FBE7A1;border-color:#B8860B;color:#7a5b00">🏆 10× champion</span>';
+  if(b.status==='busted')return '<span class="badge" style="background:#F3D6D2;border-color:#B02A2A;color:#8a1f1f">💀 busted</span>';
+  return '<span class="badge b-ok">● trading</span>';
 }
-function pbRender(){
-  var box=document.getElementById('pbBody');if(!box)return;if(!PB)pbLoad();
-  var rows=ARCH.map(function(a){var w=PB.wallets[a.id];var tot=pbTotal(w);var pnl=tot-1000;var closed=w.wins+w.losses;return {a:a,w:w,tot:tot,pnl:pnl,wr:closed?Math.round(w.wins/closed*100):null,open:Object.keys(w.positions).length};}).sort(function(x,y){return y.tot-x.tot;});
-  var grand=rows.reduce(function(s,r){return s+r.tot;},0),gpnl=grand-10000;
-  var head='<div class="card" style="margin-bottom:16px"><div class="row wrap"><div><div class="klabel">10 bots · combined paper value</div><div class="mono" style="font-size:28px;font-weight:700">'+pbUsd(grand)+'</div><div class="mono" style="font-weight:700;color:'+(gpnl>=0?'#0F7A45':'#B02A2A')+'">'+(gpnl>=0?'+':'')+pbUsd(gpnl)+' ('+(gpnl/100>=0?'+':'')+(gpnl/100).toFixed(1)+'%)</div></div><div style="text-align:right"><div class="faint mono" style="font-size:11px">each started $1,000</div><div class="faint mono" style="font-size:11px">'+PB.ticks+' scans</div></div></div></div>';
-  var lead='<div class="card"><h3>Leaderboard — 10 archetypes</h3><div class="note" style="margin:0 0 4px"><span class="faint">#· archetype· balance· PnL%· win%· open  (click a row for its positions + trades)</span></div>'
-    +rows.map(function(r,i){var col=r.pnl>=0?'#0F7A45':'#B02A2A';
-      return '<div onclick="pbToggleDetail(\''+r.a.id+'\')" style="cursor:pointer;display:grid;grid-template-columns:20px 1fr 84px 70px 48px 34px;gap:6px;align-items:center;border-bottom:1px solid var(--hairline);padding:8px 0">'
-        +'<div class="mono faint">'+(i+1)+'</div>'
-        +'<div><b style="font-size:13px">'+escapeHtml(r.a.name)+'</b> <span class="faint" style="font-size:10px">risk '+r.a.dial+'</span></div>'
-        +'<div class="mono" style="text-align:right">'+pbUsd(r.tot)+'</div>'
-        +'<div class="mono" style="text-align:right;color:'+col+';font-weight:700">'+(r.pnl>=0?'+':'')+(r.pnl/10).toFixed(1)+'%</div>'
-        +'<div class="mono faint" style="text-align:right;font-size:11px">'+(r.wr!=null?r.wr+'%':'—')+'</div>'
-        +'<div class="mono faint" style="text-align:right;font-size:11px">'+r.open+'</div></div>'
-        +(PB_OPEN===r.a.id?pbDetail(r.w):'');
-    }).join('')
-    +'<div class="note"><span class="tick mid"></span> 10 bots, each a $1,000 paper wallet trading the live trending universe with its own archetype + risk profile (slippage + 1% fee modeled). This is the validation data — the configs that consistently win earn real allocation later. Runs while this tab is open; 24/7 unattended = the backend phase.</div></div>';
+function labDetail(b){
+  var P=b.params,BP=b.baseParams,bpos=Math.round(BP.posPct*100);
+  var strat='<div style="background:var(--cream);border:1.5px solid var(--ink);border-radius:8px;padding:10px;margin:6px 0">'
+    +'<div class="klabel" style="margin-bottom:6px">its strategy right now <span class="faint" style="text-transform:none">(vs the profile it started with)</span></div>'
+    +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;font-size:12px">'
+    +'<div><div class="faint">entry bar</div><div class="mono" style="font-weight:700">'+P.threshold+' '+labDrift(P.threshold,BP.threshold)+'</div><div class="faint" style="font-size:10px">started '+BP.threshold+'</div></div>'
+    +'<div><div class="faint">take-profit</div><div class="mono" style="font-weight:700">+'+P.tp+'% '+labDrift(P.tp,BP.tp)+'</div><div class="faint" style="font-size:10px">started +'+BP.tp+'%</div></div>'
+    +'<div><div class="faint">stop-loss</div><div class="mono" style="font-weight:700">-'+P.sl+'% '+labDrift(P.sl,BP.sl)+'</div><div class="faint" style="font-size:10px">started -'+BP.sl+'%</div></div>'
+    +'<div><div class="faint">bet size</div><div class="mono" style="font-weight:700">'+P.posPct+'% '+labDrift(P.posPct,bpos)+'</div><div class="faint" style="font-size:10px">started '+bpos+'%</div></div>'
+    +'</div>'+(b.equityCurve&&b.equityCurve.length>1?'<div style="margin-top:8px"><div class="klabel" style="margin-bottom:2px">equity (dashed = $2,000 start)</div>'+labSpark(b.equityCurve)+'</div>':'')+'</div>';
+  var pos=b.positions.length?b.positions.map(function(p){var col=p.upPct>=0?'#0F7A45':'#B02A2A';return '<div style="display:grid;grid-template-columns:1fr 60px 70px;gap:6px;font-size:11px;padding:3px 0"><span>$'+escapeHtml(p.symbol||'?')+'</span><span class="mono" style="text-align:right;color:'+col+'">'+(p.upPct>=0?'+':'')+p.upPct+'%</span><span class="mono faint" style="text-align:right">'+lm(p.value)+'</span></div>';}).join(''):'<div class="faint" style="font-size:11px">holding cash — no open positions</div>';
+  var log=b.log.length?b.log.map(function(t){
+    if(t.side==='BUY')return '<div style="display:grid;grid-template-columns:30px 38px 1fr 70px;gap:6px;font-size:11px;padding:3px 0"><span class="faint mono">t'+t.tick+'</span><span class="mono" style="color:var(--blue-ink)">BUY</span><span>$'+escapeHtml(t.symbol||'?')+'</span><span class="mono faint" style="text-align:right">'+lm(t.usd)+'</span></div>';
+    var win=t.pnl>=0;var col=win?'#0F7A45':'#B02A2A';
+    return '<div style="display:grid;grid-template-columns:30px 38px 1fr 70px;gap:6px;font-size:11px;padding:3px 0"><span class="faint mono">t'+t.tick+'</span><span class="mono" style="color:'+col+'">SELL</span><span>$'+escapeHtml(t.symbol||'?')+' <span class="faint">'+escapeHtml(t.reason||'')+'</span> '+(win?'<span style="color:#0F7A45">✓</span>':'<span style="color:#B02A2A">✗ mistake</span>')+'</span><span class="mono" style="text-align:right;color:'+col+';font-weight:700">'+(win?'+':'')+lm(t.pnl)+'</span></div>';
+  }).join(''):'<div class="faint" style="font-size:11px">no trades yet</div>';
+  var jour=b.history.length?b.history.map(function(h){
+    var diffs='';
+    if(h.before&&h.after){var parts=[];if(h.before.threshold!==h.after.threshold)parts.push('bar '+h.before.threshold+'→'+h.after.threshold);if(h.before.tp!==h.after.tp)parts.push('TP '+h.before.tp+'→'+h.after.tp+'%');if(h.before.sl!==h.after.sl)parts.push('SL '+h.before.sl+'→'+h.after.sl+'%');if(h.before.posPct!==h.after.posPct)parts.push('size '+Math.round(h.before.posPct*100)+'→'+Math.round(h.after.posPct*100)+'%');if(parts.length)diffs='<div class="mono faint" style="font-size:10px;margin-top:2px">'+parts.join(' · ')+'</div>';}
+    var meta=h.wr!=null?('win rate '+h.wr+'% · '+h.trades+' trades · day P/L '+(h.realizedDay>=0?'+':'')+lm(h.realizedDay)):'';
+    return '<div style="border-left:2px solid var(--ink);padding:4px 0 4px 8px;margin:6px 0"><div style="font-size:11px"><b>Day '+h.day+'</b> — '+escapeHtml(h.headline||'')+'</div>'+(meta?'<div class="faint" style="font-size:10px">'+meta+'</div>':'')+'<div class="faint" style="font-size:11px;margin-top:2px">'+h.changes.map(function(c){return '· '+escapeHtml(c);}).join('<br>')+'</div>'+diffs+'</div>';
+  }).join(''):'<div class="faint" style="font-size:11px">no lessons yet — the first lesson lands after day 1.</div>';
+  return '<div style="background:var(--paper);border:1.5px solid var(--ink);border-radius:8px;padding:12px;margin:2px 0 12px">'
+    +strat
+    +'<div class="klabel" style="margin:10px 0 3px">open positions</div>'+pos
+    +'<div class="klabel" style="margin:12px 0 3px">recent trades <span class="faint" style="text-transform:none">(✓ good · ✗ mistake)</span></div>'+log
+    +'<div class="klabel" style="margin:14px 0 3px">📓 learning journal <span class="faint" style="text-transform:none">— what it changed, day by day</span></div>'+jour
+    +'</div>';
+}
+function labToggle(id){LAB_OPEN=LAB_OPEN===id?null:id;labRender();}
+function labRender(){
+  var box=document.getElementById('labBody');if(!box||!LAB)return;
+  var grand=LAB.bots.reduce(function(s,b){return s+b.equity;},0);
+  var gbase=LAB.bots.length*LAB.start;var gpnl=grand-gbase;
+  var grad=LAB.bots.filter(function(b){return b.status==='graduated';}).length;
+  var bust=LAB.bots.filter(function(b){return b.status==='busted';}).length;
+  var head='<div class="card" style="margin-bottom:16px"><div class="row wrap" style="align-items:flex-start">'
+    +'<div><div class="klabel">Day '+LAB.day+(LAB.season>1?' · Season '+LAB.season:'')+' · '+LAB.tick+' rounds traded</div>'
+    +'<div class="mono" style="font-size:28px;font-weight:700">'+lm(grand)+'</div>'
+    +'<div class="mono" style="font-weight:700;color:'+(gpnl>=0?'#0F7A45':'#B02A2A')+'">'+(gpnl>=0?'+':'')+lm(gpnl)+' combined ('+(gpnl/gbase*100>=0?'+':'')+(gpnl/gbase*100).toFixed(1)+'%)</div></div>'
+    +'<div style="text-align:right"><div class="faint mono" style="font-size:11px">10 bots · $'+LAB.start.toLocaleString()+' each</div>'
+    +'<div class="mono" style="font-size:11px">● '+LAB.activeCount+' trading'+(grad?' · 🏆 '+grad:'')+(bust?' · 💀 '+bust:'')+'</div>'
+    +'<div class="faint mono" style="font-size:11px">running '+LAB.ageDays.toFixed(1)+' days</div></div>'
+    +'</div></div>';
+  var rows=LAB.bots.map(function(b,i){
+    var col=b.pnl>=0?'#0F7A45':'#B02A2A';var medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'';
+    return '<div onclick="labToggle(\''+b.id+'\')" style="cursor:pointer;display:grid;grid-template-columns:26px 1fr 92px 64px 78px;gap:6px;align-items:center;border-bottom:1px solid var(--hairline);padding:9px 0">'
+      +'<div class="mono" style="font-size:13px">'+medal+'</div>'
+      +'<div><b style="font-size:13px">'+escapeHtml(b.name)+'</b> <span class="faint" style="font-size:10px">risk '+b.dial+'</span> '+labStatusBadge(b)+(b.lives>1?' <span class="faint" style="font-size:10px">life '+b.lives+'</span>':'')+'<div class="faint" style="font-size:10px">'+b.openCount+' open · '+(b.winRate!=null?b.winRate+'% win · ':'')+b.trades+' closed</div></div>'
+      +'<div class="mono" style="text-align:right;font-weight:700">'+lm(b.equity)+'</div>'
+      +'<div class="mono" style="text-align:right;color:'+col+';font-weight:700">'+(b.pnl>=0?'+':'')+b.pnlPct+'%</div>'
+      +'<div class="mono faint" style="text-align:right;font-size:11px">'+(b.params?'bar '+b.params.threshold:'')+'</div>'
+      +'</div>'+(LAB_OPEN===b.id?'<div style="grid-column:1/-1">'+labDetail(b)+'</div>':'');
+  }).join('');
+  var lead='<div class="card"><h3>Leaderboard — most → least profitable</h3>'
+    +'<div class="note" style="margin:0 0 6px"><span class="faint">rank · archetype · paper balance · PnL% · current entry bar &nbsp;(click any bot for its strategy, trades + learning journal)</span></div>'
+    +rows
+    +'<div class="note"><span class="tick mid"></span> Each bot is a $'+LAB.start.toLocaleString()+' paper wallet trading the live trending Solana universe with its own archetype + risk profile (slippage + 1% fee modeled). It runs on the server 24/7 and adapts daily. The archetype at the top is the one this market is currently rewarding — that’s the read for which style to copy on a real wallet. Paper only; no funds, no signing.</div></div>';
   box.innerHTML=head+lead;
 }
+function labFetch(advance){
+  var st=document.getElementById('labStatus');if(st)st.textContent='refreshing…';
+  var url='/api/lab'+(advance?'?peek=1':'');
+  withTimeout(fetch(url).then(function(r){return r.json();}),35000).then(function(d){
+    if(d&&d.bots){LAB=d;labRender();
+      if(st)st.textContent='updated '+new Date().toLocaleTimeString()+' · next round ~'+Math.max(1,Math.round(d.nextTickInSec/60))+'m';
+    } else {if(st)st.textContent=(d&&d.error)?d.error:'no data yet — retry';}
+  }).catch(function(){if(st)st.textContent='backend slow — retry in a moment';});
+}
+function labEnter(){labFetch(false);if(labTimer)clearInterval(labTimer);labTimer=setInterval(function(){labFetch(true);},30000);}
+function labLeave(){if(labTimer){clearInterval(labTimer);labTimer=null;}}
 
 /* ---------- init ---------- */
-renderArchbar();selectArch('balanced');renderChat();onDial(50);initGate();pbLoad();
+renderArchbar();selectArch('balanced');renderChat();onDial(50);initGate();
 </script>
 </body>
 </html>
