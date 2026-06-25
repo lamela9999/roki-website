@@ -220,6 +220,7 @@ function applyStrategyVersion(state, nowTs) {
   state.strategyVersion = STRATEGY_VERSION;
   state.versionStartedTs = nowTs;
   state.season = 1; state.day = 0; state.lastLearnDay = 0; state.startedTs = nowTs; state.tick = 0;
+  state.lastTickTs = 0; // let the fresh run start trading immediately
   return { key: KVKEY + ':archive:v' + from, data: { version: from, summary, ledgers: archiveLedgers, ts: nowTs } };
 }
 
