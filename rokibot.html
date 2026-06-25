@@ -837,7 +837,14 @@ function renderSmartWallets(d){
 }
 
 /* ---------- THE LAB: viewer for the 24/7 server-side bot competition ---------- */
-var LAB=null, labTimer=null, LAB_OPEN=null, LAB_FULL={}, LAB_W=null;
+var LAB=null, labTimer=null, LAB_OPEN=null, LAB_FULL={}, LAB_W=null, LAB_WHO={}, LAB_WHO_OPEN=null;
+function labWho(mint){if(LAB_WHO_OPEN===mint){LAB_WHO_OPEN=null;labRender();return;}LAB_WHO_OPEN=mint;labRender();if(!LAB_WHO[mint]){withTimeout(fetch('/api/walletdb?token='+encodeURIComponent(mint)).then(function(r){return r.json();}),20000).then(function(d){LAB_WHO[mint]=d||{wallets:[]};if(LAB_WHO_OPEN===mint)labRender();}).catch(function(){LAB_WHO[mint]={wallets:[]};if(LAB_WHO_OPEN===mint)labRender();});}}
+function labWhoBlock(mint){
+  if(LAB_WHO_OPEN!==mint)return ' <span class="wchip mono" style="font-size:9px;cursor:pointer" onclick="labWho(\''+mint+'\')">🐋 who aped</span>';
+  var d=LAB_WHO[mint];
+  var body=!d?'<span class="faint">loading…</span>':((d.wallets&&d.wallets.length)?('<div class="faint" style="font-size:9px;margin-bottom:2px">'+(d.traders||d.wallets.length)+' traders seen · ranked by net SOL on $'+escapeHtml(d.sym||'?')+'</div>'+d.wallets.slice(0,8).map(function(w){var col=w.net>=0?'#0F7A45':'#B02A2A';return '<div style="display:flex;gap:6px;font-size:10px;padding:1px 0"><a href="https://solscan.io/account/'+w.addr+'" target="_blank" rel="noopener" class="mono" style="text-decoration:none">'+w.addr.slice(0,4)+'…'+w.addr.slice(-4)+' ↗</a><span style="flex:1"></span><span class="mono" style="color:'+col+'">'+(w.net>=0?'+':'')+w.net+' SOL</span><span class="faint mono">'+w.n+'tx</span></div>';}).join('')):'<span class="faint">not analyzed yet — the wallet scanner reaches it soon</span>');
+  return ' <span class="wchip mono" style="font-size:9px;cursor:pointer" onclick="labWho(\''+mint+'\')">🐋 hide</span><div style="margin-top:3px;padding:5px 7px;background:var(--cream);border:1px solid var(--hairline);border-radius:5px">'+body+'</div>';
+}
 function lm(v){v=Math.round(v||0);var s=v<0?'-':'';return s+'$'+Math.abs(v).toLocaleString('en-US');}
 function fmtCap(v){v=+v||0;if(v>=1e9)return '$'+(v/1e9).toFixed(2)+'B';if(v>=1e6)return '$'+(v/1e6).toFixed(2)+'M';if(v>=1e3)return '$'+(v/1e3).toFixed(0)+'K';return '$'+Math.round(v);}
 function fmtPx(p){p=+p||0;if(p<=0)return '$0';if(p>=1)return '$'+p.toFixed(3);if(p>=0.001)return '$'+p.toFixed(5);return '$'+p.toPrecision(2);}
@@ -924,7 +931,7 @@ function labDetail(b){
     return '<div style="border-bottom:1px solid var(--hairline);padding:6px 0">'
       +'<div style="display:flex;gap:5px;align-items:baseline"><span style="font-weight:700">$'+escapeHtml(p.symbol||'?')+'</span>'+labSrcTag(p.src)+'<span style="flex:1"></span><span class="mono" style="color:'+col+';font-weight:700">'+(p.upPct>=0?'+':'')+p.upPct+'%</span> <span class="mono faint">'+lm(p.value)+'</span></div>'
       +'<div class="faint mono" style="font-size:10px;margin-top:1px">bought '+fmtT(p.tsIn)+' · '+fmtCap(p.mcapIn)+' mcap · '+fmtPx(p.entryPrice)+' · '+lm(p.usdIn)+' → '+fmtQty(p.qty)+' tok'+(p.scoreIn!=null?' · scored '+p.scoreIn+'/≥'+p.barIn:'')+(p.slipInPct!=null?' · slip '+p.slipInPct+'%':'')+'</div>'
-      +'<div class="faint mono" style="font-size:10px">now · '+fmtCap(p.mcapNow)+' mcap · '+fmtPx(p.nowPrice)+'</div>'
+      +'<div class="faint mono" style="font-size:10px">now · '+fmtCap(p.mcapNow)+' mcap · '+fmtPx(p.nowPrice)+(p.mint?labWhoBlock(p.mint):'')+'</div>'
       +'</div>';
   }).join(''):'<div class="faint" style="font-size:11px">holding cash — no open positions</div>';
   var fullT=LAB_FULL[b.id];

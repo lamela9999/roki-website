@@ -40,6 +40,15 @@ export async function onRequestGet({ request, env }) {
     return json({ addr, ...w, tokens: Object.keys(w.toks || {}) }, 200, { 'cache-control': 'no-store' });
   }
 
+  // ---- who aped a token: the wallets we've observed swapping it, ranked by net SOL on it ----
+  const tokenMint = url.searchParams.get('token');
+  if (tokenMint) {
+    const tw = await KV.get('radar:db:tokenwallets', 'json').catch(() => null);
+    const e = tw && tw.tokens && tw.tokens[tokenMint];
+    if (!e) return json({ mint: tokenMint, wallets: [], note: 'not analyzed yet' }, 200, { 'cache-control': 'no-store' });
+    return json({ mint: tokenMint, ...e }, 200, { 'cache-control': 'public, max-age=60' });
+  }
+
   // ---- leaderboard (default, read-only) ----
   if (!url.searchParams.get('scan')) {
     const db = await KV.get(DBKEY, 'json').catch(() => null);
@@ -87,6 +96,7 @@ export async function onRequestGet({ request, env }) {
   db.scans++; db.updated = nowTs;
 
   let analyzed = 0, newW = 0, txSeen = 0;
+  const tokWalletsBatch = {}; // mint -> top wallets on THIS token (for the "who aped" view)
   for (const mint of batch) {
     try {
       const r = await fetch(`https://api.helius.xyz/v0/addresses/${mint}/transactions?api-key=${KEY}&type=SWAP&limit=${TX_PER}`);
@@ -113,6 +123,10 @@ export async function onRequestGet({ request, env }) {
         w.netSol = +(w.outSol - w.inSol).toFixed(3);
         w.toks[sym] = (w.toks[sym] || 0) + 1;
       }
+      // top wallets ON this token (ranked by net SOL on it) → the "who aped" snapshot
+      const tw = Object.keys(per).map((a) => ({ addr: a, net: +((per[a].out - per[a].in) / 1e9).toFixed(3), n: per[a].n }))
+        .sort((x, y) => y.net - x.net).slice(0, 15);
+      tokWalletsBatch[mint] = { sym, updated: nowTs, traders: Object.keys(per).length, wallets: tw };
     } catch (e) { /**/ }
   }
 
@@ -121,6 +135,18 @@ export async function onRequestGet({ request, env }) {
   if (keys.length > WMAX) { keys.sort((a, b) => (db.wallets[a].last || 0) - (db.wallets[b].last || 0)); for (let i = 0; i < keys.length - WMAX; i++) delete db.wallets[keys[i]]; }
   db.n = Object.keys(db.wallets).length;
   await KV.put(DBKEY, JSON.stringify(db)).catch(() => {});
+
+  // merge the per-token "who aped" snapshots (own KV key, bounded by recency)
+  if (Object.keys(tokWalletsBatch).length) {
+    try {
+      let twdb = await KV.get('radar:db:tokenwallets', 'json').catch(() => null);
+      if (!twdb || !twdb.tokens) twdb = { tokens: {} };
+      Object.assign(twdb.tokens, tokWalletsBatch);
+      const tk = Object.keys(twdb.tokens);
+      if (tk.length > 2500) { tk.sort((a, b) => (twdb.tokens[a].updated || 0) - (twdb.tokens[b].updated || 0)); for (let i = 0; i < tk.length - 2500; i++) delete twdb.tokens[tk[i]]; }
+      await KV.put('radar:db:tokenwallets', JSON.stringify(twdb));
+    } catch (e) { /**/ }
+  }
 
   // advance the trending cursor (separate key) so the next scan covers different tokens
   try { await KV.put('radar:db:wcursor', JSON.stringify({ i: (cursor + BATCH) % Math.max(1, trending.length || 1) })); } catch (e) { /**/ }
