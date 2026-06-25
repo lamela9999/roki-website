@@ -971,9 +971,22 @@ function labRender(){
     +'<div class="note" style="margin:0 0 6px"><span class="faint">rank · archetype · paper balance · PnL% · <b>buys ≥N</b> &nbsp;(click any bot for its strategy, every trade + learning journal)</span></div>'
     +'<div class="note" style="margin:0 0 8px;font-size:11px"><span class="faint"><b>“buys ≥N”</b> = a token must score at least N/100 on that bot\'s checklist before it buys. The bot raises it when it\'s losing (gets pickier), lowers it when winning. Every trade shows entry/exit market cap, time, and the real slippage + fee haircut so you can verify it against the chart.</span></div>'
     +rows
-    +'<div class="note"><span class="tick mid"></span> Each bot is a $'+LAB.start.toLocaleString()+' paper wallet hunting a broad live universe — volume spikes, activity surges, fresh launches, accumulation + trending — with its own archetype + risk profile (slippage + 1% fee modeled). Momentum/degen lean into spikes; whales/conservatives prefer quiet accumulation. It runs on the server 24/7 and adapts daily. The archetype at the top is the one this market is currently rewarding — that’s the read for which style to copy on a real wallet. Paper only; no funds, no signing.</div></div>';
+    +'<div class="note"><span class="tick mid"></span> Each bot is a $'+LAB.start.toLocaleString()+' paper wallet hunting a broad live universe ($10k–tens of millions) with its own cap band, signal triggers + risk profile (real slippage + 1% fee modeled). It runs on the server 24/7, adapts daily, and the whole strategy gets versioned: when a run\'s mistakes are clear, we ship a new strategy version (v1 → v2 …) and archive the old one. The archetype at the top is the one this market is rewarding. Paper only; no funds, no signing.</div></div>';
   var idName={};LAB.bots.forEach(function(b){idName[b.id]=b.name.split(' ')[0];});
-  box.innerHTML=head+lead+labCalls(LAB.calls,idName);
+  box.innerHTML=head+labVersions(LAB)+lead+labCalls(LAB.calls,idName);
+}
+function labVersions(L){
+  var v=L.strategyVersion||1;
+  var dbN=L.db?L.db.tokens:0,dbS=L.db?L.db.scans:0;
+  var lessons=(L.lessons||[]).map(function(x){return '<li style="margin:3px 0">'+escapeHtml(x)+'</li>';}).join('');
+  var past=(L.versions||[]).map(function(s){
+    var col=s.pnlPct>=0?'#0F7A45':'#B02A2A';
+    return '<div style="border-top:1px solid var(--hairline);padding:6px 0;font-size:11px"><b>v'+s.version+'</b> — final <span class="mono" style="color:'+col+';font-weight:700">'+(s.pnlPct>=0?'+':'')+s.pnlPct+'%</span> over '+(s.endedTick||0)+' rounds · best '+escapeHtml((s.leader||{}).name||'?')+' ('+((s.leader||{}).pnlPct)+'%) · worst '+escapeHtml((s.worst||{}).name||'?')+' ('+((s.worst||{}).pnlPct)+'%) · <a href="/api/lab?version='+s.version+'" target="_blank" rel="noopener" style="text-decoration:underline">full ledger</a></div>';
+  }).join('');
+  return '<div class="card" style="margin-bottom:16px"><div class="row wrap" style="align-items:baseline"><h3 style="margin:0">🧪 Strategy v'+v+'</h3><span class="faint mono" style="font-size:11px">growing research DB · '+dbN.toLocaleString()+' tokens tracked · '+dbS.toLocaleString()+' scans</span></div>'
+    +(lessons?'<div class="note" style="margin:6px 0 0"><b>What v'+v+' fixed (learned from v'+(v-1)+'\'s real trades):</b><ul style="margin:4px 0 0;padding-left:16px">'+lessons+'</ul></div>':'')
+    +(past?'<div style="margin-top:8px"><div class="klabel">past versions — checkable anytime</div>'+past+'</div>':'')
+    +'</div>';
 }
 function labFetch(advance){
   var st=document.getElementById('labStatus');if(st)st.textContent='refreshing…';

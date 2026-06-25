@@ -15,6 +15,20 @@ export const onRequestOptions = () => preflight();
 
 const V = 5;                       // schema version. Bumping does NOT wipe — migrate() preserves
                                    // all trades/history/balances. Add field defaults there instead.
+// STRATEGY version. Bumping THIS archives the finished run (checkable via ?version=N) and starts
+// a fresh run with the new strategy — that's the deliberate "v1 did this, now we try v2" cycle,
+// separate from the schema version above. Each bump records the lessons that drove the change.
+const STRATEGY_VERSION = 2;
+const STRATEGY_LESSONS = {
+  2: [
+    'Chasing volume-spikes lost ~41% on average (33 trades) — v2 removes spikes as a buy trigger entirely.',
+    'Accumulation was the only signal near breakeven — v2 makes quiet accumulation the primary buy across most archetypes.',
+    'Stops were too wide (34 stop-losses cost ~$4.9k; tokens fell ~25% before exit) — v2 tightens stops to 6–22%.',
+    '$100k–1M caps bled worst (-37%); $1–10M held best (-6%) — v2 shifts every cap band upward.',
+    'Thin pools cost ~5%/side in slippage — v2 raises liquidity floors hard (12k–60k) for deeper, cheaper fills.',
+    'Sniping the first candle was -91% — v2 sniper waits for age, real liquidity and buy-pressure before entering.',
+  ],
+};
 const START = 2000;                // each wallet starts here
 const GRAD = START * 10;           // 10× → graduate (champion)
 const BUST = START * 0.10;         // lose 90% → bust (dead)
@@ -59,11 +73,12 @@ const FACTORS = [
 ];
 // how much each discovery signal nudges each archetype's score (spikes suit momentum/degen,
 // quiet accumulation suits whales/conservatives) — so the broadened universe changes behaviour
+// v2: volume-spike bonus REMOVED (it averaged -41%). Accumulation boosted + widened (only
+// signal that held up). Trending kept small; fresh small for sniper.
 const SRC_BONUS = {
-  'volume-spike': { momentum: 8, degen: 7, sniper: 6, narrative: 5 },
-  accumulation: { whale: 8, conservative: 7, smart: 6, insider: 6, safety: 5 },
-  trending: { narrative: 5, degen: 4, momentum: 3 },
-  fresh: { sniper: 7, degen: 5 },
+  accumulation: { smart: 9, insider: 9, whale: 8, conservative: 8, safety: 6, balanced: 6, momentum: 4, narrative: 4, degen: 4 },
+  trending: { narrative: 4, balanced: 2, momentum: 2 },
+  fresh: { sniper: 3 },
 };
 const SRC_RANK = ['volume-spike', 'accumulation', 'trending', 'fresh', 'boosted', 'volume', 'new-boost', 'profile'];
 const primarySrc = (sources) => { for (const s of SRC_RANK) if (sources && sources.indexOf(s) >= 0) return s; return (sources && sources[0]) || 'trending'; };
@@ -79,23 +94,25 @@ function deriveTags(p) {
   return tags;
 }
 
-// Each archetype hunts a DIFFERENT slice of the market. Bands fit the real Cloudflare-reachable
-// pool (mostly $10k–$1M with a thin tail into the tens of millions), so the risky bots feast on
-// micro-caps and the cautious ones wait for the few deep, established names. `trig(M)` is the
-// signal that makes it pull the trigger — momentum chases rising price+volume, insiders want
-// quiet early accumulation, whales want deep-liquidity dips, snipers want brand-new clean
-// launches, etc. (M = raw per-token metrics built in scanUniverse.)
+// STRATEGY v2 — rebuilt from v1's real results (v1 lost ~30% in a day). The data said:
+//   • buying AFTER a volume-spike averaged -41% → stop chasing spikes (removed as a trigger)
+//   • accumulation was the only ~breakeven signal → make it the primary buy trigger, widely
+//   • stops were too wide (tokens fell ~25% before exit) → tighter stops elsewhere (baseParams)
+//   • $100k–1M caps bled worst (-37%), $1–10M held best (-6%) → shift bands up
+//   • thin pools cost ~5%/side slippage → raise liquidity floors hard (deeper pools)
+//   • sniping the first candle was -91% → require confirmation (age, liquidity, buy-pressure)
+// `trig(M)` is the signal that makes it buy. M = raw per-token metrics from scanUniverse.
 const PROFILE = {
-  degen:        { capMin: 10e3,  capMax: 600e3, liqMin: 1500, hold: 6,  trig: (m) => m.spike || (m.ageDays != null && m.ageDays < 2 && m.pc6 > 10),                         label: 'micro-cap fresh pumps' },
-  sniper:       { capMin: 10e3,  capMax: 350e3, liqMin: 3000, hold: 4,  trig: (m) => m.ageDays != null && m.ageDays < 1.5 && m.clean && m.liq >= 3000,                      label: 'brand-new clean launches' },
-  insider:      { capMin: 20e3,  capMax: 1.5e6, liqMin: 5000, hold: 18, trig: (m) => m.accum && m.ageDays != null && m.ageDays < 6,                                        label: 'early quiet accumulation' },
-  smart:        { capMin: 30e3,  capMax: 4e6,   liqMin: 10e3, hold: 20, trig: (m) => m.accum && m.clean,                                                                    label: 'clean accumulation' },
-  momentum:     { capMin: 50e3,  capMax: 25e6,  liqMin: 12e3, hold: 10, trig: (m) => (m.pc6 > 5 && m.pc1 > 0 && m.buyRatio6 > 0.55) || m.reawaken,                          label: 'rising momentum + reawakenings' },
-  narrative:    { capMin: 40e3,  capMax: 25e6,  liqMin: 8000, hold: 14, trig: (m) => m.srcTrendy && m.pc24 > 0,                                                             label: 'hot trending narratives' },
-  balanced:     { capMin: 20e3,  capMax: 60e6,  liqMin: 6000, hold: 24, trig: () => true,                                                                                   label: 'a bit of everything' },
-  whale:        { capMin: 400e3, capMax: 300e6, liqMin: 45e3, hold: 36, trig: (m) => m.liq >= 45e3 && m.pc6 <= 3 && m.pc6 >= -12 && m.pc24 > -25,                            label: 'deep-liquidity dips' },
-  conservative: { capMin: 300e3, capMax: 300e6, liqMin: 35e3, hold: 40, trig: (m) => m.clean && m.ageDays != null && m.ageDays > 2 && m.pc6 < 1,                            label: 'established pullbacks' },
-  safety:       { capMin: 250e3, capMax: 300e6, liqMin: 40e3, hold: 40, trig: (m) => m.clean && m.liq >= 40e3 && m.pc24 >= -12 && m.pc24 <= 35,                             label: 'safest, every gate clean' },
+  degen:        { capMin: 50e3,  capMax: 3e6,   liqMin: 12e3, hold: 6,  trig: (m) => m.accum || (m.ageDays != null && m.ageDays < 2 && m.pc6 > 3 && m.pc6 < 40 && m.buyRatio6 > 0.55 && !m.spike), label: 'early movers, not blow-off tops' },
+  sniper:       { capMin: 40e3,  capMax: 2e6,   liqMin: 15e3, hold: 6,  trig: (m) => m.ageDays != null && m.ageDays >= 0.3 && m.ageDays < 7 && m.clean && m.liq >= 15e3 && m.buyRatio6 > 0.55 && m.pc24 > -8, label: 'confirmed early launches' },
+  insider:      { capMin: 50e3,  capMax: 3e6,   liqMin: 12e3, hold: 18, trig: (m) => m.accum && m.clean,                                                                     label: 'early quiet accumulation' },
+  smart:        { capMin: 100e3, capMax: 8e6,   liqMin: 20e3, hold: 20, trig: (m) => m.accum && m.clean,                                                                     label: 'clean accumulation' },
+  momentum:     { capMin: 200e3, capMax: 25e6,  liqMin: 30e3, hold: 10, trig: (m) => m.pc6 > 3 && m.pc6 < 35 && m.pc1 > -2 && m.buyRatio6 > 0.55 && !m.spike,                 label: 'sustained momentum, not spikes' },
+  narrative:    { capMin: 150e3, capMax: 25e6,  liqMin: 20e3, hold: 14, trig: (m) => m.srcTrendy && m.pc24 > 0 && m.pc24 < 60 && !m.spike,                                    label: 'hot narratives, pre-blowoff' },
+  balanced:     { capMin: 100e3, capMax: 50e6,  liqMin: 15e3, hold: 24, trig: (m) => m.accum || (m.pc6 > 0 && m.pc6 < 30 && m.buyRatio6 > 0.52),                              label: 'steady, mid-cap tilt' },
+  whale:        { capMin: 1e6,   capMax: 300e6, liqMin: 60e3, hold: 36, trig: (m) => m.liq >= 60e3 && m.pc6 <= 2 && m.pc6 >= -12 && m.pc24 > -20,                             label: 'deep-liquidity dips' },
+  conservative: { capMin: 500e3, capMax: 300e6, liqMin: 50e3, hold: 40, trig: (m) => m.clean && m.ageDays != null && m.ageDays > 2 && m.pc6 < 1 && m.pc6 > -15,              label: 'established pullbacks' },
+  safety:       { capMin: 500e3, capMax: 300e6, liqMin: 60e3, hold: 40, trig: (m) => m.clean && m.liq >= 60e3 && m.pc24 >= -10 && m.pc24 <= 25,                              label: 'safest, deep + clean' },
 };
 // does this archetype want this token? (cap band + liquidity floor + its trigger + quality bar)
 function eligible(prof, M, scoreObj, bar) {
@@ -119,7 +136,7 @@ function baseParams(dial) {
     posPct: clPos((1 + d / 100 * 24) / 100),    // 1%..25% of equity
     threshold: clT(70 - d / 100 * 25),          // 70..45 entry bar
     tp: clTP(20 + d / 100 * 60),                // +20%..+80%
-    sl: clSL(8 + d / 100 * 42),                 // -8%..-50%
+    sl: clSL(6 + d / 100 * 16),                 // v2: -6%..-22% (was -8..-50; stops were too wide)
     slip: +((0.5 + d / 100 * 4.5) / 100).toFixed(4), // 0.5%..5% (fixed, not learned)
     maxHold: Math.round(40 - d / 100 * 28),     // ticks held before time-stop (degen flips fast)
   };
@@ -136,7 +153,7 @@ function freshWallet(dial) {
 function freshState(nowTs) {
   const bots = {};
   BOTS.forEach((b) => { bots[b.id] = freshWallet(b.dial); });
-  return { v: V, startedTs: nowTs, lastTickTs: 0, tick: 0, day: 0, lastLearnDay: 0, season: 1, ticking: 0, bots };
+  return { v: V, startedTs: nowTs, lastTickTs: 0, tick: 0, day: 0, lastLearnDay: 0, season: 1, ticking: 0, bots, strategyVersion: STRATEGY_VERSION, versions: [], versionStartedTs: nowTs };
 }
 // Bring an older saved state up to the current schema WITHOUT ever discarding trades, history,
 // positions or balances. Version changes migrate (fill in any missing fields with defaults);
@@ -169,8 +186,41 @@ function migrate(state, nowTs) {
   if (state.lastLearnDay == null) state.lastLearnDay = 0;
   if (state.season == null) state.season = 1;
   if (state.lastTickTs == null) state.lastTickTs = 0;
+  if (state.strategyVersion == null) state.strategyVersion = 1;
+  if (!Array.isArray(state.versions)) state.versions = [];
   state.v = V; // mark migrated; data preserved
   return state;
+}
+
+// When the STRATEGY_VERSION in code is newer than the saved run, archive the finished run
+// (summary kept in state.versions for the UI; full per-bot ledgers returned for KV) and start a
+// fresh run with the new strategy. Returns { key, data } to persist, or null if nothing to do.
+function applyStrategyVersion(state, nowTs) {
+  const from = state.strategyVersion || 1;
+  if (from >= STRATEGY_VERSION) return null;
+  const perBot = BOTS.map((b) => {
+    const w = state.bots[b.id]; const eq = Math.round(totalEquity(w));
+    return { id: b.id, name: b.name, equity: eq, pnlPct: +((eq / START - 1) * 100).toFixed(1), wins: w.wins, losses: w.losses, trades: (w.trades || []).length, status: w.status };
+  });
+  const startEq = BOTS.length * START, endEq = perBot.reduce((s, x) => s + x.equity, 0);
+  const archiveLedgers = {};
+  BOTS.forEach((b) => { archiveLedgers[b.id] = (state.bots[b.id].trades || []); });
+  const summary = {
+    version: from, startedTs: state.versionStartedTs || state.startedTs, endedTs: nowTs,
+    endedDay: state.day, endedTick: state.tick, startEquity: startEq, endEquity: endEq,
+    pnlPct: +((endEq / startEq - 1) * 100).toFixed(1), perBot,
+    leader: perBot.slice().sort((a, c) => c.equity - a.equity)[0],
+    worst: perBot.slice().sort((a, c) => a.equity - c.equity)[0],
+    nextLessons: STRATEGY_LESSONS[from + 1] || [],
+  };
+  state.versions.unshift(summary);
+  if (state.versions.length > 20) state.versions.pop();
+  // fresh run for the new strategy version (v1 archived above is fully preserved + checkable)
+  BOTS.forEach((b) => { state.bots[b.id] = freshWallet(b.dial); });
+  state.strategyVersion = STRATEGY_VERSION;
+  state.versionStartedTs = nowTs;
+  state.season = 1; state.day = 0; state.lastLearnDay = 0; state.startedTs = nowTs; state.tick = 0;
+  return { key: KVKEY + ':archive:v' + from, data: { version: from, summary, ledgers: archiveLedgers, ts: nowTs } };
 }
 
 function totalEquity(w) {
@@ -290,15 +340,49 @@ function sell(w, mint, price, reason, tick, ts, liqNow) {
   w.realized += pnl;
   if (pnl >= 0) { w.wins++; w.dayWins++; } else { w.losses++; w.dayLosses++; }
   w.dayRealized += pnl; w.dayTrades++;
-  w.trades.unshift({
+  const rec = {
     tick, ts, side: 'SELL', symbol: pos.symbol, mint, reason,
     usdIn: Math.round(pos.usdIn), proceeds: +proceeds.toFixed(2), pnl: +pnl.toFixed(2), pnlPct: +netPct.toFixed(1),
     movePct: +movePct.toFixed(1), entryPrice: pos.mid, exitPrice: price, mcapIn: pos.mcapIn, mcapOut,
     qty: pos.qty, slipPct: +(slip * 100).toFixed(2), feePct: 1, heldTicks: tick - pos.tick,
     tsIn: pos.ts || null, src: pos.src, scoreIn: pos.scoreIn, barIn: pos.barIn,
-  });
+  };
+  w.trades.unshift(rec);
   if (w.trades.length > TRADES_KEEP) w.trades.pop();
   delete w.positions[mint];
+  return rec;
+}
+
+// ---- the growing research database: every scanned token is logged + accrues a track record ----
+// Lives in its own KV key (radar:db:tokens). Each tick we merge the scanned universe (cap range,
+// liquidity, which signals fired, how often we've seen it) and fold in any trade outcomes, so the
+// longer the lab runs the more it KNOWS about which tokens/signals/caps actually pay.
+const DB_MAX = 6000;
+async function updateTokenDB(env, universe, closures, nowTs) {
+  const KV = env.ZEN_KV; if (!KV) return null;
+  let db = await KV.get('radar:db:tokens', 'json').catch(() => null);
+  if (!db || !db.tokens) db = { tokens: {}, scans: 0, firstTs: nowTs };
+  db.scans++; db.updated = nowTs;
+  for (const u of universe) {
+    let t = db.tokens[u.mint];
+    if (!t) t = db.tokens[u.mint] = { sym: u.symbol, name: u.name, first: nowTs, seen: 0, capMin: u.mcap, capMax: u.mcap, sig: {}, buys: 0, sells: 0, wins: 0, losses: 0, pnl: 0 };
+    t.last = nowTs; t.seen++; t.capLast = u.mcap; t.liqLast = u.liq;
+    if (u.mcap > 0) { t.capMin = Math.min(t.capMin || u.mcap, u.mcap); t.capMax = Math.max(t.capMax || 0, u.mcap); }
+    (u.sources || []).forEach((s) => { t.sig[s] = (t.sig[s] || 0) + 1; });
+  }
+  for (const c of closures || []) {
+    const t = db.tokens[c.mint]; if (!t) continue;
+    t.sells++; t.pnl = +((t.pnl || 0) + c.pnl).toFixed(2); if (c.pnl >= 0) t.wins++; else t.losses++;
+  }
+  // bound the registry: when over cap, drop the least-recently-seen tokens
+  const keys = Object.keys(db.tokens);
+  if (keys.length > DB_MAX) {
+    keys.sort((a, b) => (db.tokens[a].last || 0) - (db.tokens[b].last || 0));
+    for (let i = 0; i < keys.length - DB_MAX; i++) delete db.tokens[keys[i]];
+  }
+  db.n = Object.keys(db.tokens).length;
+  try { await KV.put('radar:db:tokens', JSON.stringify(db)); } catch (e) { /**/ }
+  return { n: db.n, scans: db.scans };
 }
 
 // ---- the daily lesson: review the day's trades, adjust own params, journal it ----
@@ -369,6 +453,7 @@ async function advance(state, env, nowTs) {
 
   state.tick++;
   const tick = state.tick;
+  const closures = []; // trade outcomes this tick → folded into the research DB
 
   for (const b of BOTS) {
     const w = state.bots[b.id];
@@ -384,9 +469,11 @@ async function advance(state, env, nowTs) {
       pos.last = price;
       const liqNow = (uScore[m] && uScore[m].liq) || 0;
       const up = (price / pos.entry - 1) * 100;
-      if (up >= p.tp) sell(w, m, price, 'take-profit', tick, nowTs, liqNow);
-      else if (up <= -p.sl) sell(w, m, price, 'stop-loss', tick, nowTs, liqNow);
-      else if (tick - pos.tick >= prof.hold) sell(w, m, price, 'time-stop', tick, nowTs, liqNow);
+      let rec = null;
+      if (up >= p.tp) rec = sell(w, m, price, 'take-profit', tick, nowTs, liqNow);
+      else if (up <= -p.sl) rec = sell(w, m, price, 'stop-loss', tick, nowTs, liqNow);
+      else if (tick - pos.tick >= prof.hold) rec = sell(w, m, price, 'time-stop', tick, nowTs, liqNow);
+      if (rec) closures.push({ mint: m, pnl: rec.pnl });
     }
 
     // open new positions: must fit THIS archetype's cap band + liquidity floor + trigger + bar
@@ -417,6 +504,9 @@ async function advance(state, env, nowTs) {
       w.params.posPct = clPos(w.params.posPct * 0.8); w.params.threshold = clT(w.params.threshold + 3);
     }
   }
+
+  // grow the research database (every scanned token + this tick's trade outcomes)
+  try { const dbStat = await updateTokenDB(env, universe, closures, nowTs); if (dbStat) state.db = dbStat; } catch (e) { /**/ }
 
   // sim-day rollover → everyone learns
   const day = Math.floor((nowTs - state.startedTs) / DAY_MS);
@@ -477,6 +567,9 @@ function publicState(state, nowTs) {
   return {
     startedTs: state.startedTs, ageDays: +ageDays.toFixed(2), day: state.day, season: state.season,
     tick: state.tick, lastTickTs: state.lastTickTs, start: START, grad: GRAD, bust: BUST,
+    strategyVersion: state.strategyVersion || 1, versions: state.versions || [],
+    lessons: STRATEGY_LESSONS[state.strategyVersion || 1] || [],
+    db: state.db ? { tokens: state.db.n || 0, scans: state.db.scans || 0 } : null,
     activeCount: BOTS.filter((b) => state.bots[b.id].status === 'active').length,
     universe: state.universe || null, calls: state.calls || [],
     leader: bots[0] ? bots[0].id : null, bots, ts: nowTs,
@@ -489,7 +582,29 @@ export async function onRequestGet({ request, env }) {
   const url = new URL(request.url);
   const peek = url.searchParams.get('peek');
   const botId = url.searchParams.get('bot'); // request ONE bot's full lifetime trade ledger
+  const versionId = url.searchParams.get('version'); // request an ARCHIVED strategy version's run
   const nowTs = Date.now();
+
+  // archived strategy-version run (read-only; full ledgers from when that version was retired)
+  if (versionId) {
+    const arch = await KV.get(KVKEY + ':archive:v' + versionId, 'json').catch(() => null);
+    if (!arch) return json({ error: 'no archived run for v' + versionId }, 404);
+    return json(arch, 200, { 'cache-control': 'no-store' });
+  }
+
+  // the growing research database — summary + most-traded / best / worst tokens it has learned
+  if (url.searchParams.get('db')) {
+    const db = await KV.get('radar:db:tokens', 'json').catch(() => null);
+    if (!db || !db.tokens) return json({ n: 0, scans: 0, tokens: [] }, 200, { 'cache-control': 'no-store' });
+    const arr = Object.keys(db.tokens).map((m) => ({ mint: m, ...db.tokens[m], traded: (db.tokens[m].sells || 0) }));
+    const traded = arr.filter((t) => t.traded > 0);
+    return json({
+      n: db.n || arr.length, scans: db.scans || 0, firstTs: db.firstTs, updated: db.updated,
+      mostSeen: arr.slice().sort((a, b) => b.seen - a.seen).slice(0, 25),
+      bestTraded: traded.slice().sort((a, b) => b.pnl - a.pnl).slice(0, 15),
+      worstTraded: traded.slice().sort((a, b) => a.pnl - b.pnl).slice(0, 15),
+    }, 200, { 'cache-control': 'no-store' });
+  }
 
   let state = await KV.get(KVKEY, 'json').catch(() => null);
   state = state ? migrate(state, nowTs) : freshState(nowTs); // migrate, never wipe
@@ -500,6 +615,12 @@ export async function onRequestGet({ request, env }) {
     if (!w) return json({ error: 'unknown bot' }, 404);
     const b = BOTS.find((x) => x.id === botId) || { name: botId };
     return json({ id: botId, name: b.name, trades: w.trades || [], history: w.history || [], wins: w.wins, losses: w.losses, realized: Math.round(w.realized || 0), totalClosed: (w.wins || 0) + (w.losses || 0), ts: nowTs }, 200, { 'cache-control': 'no-store' });
+  }
+
+  // strategy-version transition: archive the finished run + start fresh on the new strategy
+  if (!peek && (state.strategyVersion || 1) < STRATEGY_VERSION) {
+    const arch = applyStrategyVersion(state, nowTs);
+    if (arch) { try { await KV.put(arch.key, JSON.stringify(arch.data)); } catch (e) { /**/ } try { await KV.put(KVKEY, JSON.stringify(state)); } catch (e) { /**/ } }
   }
 
   let advanced = false;
