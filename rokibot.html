@@ -837,7 +837,7 @@ function renderSmartWallets(d){
 }
 
 /* ---------- THE LAB: viewer for the 24/7 server-side bot competition ---------- */
-var LAB=null, labTimer=null, LAB_OPEN=null, LAB_FULL={};
+var LAB=null, labTimer=null, LAB_OPEN=null, LAB_FULL={}, LAB_W=null;
 function lm(v){v=Math.round(v||0);var s=v<0?'-':'';return s+'$'+Math.abs(v).toLocaleString('en-US');}
 function fmtCap(v){v=+v||0;if(v>=1e9)return '$'+(v/1e9).toFixed(2)+'B';if(v>=1e6)return '$'+(v/1e6).toFixed(2)+'M';if(v>=1e3)return '$'+(v/1e3).toFixed(0)+'K';return '$'+Math.round(v);}
 function fmtPx(p){p=+p||0;if(p<=0)return '$0';if(p>=1)return '$'+p.toFixed(3);if(p>=0.001)return '$'+p.toFixed(5);return '$'+p.toPrecision(2);}
@@ -882,6 +882,27 @@ function labCalls(calls,idName){
   return '<div class="card" style="margin-top:16px"><h3>📡 Live calls — what the radar is rating now</h3>'
     +'<div class="note" style="margin:0 0 6px"><span class="faint">every project the radar surfaced this round · market cap · age · 24h move · best-fit <b>rating</b> (0–100) · which archetypes want it. Each bot only buys calls that fit its own lane (cap band + signal). Click a ticker to open the chart.</span></div>'
     +rows+'</div>';
+}
+function labShortAddr(a){return a.slice(0,4)+'…'+a.slice(-4);}
+function labWallets(W){
+  if(!W)return '<div class="card" style="margin-top:16px"><h3>🐋 Top Traders</h3><div class="faint" style="font-size:12px">loading the wallet database…</div></div>';
+  if(!W.top||!W.top.length)return '<div class="card" style="margin-top:16px"><h3>🐋 Top Traders</h3><div class="faint" style="font-size:12px">The wallet database is still warming up ('+(W.scans||0)+' scans). It grows as the scanner runs — check back shortly.</div></div>';
+  var rows=W.top.slice(0,30).map(function(w){
+    var col=w.netSol>=0?'#0F7A45':'#B02A2A';var medal=w.rank<=3?['🥇','🥈','🥉'][w.rank-1]:w.rank;
+    var toks=(w.tokens||[]).slice(0,5).map(function(t){return '<span class="faint" style="font-size:9px;border:1px solid var(--hairline);border-radius:4px;padding:0 3px">$'+escapeHtml(t)+'</span>';}).join(' ');
+    return '<div style="display:grid;grid-template-columns:26px 1fr 90px 52px;gap:8px;align-items:center;border-bottom:1px solid var(--hairline);padding:7px 0">'
+      +'<div class="mono" style="font-size:13px">'+medal+'</div>'
+      +'<div><a href="https://solscan.io/account/'+w.addr+'" target="_blank" rel="noopener" class="mono" style="font-size:12px;text-decoration:none;font-weight:600">'+labShortAddr(w.addr)+' ↗</a> <span class="wchip mono" style="font-size:9px;cursor:pointer" onclick="copyCA(\''+w.addr+'\',this)">copy</span>'+(w.twitter?' <a href="https://x.com/'+escapeHtml(w.twitter)+'" target="_blank" rel="noopener" style="font-size:10px">@'+escapeHtml(w.twitter)+'</a>':'')+'<div style="margin-top:2px">'+toks+(w.tokenCount>5?' <span class="faint" style="font-size:9px">+'+(w.tokenCount-5)+'</span>':'')+'</div></div>'
+      +'<div class="mono" style="text-align:right;color:'+col+';font-weight:700">'+(w.netSol>=0?'+':'')+w.netSol+' SOL</div>'
+      +'<div class="mono faint" style="text-align:right;font-size:11px">'+w.trades+' tx</div>'
+      +'</div>';
+  }).join('');
+  return '<div class="card" style="margin-top:16px"><div class="row wrap" style="align-items:baseline"><h3 style="margin:0">🐋 Top Traders</h3><span class="faint mono" style="font-size:11px">'+(W.n||0).toLocaleString()+' wallets tracked · '+(W.scans||0).toLocaleString()+' scans</span></div>'
+    +'<div class="note" style="margin:0 0 6px"><span class="faint">Every wallet the lab has seen trading the tokens it watches, ranked by <b>net SOL</b> across those tokens (a recent-window performance proxy — sharpens as the database grows). Click an address for Solscan.</span></div>'
+    +rows+'</div>';
+}
+function labLoadWallets(){
+  withTimeout(fetch('/api/walletdb').then(function(r){return r.json();}),30000).then(function(d){if(d&&(d.top||d.n!=null)){LAB_W=d;labRender();}}).catch(function(){});
 }
 function labStatusBadge(b){
   if(b.status==='graduated')return '<span class="badge" style="background:#FBE7A1;border-color:#B8860B;color:#7a5b00">🏆 10× champion</span>';
@@ -973,7 +994,7 @@ function labRender(){
     +rows
     +'<div class="note"><span class="tick mid"></span> Each bot is a $'+LAB.start.toLocaleString()+' paper wallet hunting a broad live universe ($10k–tens of millions) with its own cap band, signal triggers + risk profile (real slippage + 1% fee modeled). It runs on the server 24/7, adapts daily, and the whole strategy gets versioned: when a run\'s mistakes are clear, we ship a new strategy version (v1 → v2 …) and archive the old one. The archetype at the top is the one this market is rewarding. Paper only; no funds, no signing.</div></div>';
   var idName={};LAB.bots.forEach(function(b){idName[b.id]=b.name.split(' ')[0];});
-  box.innerHTML=head+labVersions(LAB)+lead+labCalls(LAB.calls,idName);
+  box.innerHTML=head+labVersions(LAB)+lead+labCalls(LAB.calls,idName)+labWallets(LAB_W);
 }
 function labVersions(L){
   var v=L.strategyVersion||1;
@@ -997,7 +1018,7 @@ function labFetch(advance){
     } else {if(st)st.textContent=(d&&d.error)?d.error:'no data yet — retry';}
   }).catch(function(){if(st)st.textContent='backend slow — retry in a moment';});
 }
-function labEnter(){labFetch(false);if(labTimer)clearInterval(labTimer);labTimer=setInterval(function(){labFetch(true);},30000);}
+function labEnter(){labFetch(false);labLoadWallets();if(labTimer)clearInterval(labTimer);labTimer=setInterval(function(){labFetch(true);labLoadWallets();},30000);}
 function labLeave(){if(labTimer){clearInterval(labTimer);labTimer=null;}}
 
 /* ---------- init ---------- */

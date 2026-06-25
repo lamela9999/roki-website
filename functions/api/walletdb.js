@@ -78,6 +78,10 @@ export async function onRequestGet({ request, env }) {
   const symOf = {};
   try { const ds = await fetch('https://api.dexscreener.com/latest/dex/tokens/' + batch.join(',')).then((r) => r.json()); for (const p of (ds && ds.pairs) || []) { const m = p.baseToken && p.baseToken.address; if (m && !symOf[m]) symOf[m] = (p.baseToken.symbol || '').replace(/^\$/, ''); } } catch (e) { /**/ }
 
+  // symbol fallback: the lab's token DB already knows most tickers (DexScreener can rate-limit)
+  const tdb = await KV.get('radar:db:tokens', 'json').catch(() => null);
+  const symFor = (m) => symOf[m] || (tdb && tdb.tokens && tdb.tokens[m] && tdb.tokens[m].sym) || m.slice(0, 4);
+
   let db = await KV.get(DBKEY, 'json').catch(() => null);
   if (!db || !db.wallets) db = { wallets: {}, scans: 0, firstTs: nowTs };
   db.scans++; db.updated = nowTs;
@@ -89,7 +93,7 @@ export async function onRequestGet({ request, env }) {
       if (!r.ok) continue;
       const txs = await r.json(); if (!Array.isArray(txs)) continue;
       analyzed++;
-      const sym = symOf[mint] || mint.slice(0, 4);
+      const sym = symFor(mint);
       const per = {};
       for (const t of txs) {
         const sw = t.events && t.events.swap; if (!sw) continue;
