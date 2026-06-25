@@ -1,0 +1,125 @@
+// GET /api/walletdb            → the wallet leaderboard (read-only, cheap): top traders by net
+//                                SOL across every token we've observed, growing over time.
+// GET /api/walletdb?scan=1      → analyze a BATCH of tokens (cron-driven, spends Helius credits):
+//                                pull every wallet that swapped them, fold into the wallet DB.
+// GET /api/walletdb?addr=<pk>   → one wallet's full observed record.
+//
+// This is the growing "who's who" of Solana traders the lab has seen. We prioritise the tokens
+// the bots currently HOLD (so we learn who aped alongside them), then fill with live trending.
+// Net SOL across observed tokens is a recent-window performance PROXY (not lifetime PnL) — it
+// sharpens as the DB accumulates. Decoupled from the lab tick to respect CF subrequest limits.
+
+import { json, preflight, buildUniverse } from './_utils.js';
+
+export const onRequestOptions = () => preflight();
+
+const BATCH = 16;       // tokens analyzed per scan call (keeps us under the CF subrequest cap)
+const TX_PER = 80;      // recent swaps pulled per token
+const WMAX = 15000;     // wallet DB cap (prune least-recently-seen beyond this)
+const DBKEY = 'radar:db:wallets';
+
+function loadFromState(state) {
+  // mints the bots currently hold — highest-value to learn "who else is in this with us"
+  const held = new Set();
+  try { for (const id in state.bots) { const p = state.bots[id].positions || {}; for (const m in p) held.add(m); } } catch (e) { /**/ }
+  return [...held];
+}
+
+export async function onRequestGet({ request, env }) {
+  const KV = env.ZEN_KV;
+  if (!KV) return json({ error: 'Wallet DB needs KV storage.' }, 503);
+  const url = new URL(request.url);
+  const nowTs = Date.now();
+
+  // ---- single wallet lookup ----
+  const addr = url.searchParams.get('addr');
+  if (addr) {
+    const db = await KV.get(DBKEY, 'json').catch(() => null);
+    const w = db && db.wallets && db.wallets[addr];
+    if (!w) return json({ error: 'wallet not in DB yet' }, 404);
+    return json({ addr, ...w, tokens: Object.keys(w.toks || {}) }, 200, { 'cache-control': 'no-store' });
+  }
+
+  // ---- leaderboard (default, read-only) ----
+  if (!url.searchParams.get('scan')) {
+    const db = await KV.get(DBKEY, 'json').catch(() => null);
+    if (!db || !db.wallets) return json({ n: 0, scans: 0, top: [] }, 200, { 'cache-control': 'no-store' });
+    const arr = Object.keys(db.wallets).map((a) => ({ addr: a, ...db.wallets[a] }));
+    const top = arr.filter((w) => (w.n || 0) >= 3)
+      .sort((a, b) => (b.netSol || 0) - (a.netSol || 0))
+      .slice(0, 500)
+      .map((w, i) => ({
+        rank: i + 1, addr: w.addr, netSol: +(w.netSol || 0).toFixed(2), trades: w.n || 0,
+        tokens: Object.keys(w.toks || {}).slice(0, 8), tokenCount: Object.keys(w.toks || {}).length,
+        first: w.first, last: w.last, label: (w.netSol || 0) > 0 ? (Object.keys(w.toks || {}).length > 2 ? 'consistent winner' : 'net-positive') : 'net-negative',
+        twitter: w.twitter || null,
+      }));
+    return json({ n: db.n || arr.length, scans: db.scans || 0, firstTs: db.firstTs, updated: db.updated, top }, 200, { 'cache-control': 'public, max-age=30' });
+  }
+
+  // ---- scan a batch (cron-driven; spends Helius credits) ----
+  const KEY = env.HELIUS_API_KEY;
+  if (!KEY) return json({ error: 'Scan needs the Helius backend (key not set).' }, 503);
+
+  // pick tokens: bots' current holdings first, then live trending, dedup
+  const lab = await KV.get('radar:lab', 'json').catch(() => null);
+  const held = lab ? loadFromState(lab) : [];
+  let trending = [];
+  try { const cand = await buildUniverse(); trending = cand.slice(0, 30).map((c) => c.mint); } catch (e) { /**/ }
+  // rotate through the trending set across calls (separate key — never touch the lab state)
+  const cursor = ((await KV.get('radar:db:wcursor', 'json').catch(() => null)) || { i: 0 }).i || 0;
+  const rotated = trending.slice(cursor).concat(trending.slice(0, cursor));
+  const seen = new Set(); const list = [];
+  for (const m of [...held, ...rotated]) { if (m && !seen.has(m)) { seen.add(m); list.push(m); } }
+  const batch = list.slice(0, BATCH);
+  if (!batch.length) return json({ analyzed: 0, note: 'no tokens to analyze yet' }, 200);
+
+  // symbols for the batch (one DexScreener call)
+  const symOf = {};
+  try { const ds = await fetch('https://api.dexscreener.com/latest/dex/tokens/' + batch.join(',')).then((r) => r.json()); for (const p of (ds && ds.pairs) || []) { const m = p.baseToken && p.baseToken.address; if (m && !symOf[m]) symOf[m] = (p.baseToken.symbol || '').replace(/^\$/, ''); } } catch (e) { /**/ }
+
+  let db = await KV.get(DBKEY, 'json').catch(() => null);
+  if (!db || !db.wallets) db = { wallets: {}, scans: 0, firstTs: nowTs };
+  db.scans++; db.updated = nowTs;
+
+  let analyzed = 0, newW = 0, txSeen = 0;
+  for (const mint of batch) {
+    try {
+      const r = await fetch(`https://api.helius.xyz/v0/addresses/${mint}/transactions?api-key=${KEY}&type=SWAP&limit=${TX_PER}`);
+      if (!r.ok) continue;
+      const txs = await r.json(); if (!Array.isArray(txs)) continue;
+      analyzed++;
+      const sym = symOf[mint] || mint.slice(0, 4);
+      const per = {};
+      for (const t of txs) {
+        const sw = t.events && t.events.swap; if (!sw) continue;
+        const tr = t.feePayer; if (!tr) continue;
+        const nIn = (sw.nativeInput && Number(sw.nativeInput.amount)) || 0;   // SOL spent (buy)
+        const nOut = (sw.nativeOutput && Number(sw.nativeOutput.amount)) || 0; // SOL received (sell)
+        const p = per[tr] = per[tr] || { in: 0, out: 0, n: 0 };
+        p.in += nIn; p.out += nOut; p.n++; txSeen++;
+      }
+      for (const a of Object.keys(per)) {
+        const p = per[a];
+        let w = db.wallets[a];
+        if (!w) { w = db.wallets[a] = { first: nowTs, n: 0, inSol: 0, outSol: 0, netSol: 0, toks: {} }; newW++; }
+        w.last = nowTs; w.n += p.n;
+        w.inSol = +(w.inSol + p.in / 1e9).toFixed(3);
+        w.outSol = +(w.outSol + p.out / 1e9).toFixed(3);
+        w.netSol = +(w.outSol - w.inSol).toFixed(3);
+        w.toks[sym] = (w.toks[sym] || 0) + 1;
+      }
+    } catch (e) { /**/ }
+  }
+
+  // prune least-recently-seen beyond the cap
+  const keys = Object.keys(db.wallets);
+  if (keys.length > WMAX) { keys.sort((a, b) => (db.wallets[a].last || 0) - (db.wallets[b].last || 0)); for (let i = 0; i < keys.length - WMAX; i++) delete db.wallets[keys[i]]; }
+  db.n = Object.keys(db.wallets).length;
+  await KV.put(DBKEY, JSON.stringify(db)).catch(() => {});
+
+  // advance the trending cursor (separate key) so the next scan covers different tokens
+  try { await KV.put('radar:db:wcursor', JSON.stringify({ i: (cursor + BATCH) % Math.max(1, trending.length || 1) })); } catch (e) { /**/ }
+
+  return json({ analyzed, batch: batch.length, txSeen, walletsKnown: db.n, newWallets: newW, scans: db.scans, ts: nowTs }, 200, { 'cache-control': 'no-store' });
+}
