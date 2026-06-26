@@ -36,6 +36,7 @@ const TICK_MS = 10 * 60 * 1000;    // minimum spacing between ticks
 const DAY_MS = 24 * 60 * 60 * 1000;
 const FEE = 0.99;                  // 1% taker fee each side
 const POOL = 48;                   // candidate tokens fetched per tick (batched, multi-source)
+const LEARN_EVERY = 6;             // run a learning review every N ticks (frequent + visible)
 // Full lifetime ledger — keep thousands of trades so the history is "from day one", never a
 // rolling window. (10 bots × 4000 trades × ~0.25KB ≈ 10MB, well under the 25MB KV value cap.)
 const TRADES_KEEP = 4000, EQUITY_KEEP = 1500, HISTORY_KEEP = 400;
@@ -187,6 +188,8 @@ function migrate(state, nowTs) {
   if (state.season == null) state.season = 1;
   if (state.lastTickTs == null) state.lastTickTs = 0;
   if (state.strategyVersion == null) state.strategyVersion = 1;
+  if (state.lastLearnTick == null) state.lastLearnTick = 0;
+  if (state.reviews == null) state.reviews = 0;
   if (!Array.isArray(state.versions)) state.versions = [];
   state.v = V; // mark migrated; data preserved
   return state;
@@ -233,11 +236,24 @@ function totalEquity(w) {
 // ---- one scan of the candidate universe → rich metrics + per-archetype scores ----
 async function scanUniverse(env, nowTs) {
   const dexGet = async (u) => { for (let i = 0; i < 3; i++) { try { const r = await fetch(u); if (r.ok) return await r.json(); } catch (e) { /**/ } await new Promise((res) => setTimeout(res, 250)); } return null; };
+  const KV = env.ZEN_KV;
+  // The DISCOVERY feed (buildUniverse: boosts/profiles/GeckoTerminal) is rate-limited from CF
+  // most of the time, which was freezing the whole lab. So: get the candidate MINTS from it when
+  // we can and CACHE them; when it's empty, reuse the last-good set. Then we always batch-fetch
+  // FRESH prices below (the /tokens endpoint is far more reliable) so the lab never stalls.
   const cand = await buildUniverse();
-  if (!cand.length) return null;
-  const pool = cand.slice(0, POOL);
-  const mints = pool.map((c) => c.mint);
-  const srcOf = {}; pool.forEach((c) => { srcOf[c.mint] = c.sources; });
+  let mints, srcOf = {};
+  if (cand && cand.length >= 8) {
+    const pool = cand.slice(0, POOL);
+    mints = pool.map((c) => c.mint);
+    pool.forEach((c) => { srcOf[c.mint] = c.sources; });
+    if (KV) { try { await KV.put('radar:lab:mints', JSON.stringify({ mints, srcOf, ts: nowTs })); } catch (e) { /**/ } }
+  } else {
+    let cached = null; if (KV) cached = await KV.get('radar:lab:mints', 'json').catch(() => null);
+    if (cached && cached.mints && cached.mints.length) { mints = cached.mints; srcOf = cached.srcOf || {}; }
+    else if (cand && cand.length) { const pool = cand.slice(0, POOL); mints = pool.map((c) => c.mint); pool.forEach((c) => { srcOf[c.mint] = c.sources; }); }
+    else return null;
+  }
 
   // batch DexScreener market data (up to 30 mints per call) + one authorities RPC
   const chunks = []; for (let i = 0; i < mints.length; i += 30) chunks.push(mints.slice(i, i + 30));
@@ -295,7 +311,11 @@ async function scanUniverse(env, nowTs) {
     }
     out.push({ mint, symbol: ((p.baseToken && p.baseToken.symbol) || '?').replace(/^\$/, ''), name: (p.baseToken && p.baseToken.name) || 'Unknown', price, mcap, liq, M, scores, sources, src: primarySrc(sources) });
   }
-  return out;
+  // last-resort fallback: if even the price fetch came back empty, reuse the last scored universe
+  // (slightly stale, but the lab keeps trading rather than freezing on a rate-limit blip)
+  if (out.length >= 5) { if (KV) { try { await KV.put('radar:lab:uni', JSON.stringify({ ts: nowTs, out })); } catch (e) { /**/ } } return out; }
+  if (KV) { const c = await KV.get('radar:lab:uni', 'json').catch(() => null); if (c && c.out && c.out.length) return c.out; }
+  return out.length ? out : null;
 }
 
 // price impact from finite pool depth: a trade worth `usd` against `liq` liquidity moves the
@@ -406,16 +426,16 @@ function learn(w, day) {
       headline = 'Strategy is working — pressing the edge.';
     } else {
       changes.push('Win rate ' + Math.round(wr * 100) + '% — solid; only fine-tuning.');
-      headline = 'Steady day — minor adjustments.';
+      headline = 'Steady stretch — minor adjustments.';
     }
-    if (dr < 0) { p.posPct = clPos(p.posPct * 0.9); changes.push('Red day — sizing positions smaller (now ' + Math.round(p.posPct * 100) + '% of equity).'); }
-    else if (dr > 0) { p.posPct = clPos(p.posPct * 1.06); changes.push('Green day — sizing up a touch (now ' + Math.round(p.posPct * 100) + '% of equity).'); }
+    if (dr < 0) { p.posPct = clPos(p.posPct * 0.9); changes.push('Down over these trades — sizing positions smaller (now ' + Math.round(p.posPct * 100) + '% of equity).'); }
+    else if (dr > 0) { p.posPct = clPos(p.posPct * 1.06); changes.push('Up over these trades — sizing up a touch (now ' + Math.round(p.posPct * 100) + '% of equity).'); }
   } else {
-    changes.push('Only ' + closed + ' closed trade' + (closed === 1 ? '' : 's') + ' today — not enough signal, keeping strategy steady.');
-    headline = 'Quiet day — no strategy change.';
+    changes.push('Only ' + closed + ' closed trade' + (closed === 1 ? '' : 's') + ' since the last review — not enough signal, keeping strategy steady.');
+    headline = 'Quiet stretch — no strategy change.';
   }
   const after = { threshold: p.threshold, tp: p.tp, sl: p.sl, posPct: p.posPct };
-  w.history.unshift({ day, headline, wr: closed ? Math.round(dw / closed * 100) : null, realizedDay: +dr.toFixed(2), trades: dt, equity: Math.round(totalEquity(w)), changes, before, after });
+  w.history.unshift({ review: day, headline, wr: closed ? Math.round(dw / closed * 100) : null, realizedDay: +dr.toFixed(2), trades: dt, equity: Math.round(totalEquity(w)), changes, before, after });
   if (w.history.length > HISTORY_KEEP) w.history.pop();
   w.dayWins = 0; w.dayLosses = 0; w.dayRealized = 0; w.dayTrades = 0;
 }
@@ -509,12 +529,13 @@ async function advance(state, env, nowTs) {
   // grow the research database (every scanned token + this tick's trade outcomes)
   try { const dbStat = await updateTokenDB(env, universe, closures, nowTs); if (dbStat) state.db = dbStat; } catch (e) { /**/ }
 
-  // sim-day rollover → everyone learns
-  const day = Math.floor((nowTs - state.startedTs) / DAY_MS);
-  if (day > state.day) {
-    state.day = day;
-    for (const b of BOTS) { const w = state.bots[b.id]; if (w.status === 'active') learn(w, day); }
-    state.lastLearnDay = day;
+  // keep `day` for age display; run a LEARNING REVIEW every LEARN_EVERY ticks (frequent + visible,
+  // instead of once per real day) so the bots visibly adapt and the journal fills up quickly
+  state.day = Math.floor((nowTs - state.startedTs) / DAY_MS);
+  if (tick - (state.lastLearnTick || 0) >= LEARN_EVERY) {
+    state.lastLearnTick = tick;
+    state.reviews = (state.reviews || 0) + 1;
+    for (const b of BOTS) { const w = state.bots[b.id]; if (w.status === 'active') learn(w, state.reviews); }
   }
 
   // keep the lab alive: if fewer than 3 bots still trading, start a new season (respawn the
@@ -568,6 +589,7 @@ function publicState(state, nowTs) {
   return {
     startedTs: state.startedTs, ageDays: +ageDays.toFixed(2), day: state.day, season: state.season,
     tick: state.tick, lastTickTs: state.lastTickTs, start: START, grad: GRAD, bust: BUST,
+    reviews: state.reviews || 0, learnEvery: LEARN_EVERY,
     strategyVersion: state.strategyVersion || 1, versions: state.versions || [],
     lessons: STRATEGY_LESSONS[state.strategyVersion || 1] || [],
     db: state.db ? { tokens: state.db.n || 0, scans: state.db.scans || 0 } : null,

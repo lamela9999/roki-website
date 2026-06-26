@@ -837,7 +837,21 @@ function renderSmartWallets(d){
 }
 
 /* ---------- THE LAB: viewer for the 24/7 server-side bot competition ---------- */
-var LAB=null, labTimer=null, LAB_OPEN=null, LAB_FULL={}, LAB_W=null, LAB_WHO={}, LAB_WHO_OPEN=null;
+var LAB=null, labTimer=null, LAB_OPEN=null, LAB_FULL={}, LAB_W=null, LAB_WHO={}, LAB_WHO_OPEN=null, LAB_DB=null;
+function labLoadDB(){withTimeout(fetch('/api/lab?db=1').then(function(r){return r.json();}),25000).then(function(d){if(d&&d.n!=null){LAB_DB=d;labRender();}}).catch(function(){});}
+function labDatabase(D){
+  if(!D)return '<div class="card" style="margin-top:16px"><h3>📊 Research Database</h3><div class="faint" style="font-size:12px">loading…</div></div>';
+  var seen=(D.mostSeen||[]).slice(0,12).map(function(t){var sig=Object.keys(t.sig||{}).filter(function(k){return k==='accumulation'||k==='volume-spike';}).map(function(k){return LAB_SRC[k]||k;}).join(' ');return '<div style="display:grid;grid-template-columns:1fr 60px 42px;gap:6px;font-size:11px;padding:3px 0;border-bottom:1px solid var(--hairline)"><span>$'+escapeHtml(t.sym||'?')+(sig?' <span class="faint" style="font-size:9px">'+sig+'</span>':'')+'</span><span class="mono faint" style="text-align:right">'+fmtCap(t.capLast||t.capMax||0)+'</span><span class="mono faint" style="text-align:right">×'+t.seen+'</span></div>';}).join('');
+  var best=(D.bestTraded||[]).slice(0,6).map(function(t){return '<div style="font-size:11px;padding:1px 0"><span style="color:#0F7A45">$'+escapeHtml(t.sym||'?')+' +$'+Math.round(t.pnl)+'</span> <span class="faint">'+t.wins+'W/'+t.losses+'L</span></div>';}).join('');
+  var worst=(D.worstTraded||[]).slice(0,6).map(function(t){return '<div style="font-size:11px;padding:1px 0"><span style="color:#B02A2A">$'+escapeHtml(t.sym||'?')+' $'+Math.round(t.pnl)+'</span> <span class="faint">'+t.wins+'W/'+t.losses+'L</span></div>';}).join('');
+  var wn=LAB_W?(LAB_W.n||0):0;
+  return '<div class="card" style="margin-top:16px"><div class="row wrap" style="align-items:baseline"><h3 style="margin:0">📊 Research Database</h3><span class="faint mono" style="font-size:11px">'+(D.n||0).toLocaleString()+' tokens · '+wn.toLocaleString()+' wallets · '+(D.scans||0).toLocaleString()+' scans · grows every round</span></div>'
+    +'<div class="note" style="margin:4px 0 8px"><span class="faint">Every token the lab has ever scanned — what signals it fired and how trades on it turned out. This is the memory the strategy learns from; it only gets bigger.</span></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">'
+    +'<div><div class="klabel">most-seen tokens</div>'+(seen||'<span class="faint" style="font-size:11px">warming up…</span>')+'</div>'
+    +'<div><div class="klabel">tokens we made money on</div>'+(best||'<span class="faint" style="font-size:11px">no closed trades yet</span>')+'<div class="klabel" style="margin-top:8px">tokens that burned us</div>'+(worst||'<span class="faint" style="font-size:11px">—</span>')+'</div>'
+    +'</div></div>';
+}
 function labWho(mint){if(LAB_WHO_OPEN===mint){LAB_WHO_OPEN=null;labRender();return;}LAB_WHO_OPEN=mint;labRender();if(!LAB_WHO[mint]){withTimeout(fetch('/api/walletdb?token='+encodeURIComponent(mint)).then(function(r){return r.json();}),20000).then(function(d){LAB_WHO[mint]=d||{wallets:[]};if(LAB_WHO_OPEN===mint)labRender();}).catch(function(){LAB_WHO[mint]={wallets:[]};if(LAB_WHO_OPEN===mint)labRender();});}}
 function labWhoBlock(mint){
   if(LAB_WHO_OPEN!==mint)return ' <span class="wchip mono" style="font-size:9px;cursor:pointer" onclick="labWho(\''+mint+'\')">🐋 who aped</span>';
@@ -959,7 +973,7 @@ function labDetail(b){
     var diffs='';
     if(h.before&&h.after){var parts=[];if(h.before.threshold!==h.after.threshold)parts.push('bar '+h.before.threshold+'→'+h.after.threshold);if(h.before.tp!==h.after.tp)parts.push('TP '+h.before.tp+'→'+h.after.tp+'%');if(h.before.sl!==h.after.sl)parts.push('SL '+h.before.sl+'→'+h.after.sl+'%');if(h.before.posPct!==h.after.posPct)parts.push('size '+Math.round(h.before.posPct*100)+'→'+Math.round(h.after.posPct*100)+'%');if(parts.length)diffs='<div class="mono faint" style="font-size:10px;margin-top:2px">'+parts.join(' · ')+'</div>';}
     var meta=h.wr!=null?('win rate '+h.wr+'% · '+h.trades+' trades · day P/L '+(h.realizedDay>=0?'+':'')+lm(h.realizedDay)):'';
-    return '<div style="border-left:2px solid var(--ink);padding:4px 0 4px 8px;margin:6px 0"><div style="font-size:11px"><b>Day '+h.day+'</b> — '+escapeHtml(h.headline||'')+'</div>'+(meta?'<div class="faint" style="font-size:10px">'+meta+'</div>':'')+'<div class="faint" style="font-size:11px;margin-top:2px">'+h.changes.map(function(c){return '· '+escapeHtml(c);}).join('<br>')+'</div>'+diffs+'</div>';
+    return '<div style="border-left:2px solid var(--ink);padding:4px 0 4px 8px;margin:6px 0"><div style="font-size:11px"><b>'+(h.review!=null?'Review '+h.review:'Day '+h.day)+'</b> — '+escapeHtml(h.headline||'')+'</div>'+(meta?'<div class="faint" style="font-size:10px">'+meta+'</div>':'')+'<div class="faint" style="font-size:11px;margin-top:2px">'+h.changes.map(function(c){return '· '+escapeHtml(c);}).join('<br>')+'</div>'+diffs+'</div>';
   }).join(''):'<div class="faint" style="font-size:11px">no lessons yet — the first lesson lands after day 1.</div>';
   return '<div style="background:var(--paper);border:1.5px solid var(--ink);border-radius:8px;padding:12px;margin:2px 0 12px">'
     +hunt+strat
@@ -978,7 +992,7 @@ function labRender(){
   var grad=LAB.bots.filter(function(b){return b.status==='graduated';}).length;
   var bust=LAB.bots.filter(function(b){return b.status==='busted';}).length;
   var head='<div class="card" style="margin-bottom:16px"><div class="row wrap" style="align-items:flex-start">'
-    +'<div><div class="klabel">Day '+LAB.day+(LAB.season>1?' · Season '+LAB.season:'')+' · '+LAB.tick+' rounds traded</div>'
+    +'<div><div class="klabel">'+LAB.tick+' rounds traded · '+(LAB.reviews||0)+' learning reviews'+(LAB.season>1?' · Season '+LAB.season:'')+'</div>'
     +'<div class="mono" style="font-size:28px;font-weight:700">'+lm(grand)+'</div>'
     +'<div class="mono" style="font-weight:700;color:'+(gpnl>=0?'#0F7A45':'#B02A2A')+'">'+(gpnl>=0?'+':'')+lm(gpnl)+' combined ('+(gpnl/gbase*100>=0?'+':'')+(gpnl/gbase*100).toFixed(1)+'%)</div></div>'
     +'<div style="text-align:right"><div class="faint mono" style="font-size:11px">10 bots · $'+LAB.start.toLocaleString()+' each</div>'
@@ -1001,7 +1015,7 @@ function labRender(){
     +rows
     +'<div class="note"><span class="tick mid"></span> Each bot is a $'+LAB.start.toLocaleString()+' paper wallet hunting a broad live universe ($10k–tens of millions) with its own cap band, signal triggers + risk profile (real slippage + 1% fee modeled). It runs on the server 24/7, adapts daily, and the whole strategy gets versioned: when a run\'s mistakes are clear, we ship a new strategy version (v1 → v2 …) and archive the old one. The archetype at the top is the one this market is rewarding. Paper only; no funds, no signing.</div></div>';
   var idName={};LAB.bots.forEach(function(b){idName[b.id]=b.name.split(' ')[0];});
-  box.innerHTML=head+labVersions(LAB)+lead+labCalls(LAB.calls,idName)+labWallets(LAB_W);
+  box.innerHTML=head+labVersions(LAB)+lead+labCalls(LAB.calls,idName)+labDatabase(LAB_DB)+labWallets(LAB_W);
 }
 function labVersions(L){
   var v=L.strategyVersion||1;
@@ -1025,7 +1039,7 @@ function labFetch(advance){
     } else {if(st)st.textContent=(d&&d.error)?d.error:'no data yet — retry';}
   }).catch(function(){if(st)st.textContent='backend slow — retry in a moment';});
 }
-function labEnter(){labFetch(false);labLoadWallets();if(labTimer)clearInterval(labTimer);labTimer=setInterval(function(){labFetch(true);labLoadWallets();},30000);}
+function labEnter(){labFetch(false);labLoadWallets();labLoadDB();if(labTimer)clearInterval(labTimer);labTimer=setInterval(function(){labFetch(true);labLoadWallets();labLoadDB();},30000);}
 function labLeave(){if(labTimer){clearInterval(labTimer);labTimer=null;}}
 
 /* ---------- init ---------- */
