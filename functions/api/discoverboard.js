@@ -49,7 +49,7 @@ export async function onRequestGet({ request, env }) {
 
   try {
     // 1) universe: broad multi-source candidate set (boosts + profiles + trending + spike/accum)
-    const cand = await buildUniverse();
+    const cand = await buildUniverse(env);
     const universe = cand.slice(0, 40).map((c) => c.mint);
     const KV = env.ZEN_KV; // serve the last-good board if every discovery source rate-limits CF
     if (!universe.length) {

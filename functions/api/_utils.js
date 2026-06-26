@@ -136,38 +136,54 @@ const QUOTE_MINTS = new Set([
 //   volume-spike         — last hour running >=2.2x the 24h average pace (sudden activity)
 //   accumulation         — steady positive drift + buy-side pressure, no blow-off spike
 // GeckoTerminal is keyless & free (~30 req/min). All calls are best-effort; partial data is OK.
-export async function buildUniverse() {
+export async function buildUniverse(env) {
   const get = async (u, h, tries) => { tries = tries || 3; for (let i = 0; i < tries; i++) { try { const r = await fetch(u, h ? { headers: h } : undefined); if (r.ok) return await r.json(); } catch (e) { /**/ } await new Promise((s) => setTimeout(s, 200)); } return null; };
   const num = (x) => { const n = parseFloat(x); return isFinite(n) ? n : 0; };
   const out = new Map(); // mint -> Set(sources)
   const add = (mint, src) => { if (!mint || QUOTE_MINTS.has(mint)) return; const s = out.get(mint) || new Set(); s.add(src); out.set(mint, s); };
 
-  // DexScreener is the only feed reachable from Cloudflare (pump.fun & GeckoTerminal block CF).
-  // So: boosts (top+latest) + new token profiles + SEARCH across several queries to widen the net
-  // well beyond just paid promos. GeckoTerminal kept as a single best-effort fast-fail attempt.
+  // Sources (verified reachable from Cloudflare via /api/sourcetest):
+  //  • DexScreener — keyless: boosts (top+latest) + new profiles + SEARCH (broad net)
+  //  • GeckoTerminal — keyless, rate-limited not blocked: trending + new pools (FRESH launches),
+  //    fast-fail so a rate-limit blip never stalls us
+  //  • Solana Tracker — purpose-built new/trending/graduating feed; activates if SOLANATRACKER_KEY
+  //    is set in the Cloudflare env (free key → real new launches). Dormant until then.
   const SEARCH = ['pump', 'SOL', 'moon', 'wif'];
+  const stKey = env && env.SOLANATRACKER_KEY;
+  const stH = stKey ? { 'x-api-key': stKey } : null;
+  const gtH = { accept: 'application/json' };
   const res = await Promise.all([
     get('https://api.dexscreener.com/token-boosts/top/v1'),
     get('https://api.dexscreener.com/token-boosts/latest/v1'),
     get('https://api.dexscreener.com/token-profiles/latest/v1'),
     ...SEARCH.map((q) => get('https://api.dexscreener.com/latest/dex/search?q=' + encodeURIComponent(q))),
-    get('https://api.geckoterminal.com/api/v2/networks/solana/new_pools?page=1', { accept: 'application/json' }, 1),
+    get('https://api.geckoterminal.com/api/v2/networks/solana/new_pools?page=1', gtH, 2),
+    get('https://api.geckoterminal.com/api/v2/networks/solana/trending_pools?page=1', gtH, 2),
+    stKey ? get('https://data.solanatracker.io/tokens/latest', stH, 1) : Promise.resolve(null),
+    stKey ? get('https://data.solanatracker.io/tokens/trending', stH, 1) : Promise.resolve(null),
   ]);
-  const bt = res[0], bl = res[1], prof = res[2];
-  const searches = res.slice(3, 3 + SEARCH.length);
-  const np = res[3 + SEARCH.length];
+  let k = 0;
+  const bt = res[k++], bl = res[k++], prof = res[k++];
+  const searches = res.slice(k, k + SEARCH.length); k += SEARCH.length;
+  const np = res[k++], trend = res[k++], stLatest = res[k++], stTrending = res[k++];
 
   for (const b of bt || []) if (b && b.chainId === 'solana' && b.tokenAddress) add(b.tokenAddress, 'boosted');
   for (const b of bl || []) if (b && b.chainId === 'solana' && b.tokenAddress) add(b.tokenAddress, 'new-boost');
   for (const b of prof || []) if (b && b.chainId === 'solana' && b.tokenAddress) add(b.tokenAddress, 'profile');
   for (const s of searches) for (const p of (s && s.pairs) || []) { if (p && p.chainId === 'solana' && p.baseToken && p.baseToken.address) add(p.baseToken.address, 'search'); }
 
-  // GeckoTerminal new pools (best-effort — usually blocked from CF, free bonus when it works)
   const mintOf = (p) => { const id = p && p.relationships && p.relationships.base_token && p.relationships.base_token.data && p.relationships.base_token.data.id; return id ? String(id).replace(/^solana_/, '') : null; };
   for (const p of (np && np.data) || []) { const m = mintOf(p); if (m) add(m, 'fresh'); }
+  for (const p of (trend && trend.data) || []) { const m = mintOf(p); if (m) add(m, 'trending'); }
 
-  // diversity-first ordering so fresh/varied tokens aren't crowded out by the slow-changing boosts
-  const pri = (s) => s.has('new-boost') ? 0 : s.has('fresh') ? 1 : s.has('profile') ? 2 : s.has('boosted') ? 3 : 4;
+  // Solana Tracker (defensive parse — shape verified later via /api/sourcetest?st=KEY)
+  const stMint = (it) => (it && (it.mint || (it.token && it.token.mint) || it.address || it.tokenAddress)) || null;
+  const stArr = (d) => Array.isArray(d) ? d : (d && (d.data || d.tokens)) || [];
+  for (const it of stArr(stLatest)) add(stMint(it), 'st-new');
+  for (const it of stArr(stTrending)) add(stMint(it), 'st-trending');
+
+  // diversity-first ordering: brand-new (Solana Tracker / GT fresh) first, slow boosts last
+  const pri = (s) => s.has('st-new') ? 0 : s.has('fresh') ? 0 : s.has('st-trending') ? 1 : s.has('new-boost') ? 1 : s.has('trending') ? 2 : s.has('profile') ? 3 : s.has('boosted') ? 4 : 5;
   return [...out.entries()].map(([mint, s]) => ({ mint, sources: [...s], _p: pri(s) }))
     .sort((a, b) => a._p - b._p).map(({ mint, sources }) => ({ mint, sources }));
 }

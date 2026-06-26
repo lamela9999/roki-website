@@ -86,7 +86,7 @@ export async function onRequestGet(context) {
   const lab = await KV.get('radar:lab', 'json').catch(() => null);
   const held = lab ? loadFromState(lab) : [];
   let trending = [];
-  try { const cand = await buildUniverse(); trending = cand.slice(0, 30).map((c) => c.mint); } catch (e) { /**/ }
+  try { const cand = await buildUniverse(env); trending = cand.slice(0, 30).map((c) => c.mint); } catch (e) { /**/ }
   // rotate through the trending set across calls (separate key — never touch the lab state)
   const cursor = ((await KV.get('radar:db:wcursor', 'json').catch(() => null)) || { i: 0 }).i || 0;
   const rotated = trending.slice(cursor).concat(trending.slice(0, cursor));

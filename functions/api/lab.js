@@ -255,7 +255,7 @@ async function scanUniverse(env, nowTs, smartMap, learnedEdge, capMaxOf) {
   // most of the time, which was freezing the whole lab. So: get the candidate MINTS from it when
   // we can and CACHE them; when it's empty, reuse the last-good set. Then we always batch-fetch
   // FRESH prices below (the /tokens endpoint is far more reliable) so the lab never stalls.
-  const cand = await buildUniverse();
+  const cand = await buildUniverse(env);
   let mints, srcOf = {};
   if (cand && cand.length >= 8) {
     const pool = cand.slice(0, POOL);
