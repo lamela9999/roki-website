@@ -54,9 +54,11 @@ const BOTS = [
   { id: 'insider', name: 'Insider Watcher', dial: 44 },
   { id: 'balanced', name: 'Balanced', dial: 50 },
   { id: 'whale', name: 'Liquidity Whale', dial: 34 },
+  { id: 'knife', name: 'Falling Knife Catcher', dial: 60 },
 ];
 // scoring weights per archetype (same as /api/discoverall)
 const ARCH = {
+  knife: { Social: 30, 'On-chain health': 55, 'Wallet cleanliness': 60, Momentum: 50 },
   degen: { Social: 90, 'On-chain health': 40, 'Wallet cleanliness': 25, Momentum: 95 },
   conservative: { Social: 35, 'On-chain health': 90, 'Wallet cleanliness': 95, Momentum: 45 },
   smart: { Social: 60, 'On-chain health': 65, 'Wallet cleanliness': 80, Momentum: 55 },
@@ -83,7 +85,7 @@ const SRC_BONUS = {
 };
 // extra score weight (on top of the base smart-money bonus) for the archetypes whose whole job is
 // to follow proven winners — when validated top wallets accumulate a token, these lean in hardest
-const SMART_EXTRA = { smart: 14, insider: 12, balanced: 6, momentum: 6, narrative: 4, whale: 4, conservative: 3, safety: 2, sniper: 2, degen: 2 };
+const SMART_EXTRA = { smart: 14, insider: 12, balanced: 6, momentum: 6, narrative: 4, whale: 4, conservative: 3, safety: 2, sniper: 2, degen: 2, knife: 8 };
 const SRC_RANK = ['smart-money', 'volume-spike', 'accumulation', 'trending', 'fresh', 'boosted', 'volume', 'new-boost', 'profile'];
 const primarySrc = (sources) => { for (const s of SRC_RANK) if (sources && sources.indexOf(s) >= 0) return s; return (sources && sources[0]) || 'trending'; };
 // Derive activity signals straight from the DexScreener pair (works from CF even when the
@@ -115,6 +117,11 @@ const PROFILE = {
   narrative:    { capMin: 150e3, capMax: 25e6,  liqMin: 20e3, hold: 14, trig: (m) => m.srcTrendy && m.pc24 > 0 && m.pc24 < 60 && !m.spike,                                    label: 'hot narratives, pre-blowoff' },
   balanced:     { capMin: 100e3, capMax: 50e6,  liqMin: 15e3, hold: 24, trig: (m) => m.accum || (m.pc6 > 0 && m.pc6 < 30 && m.buyRatio6 > 0.52),                              label: 'steady, mid-cap tilt' },
   whale:        { capMin: 1e6,   capMax: 300e6, liqMin: 60e3, hold: 36, trig: (m) => m.liq >= 60e3 && m.pc6 <= 2 && m.pc6 >= -12 && m.pc24 > -20,                             label: 'deep-liquidity dips' },
+  // Falling Knife Catcher: a token we once saw much higher (>=90% down from its peak in our DB),
+  // now bottomed in the $3k–60k range but still has liquidity + signs of life. Buys the bottom,
+  // takes most profit on the bounce, keeps a MOON BAG that rides to a big target or breakeven.
+  knife:        { capMin: 3e3,   capMax: 60e3,  liqMin: 2500, hold: 80, tp: 35, sl: 30, moonBag: true, moonTP: 160,
+                  trig: (m) => m.drawdown >= 0.9 && m.liq >= 2500 && m.buyRatio6 >= 0.5,                                                                                     label: 'crashed tokens, bottom-fishing' },
   conservative: { capMin: 500e3, capMax: 300e6, liqMin: 50e3, hold: 40, trig: (m) => m.clean && m.ageDays != null && m.ageDays > 2 && m.pc6 < 1 && m.pc6 > -15,              label: 'established pullbacks' },
   safety:       { capMin: 500e3, capMax: 300e6, liqMin: 60e3, hold: 40, trig: (m) => m.clean && m.liq >= 60e3 && m.pc24 >= -10 && m.pc24 <= 25,                              label: 'safest, deep + clean' },
 };
@@ -240,8 +247,8 @@ function totalEquity(w) {
 }
 
 // ---- one scan of the candidate universe → rich metrics + per-archetype scores ----
-async function scanUniverse(env, nowTs, smartMap, learnedEdge) {
-  smartMap = smartMap || {}; learnedEdge = learnedEdge || {};
+async function scanUniverse(env, nowTs, smartMap, learnedEdge, capMaxOf) {
+  smartMap = smartMap || {}; learnedEdge = learnedEdge || {}; capMaxOf = capMaxOf || {};
   const dexGet = async (u) => { for (let i = 0; i < 3; i++) { try { const r = await fetch(u); if (r.ok) return await r.json(); } catch (e) { /**/ } await new Promise((res) => setTimeout(res, 250)); } return null; };
   const KV = env.ZEN_KV;
   // The DISCOVERY feed (buildUniverse: boosts/profiles/GeckoTerminal) is rate-limited from CF
@@ -299,7 +306,9 @@ async function scanUniverse(env, nowTs, smartMap, learnedEdge) {
     const srcTrendy = sources.indexOf('trending') >= 0 || sources.indexOf('boosted') >= 0 || sources.indexOf('new-boost') >= 0;
     const sm = smartMap[mint]; const smart = sm ? (sm.score || 0) : 0; const smartCount = sm ? (sm.count || 0) : 0;
     if (smartCount > 0 && sources.indexOf('smart-money') < 0) sources.push('smart-money');
-    const M = { mcap, liq, ageDays, vol24, vol6, vol1, pc1, pc6, pc24, buyRatio6, buyRatio24, spike, accum, reawaken, clean, srcTrendy, smart, smartCount };
+    const capPeak = Math.max(capMaxOf[mint] || 0, mcap); const drawdown = capPeak > 0 ? +(1 - mcap / capPeak).toFixed(3) : 0;
+    if (drawdown >= 0.9 && sources.indexOf('crashed') < 0) sources.push('crashed');
+    const M = { mcap, liq, ageDays, vol24, vol6, vol1, pc1, pc6, pc24, buyRatio6, buyRatio24, spike, accum, reawaken, clean, srcTrendy, smart, smartCount, capPeak, drawdown };
 
     const Vv = {
       liq: logScore(liq, 3000, 1000000), vol: logScore(vol24, 5000, 5000000),
@@ -358,16 +367,20 @@ function buy(w, mint, price, symbol, tick, ctx) {
   });
   if (w.trades.length > TRADES_KEEP) w.trades.pop();
 }
-function sell(w, mint, price, reason, tick, ts, liqNow) {
+function sell(w, mint, price, reason, tick, ts, liqNow, fraction) {
   const pos = w.positions[mint]; if (!pos) return;
+  fraction = Math.min(1, Math.max(0.05, fraction || 1));   // partial sells (moon-bag scaling)
+  const partial = fraction < 0.999;
+  const qtyOut = pos.qty * fraction;
+  const usdInOut = pos.usdIn * fraction;
   const liq = liqNow > 0 ? liqNow : (pos.liqIn || 0);
-  const grossUsd = pos.qty * price;                   // mid-value of the bag right now
+  const grossUsd = qtyOut * price;                    // mid-value of the slice being sold
   const impact = impactOf(grossUsd, liq);
   const slip = (pos.baseSlip || w.params.slip) + impact;
   const eff = price * (1 - slip);                     // effective exit price (worse than mid)
-  const proceeds = pos.qty * eff * FEE;               // cash back after slippage + 1% fee
-  const pnl = proceeds - pos.usdIn;
-  const netPct = (proceeds / pos.usdIn - 1) * 100;    // what you ACTUALLY made
+  const proceeds = qtyOut * eff * FEE;                // cash back after slippage + 1% fee
+  const pnl = proceeds - usdInOut;
+  const netPct = (proceeds / usdInOut - 1) * 100;     // what you ACTUALLY made on this slice
   const movePct = pos.mid > 0 ? (price / pos.mid - 1) * 100 : 0; // raw token price move (mid->mid)
   const mcapOut = pos.mid > 0 ? Math.round(pos.mcapIn * (price / pos.mid)) : pos.mcapIn;
   w.cash += proceeds;
@@ -375,15 +388,16 @@ function sell(w, mint, price, reason, tick, ts, liqNow) {
   if (pnl >= 0) { w.wins++; w.dayWins++; } else { w.losses++; w.dayLosses++; }
   w.dayRealized += pnl; w.dayTrades++;
   const rec = {
-    tick, ts, side: 'SELL', symbol: pos.symbol, mint, reason,
-    usdIn: Math.round(pos.usdIn), proceeds: +proceeds.toFixed(2), pnl: +pnl.toFixed(2), pnlPct: +netPct.toFixed(1),
+    tick, ts, side: 'SELL', symbol: pos.symbol, mint, reason: reason + (partial ? ' (' + Math.round(fraction * 100) + '%)' : ''),
+    usdIn: Math.round(usdInOut), proceeds: +proceeds.toFixed(2), pnl: +pnl.toFixed(2), pnlPct: +netPct.toFixed(1),
     movePct: +movePct.toFixed(1), entryPrice: pos.mid, exitPrice: price, mcapIn: pos.mcapIn, mcapOut,
-    qty: pos.qty, slipPct: +(slip * 100).toFixed(2), feePct: 1, heldTicks: tick - pos.tick,
-    tsIn: pos.ts || null, src: pos.src, scoreIn: pos.scoreIn, barIn: pos.barIn,
+    qty: qtyOut, slipPct: +(slip * 100).toFixed(2), feePct: 1, heldTicks: tick - pos.tick,
+    tsIn: pos.ts || null, src: pos.src, scoreIn: pos.scoreIn, barIn: pos.barIn, fraction: +fraction.toFixed(2),
   };
   w.trades.unshift(rec);
   if (w.trades.length > TRADES_KEEP) w.trades.pop();
-  delete w.positions[mint];
+  if (partial) { pos.qty -= qtyOut; pos.usdIn -= usdInOut; }
+  else delete w.positions[mint];
   return rec;
 }
 
@@ -481,10 +495,12 @@ function learn(w, day) {
 // ---- advance the whole lab one tick ----
 async function advance(state, env, nowTs) {
   // smart-money map: which tokens proven-winner wallets are accumulating now (built by walletdb)
-  let smartMap = {};
+  let smartMap = {}, capMaxOf = {};
   try { const sm = await env.ZEN_KV.get('radar:db:smartmap', 'json'); if (sm && sm.tokens) smartMap = sm.tokens; } catch (e) { /**/ }
+  // historical peak market cap per token (from the DB memory) → lets the knife spot 90%+ crashes
+  try { const td = await env.ZEN_KV.get('radar:db:tokens', 'json'); if (td && td.tokens) { for (const m in td.tokens) capMaxOf[m] = td.tokens[m].capMax || 0; } } catch (e) { /**/ }
   const learnedEdge = state.signalEdge || {}; // what each signal has actually paid (from outcomes)
-  const universe = await scanUniverse(env, nowTs, smartMap, learnedEdge);
+  const universe = await scanUniverse(env, nowTs, smartMap, learnedEdge, capMaxOf);
   if (!universe || !universe.length) return false;
 
   const uPrice = {}, uScore = {};
@@ -532,10 +548,21 @@ async function advance(state, env, nowTs) {
       pos.last = price;
       const liqNow = (uScore[m] && uScore[m].liq) || 0;
       const up = (price / pos.entry - 1) * 100;
+      const eTp = prof.tp != null ? prof.tp : p.tp;   // profile can override the learned TP/SL
+      const eSl = prof.sl != null ? prof.sl : p.sl;
       let rec = null;
-      if (up >= p.tp) rec = sell(w, m, price, 'take-profit', tick, nowTs, liqNow);
-      else if (up <= -p.sl) rec = sell(w, m, price, 'stop-loss', tick, nowTs, liqNow);
-      else if (tick - pos.tick >= prof.hold) rec = sell(w, m, price, 'time-stop', tick, nowTs, liqNow);
+      if (prof.moonBag) {
+        // scale out: take most profit at TP, ride a moon bag to a big target or back to breakeven
+        if (!pos.moon && up >= eTp) { rec = sell(w, m, price, 'take-profit', tick, nowTs, liqNow, 0.7); if (rec) pos.moon = true; }
+        else if (pos.moon && up >= prof.moonTP) rec = sell(w, m, price, 'moon-bag hit +' + prof.moonTP + '%', tick, nowTs, liqNow, 1);
+        else if (pos.moon && up <= 3) rec = sell(w, m, price, 'moon-bag back to breakeven', tick, nowTs, liqNow, 1);
+        else if (!pos.moon && up <= -eSl) rec = sell(w, m, price, 'stop-loss', tick, nowTs, liqNow, 1);
+        else if (tick - pos.tick >= prof.hold) rec = sell(w, m, price, 'time-stop', tick, nowTs, liqNow, 1);
+      } else {
+        if (up >= eTp) rec = sell(w, m, price, 'take-profit', tick, nowTs, liqNow);
+        else if (up <= -eSl) rec = sell(w, m, price, 'stop-loss', tick, nowTs, liqNow);
+        else if (tick - pos.tick >= prof.hold) rec = sell(w, m, price, 'time-stop', tick, nowTs, liqNow);
+      }
       if (rec) closures.push({ mint: m, pnl: rec.pnl });
     }
 
