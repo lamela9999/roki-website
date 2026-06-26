@@ -46,7 +46,7 @@ export async function onRequestGet({ request, env }) {
     if (!smap || !smap.tokens) return json({ smartCount: 0, alerts: [] }, 200, { 'cache-control': 'public, max-age=30' });
     const cutoff = nowTs - 6 * 60 * 60 * 1000; // last 6h
     const alerts = Object.keys(smap.tokens).map((m) => ({ mint: m, ...smap.tokens[m] }))
-      .filter((t) => t.count > 0 && (t.updated || 0) > cutoff)
+      .filter((t) => (t.present || t.count || 0) > 0 && (t.updated || 0) > cutoff)
       .sort((a, b) => b.score - a.score).slice(0, 30);
     return json({ smartCount: smap.smartCount || 0, updated: smap.updated, alerts }, 200, { 'cache-control': 'public, max-age=30' });
   }
@@ -175,16 +175,20 @@ export async function onRequestGet({ request, env }) {
       if (!smap || !smap.tokens) smap = { tokens: {} };
       for (const mint of Object.keys(perByMint)) {
         const { per, sym } = perByMint[mint];
-        const buyers = [];
+        const buyers = [], sellers = [];
         for (const a of Object.keys(per)) {
           if (rankOf[a] == null) continue;                 // only proven winners
-          const net = (per[a].out - per[a].in) / 1e9;      // <0 = accumulating this token
-          if (net < -0.05) buyers.push({ addr: a, rank: rankOf[a], tokenNet: +net.toFixed(2) });
+          const net = (per[a].out - per[a].in) / 1e9;      // <0 = accumulating, >0 = distributing
+          if (net < 0) buyers.push({ addr: a, rank: rankOf[a], tokenNet: +net.toFixed(2) });
+          else if (net > 0) sellers.push({ addr: a, rank: rankOf[a], tokenNet: +net.toFixed(2) });
         }
-        buyers.sort((x, y) => x.rank - y.rank);
-        // weighted score: better-ranked accumulators count more
-        const score = +buyers.reduce((s, b) => s + (SMART_TOP + 1 - b.rank) / SMART_TOP, 0).toFixed(2);
-        smap.tokens[mint] = { sym, score, count: buyers.length, buyers: buyers.slice(0, 10), updated: nowTs };
+        buyers.sort((x, y) => x.rank - y.rank); sellers.sort((x, y) => x.rank - y.rank);
+        const present = buyers.length + sellers.length;
+        if (present > 0) {
+          // conviction score: ranked accumulators add, distributors subtract
+          const score = +(buyers.reduce((s, b) => s + (SMART_TOP + 1 - b.rank) / SMART_TOP, 0) - sellers.length * 0.3).toFixed(2);
+          smap.tokens[mint] = { sym, score, count: buyers.length, sellers: sellers.length, present, buyers: buyers.slice(0, 10), updated: nowTs };
+        }
       }
       const sk = Object.keys(smap.tokens);
       if (sk.length > 2500) { sk.sort((a, b) => (smap.tokens[a].updated || 0) - (smap.tokens[b].updated || 0)); for (let i = 0; i < sk.length - 2500; i++) delete smap.tokens[sk[i]]; }

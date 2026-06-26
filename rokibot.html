@@ -843,12 +843,16 @@ function labSmartFeed(S){
   if(!S)return '';
   if(!S.alerts||!S.alerts.length)return '<div class="card" style="margin-bottom:16px;border-color:#C8821E"><div class="row wrap" style="align-items:baseline"><h3 style="margin:0">🔥 Smart Money Moves</h3><span class="faint mono" style="font-size:11px">'+(S.smartCount||0)+' proven winners tracked</span></div><div class="faint" style="font-size:12px;margin-top:4px">No proven-winner wallets are accumulating a tracked token right now. As the wallet scanner runs, live alpha shows up here.</div></div>';
   var rows=S.alerts.slice(0,12).map(function(a){
-    var buyers=(a.buyers||[]).slice(0,5).map(function(b){return '<a href="https://solscan.io/account/'+b.addr+'" target="_blank" rel="noopener" class="mono" style="font-size:10px;text-decoration:none" title="rank #'+b.rank+' winner · '+b.tokenNet+' SOL in">#'+b.rank+' '+b.addr.slice(0,4)+'…</a>';}).join(' ');
+    var buyers=(a.buyers||[]).slice(0,5).map(function(b){return '<a href="https://solscan.io/account/'+b.addr+'" target="_blank" rel="noopener" class="mono" style="font-size:10px;text-decoration:none" title="rank #'+b.rank+' winner · '+b.tokenNet+' SOL net">#'+b.rank+' '+b.addr.slice(0,4)+'…</a>';}).join(' ');
+    var badge=a.count>0
+      ? '<span class="mono" style="font-size:10px;background:#D8F0DD;border:1px solid #0F7A45;border-radius:4px;padding:0 5px;color:#0F7A45;font-weight:700">🔥 '+a.count+' winner'+(a.count>1?'s':'')+' buying</span>'
+      : '<span class="mono" style="font-size:10px;border:1px solid var(--hairline);border-radius:4px;padding:0 5px;color:#B02A2A">'+(a.sellers||0)+' winners selling</span>';
+    var sell=(a.count>0&&a.sellers>0)?' <span class="mono faint" style="font-size:9px">'+a.sellers+' selling</span>':'';
     return '<div style="border-bottom:1px solid var(--hairline);padding:8px 0"><div style="display:flex;gap:6px;align-items:baseline;flex-wrap:wrap">'
       +'<a href="'+labDex(a.mint)+'" target="_blank" rel="noopener" style="font-weight:700;text-decoration:none;font-size:14px">$'+escapeHtml(a.sym||'?')+' ↗</a>'
-      +'<span class="mono" style="font-size:10px;background:#FCE9C8;border:1px solid #C8821E;border-radius:4px;padding:0 5px;color:#7a4d00;font-weight:700">🔥 '+a.count+' proven winner'+(a.count>1?'s':'')+' accumulating</span>'
+      +badge+sell
       +'<span style="flex:1"></span><span class="wchip mono" style="font-size:9px;cursor:pointer" onclick="copyCA(\''+a.mint+'\',this)">copy CA</span></div>'
-      +'<div style="margin-top:2px;font-size:10px"><span class="faint">who:</span> '+buyers+'</div></div>';
+      +(buyers?'<div style="margin-top:2px;font-size:10px"><span class="faint">buying:</span> '+buyers+'</div>':'')+'</div>';
   }).join('');
   return '<div class="card" style="margin-bottom:16px;border-color:#C8821E;box-shadow:3px 3px 0 #C8821E"><div class="row wrap" style="align-items:baseline"><h3 style="margin:0">🔥 Smart Money Moves</h3><span class="faint mono" style="font-size:11px">'+(S.smartCount||0)+' proven winners tracked · live</span></div>'
     +'<div class="note" style="margin:4px 0 6px"><span class="faint">Tokens that wallets with a <b>proven winning record</b> (top of our leaderboard) are <b>buying right now</b>. This is the lab\'s sharpest live signal — the bots follow it too. Not financial advice; always verify the chart.</span></div>'
