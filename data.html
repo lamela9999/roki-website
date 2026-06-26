@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ROKI Lab — Data Center</title>
+<meta name="description" content="Every token the ROKI Lab has scanned — cap history, signals, trade outcomes, and exactly which wallets bought and sold it. Browsable, verifiable on-chain data.">
+<meta property="og:title" content="ROKI Lab — Data Center">
+<meta property="og:description" content="Open any token: its cap history, signals, the lab's trade outcomes, and which wallets (proven winners or not) bought and sold it.">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter+Tight:wght@400;500;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--cream:#F5EFE6;--paper:#FBF6EC;--ink:#14110F;--coral:#E8534A;--green:#0F7A45;--red:#B02A2A;--gold:#C8821E;--hair:rgba(20,17,15,.14);--mono:'JetBrains Mono',monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--cream);color:var(--ink);font-family:'Inter Tight',system-ui,sans-serif;line-height:1.5}
+.mono{font-family:var(--mono)}.faint{color:#8a8178}
+.wrap{max-width:1000px;margin:0 auto;padding:22px 18px 70px}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.logo{font-family:'Archivo Black';font-size:20px}.logo .c{color:var(--coral)}
+header .sp{flex:1}
+header a{font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;text-decoration:none;color:var(--ink);padding:8px 12px;border:1.5px solid var(--ink);border-radius:8px;background:var(--paper);box-shadow:2px 2px 0 var(--ink)}
+h1{font-family:'Archivo Black';font-size:30px;margin:6px 0 4px}
+.sub{font-size:14px;max-width:680px;color:#4a443d}
+.card{background:var(--paper);border:1.5px solid var(--ink);border-radius:12px;box-shadow:3px 3px 0 var(--ink);padding:16px;margin:14px 0}
+.klabel{font-size:10px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:#8a8178}
+.statrow{display:flex;gap:18px;flex-wrap:wrap;margin:10px 0}
+.statrow .s .v{font-family:var(--mono);font-size:20px;font-weight:700}.statrow .s .l{font-size:11px;color:#6a635b}
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0}
+.chip{font-size:12px;font-weight:700;border:1.5px solid var(--ink);border-radius:7px;padding:6px 11px;background:var(--paper);cursor:pointer}
+.chip.on{background:var(--ink);color:var(--cream)}
+input,select{padding:9px 11px;border:1.5px solid var(--ink);border-radius:8px;font-family:var(--mono);font-size:13px;background:var(--paper)}
+.trow{display:grid;grid-template-columns:1fr 84px 70px 1fr;gap:8px;align-items:center;border-bottom:1px solid var(--hair);padding:8px 0;cursor:pointer;font-size:13px}
+.trow:hover{background:var(--cream)}
+.tag{font-size:9px;border:1px solid var(--hair);border-radius:4px;padding:0 4px;color:#6a635b}
+.bar{height:8px;background:var(--cream);border:1.5px solid var(--ink);border-radius:5px;overflow:hidden;margin:4px 0}
+.bar>i{display:block;height:100%;background:var(--coral)}
+a.lk{color:var(--coral);text-decoration:underline;cursor:pointer}
+.wtab{display:grid;grid-template-columns:1fr 90px 60px;gap:8px;font-size:12px;border-bottom:1px solid var(--hair);padding:5px 0}
+.badge{font-size:9px;font-weight:800;border-radius:4px;padding:1px 5px;border:1px solid}
+.bw{border-color:var(--gold);color:#7a4d00;background:#FCE9C8}
+footer{margin-top:26px;font-size:12px;color:#8a8178;text-align:center}
+@media(max-width:600px){.trow{grid-template-columns:1fr 70px 56px}.trow .sg{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="logo">ROKI <span class="c">DATA</span></span><span class="sp"></span>
+    <a href="/rokibot">The Lab ↗</a><a href="/track">Track record ↗</a>
+  </header>
+  <h1>Data Center</h1>
+  <p class="sub">Every token the lab has ever scanned — its <b>cap history (peak→now)</b>, the <b>signals</b> it fired, the lab's <b>trade outcomes</b> on it, and exactly <b>which wallets bought and sold it</b> (and whether they're proven winners). This is the raw, growing memory the strategy learns from. Open any token, or paste a contract.</p>
+
+  <div id="stats" class="statrow"></div>
+
+  <div class="tools">
+    <input id="q" placeholder="Paste a token contract (mint)…" style="flex:1;min-width:220px" onkeydown="if(event.key==='Enter')openToken(this.value.trim())">
+    <button class="chip" onclick="openToken(document.getElementById('q').value.trim())">Open</button>
+  </div>
+  <div class="tools">
+    <span class="klabel" style="align-self:center">show:</span>
+    <span class="chip on" data-f="all" onclick="setF('all')">all</span>
+    <span class="chip" data-f="crashed" onclick="setF('crashed')">🔪 crashed -90%</span>
+    <span class="chip" data-f="smart" onclick="setF('smart')">🔥 smart money</span>
+    <span class="chip" data-f="traded" onclick="setF('traded')">traded by bots</span>
+    <span class="sp" style="flex:1"></span>
+    <select id="sort" onchange="loadList()"><option value="seen">most seen</option><option value="drawdown">biggest crash</option><option value="pnl">best/worst P/L</option><option value="cap">market cap</option></select>
+  </div>
+
+  <div id="dossier"></div>
+  <div id="list" class="card"><div class="faint">Loading the database…</div></div>
+  <footer>ROKI Lab Data Center · read-only research · <a class="lk" href="/api/explore" target="_blank">raw JSON</a></footer>
+</div>
+
+<script>
+var FILTER='all';
+var ESC=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+function cap(v){v=+v||0;return v>=1e9?'$'+(v/1e9).toFixed(2)+'B':v>=1e6?'$'+(v/1e6).toFixed(2)+'M':v>=1e3?'$'+Math.round(v/1e3)+'k':'$'+Math.round(v);}
+function sol(a){return 'https://solscan.io/account/'+a;}
+function dex(m){return 'https://dexscreener.com/solana/'+m;}
+function sh(a){return a.slice(0,4)+'…'+a.slice(-4);}
+var SIG={'smart-money':'🔥 smart money','crashed':'🔪 crashed','accumulation':'📈 accumulation','volume-spike':'⚡ spike','trending':'🔥 trending','fresh':'🌱 new','boosted':'📣 boosted'};
+function setF(f){FILTER=f;document.querySelectorAll('[data-f]').forEach(function(c){c.classList.toggle('on',c.dataset.f===f);});loadList();}
+function copyA(t,el){try{navigator.clipboard.writeText(t);}catch(e){}if(el){var o=el.textContent;el.textContent='copied ✓';setTimeout(function(){el.textContent=o;},1000);}}
+
+function loadStats(s){
+  document.getElementById('stats').innerHTML=
+    st(s.tokens,'tokens tracked')+st(s.wallets,'wallets')+st(s.winners,'proven winners')+st(s.scans,'scans');
+}
+function st(v,l){return '<div class="s"><div class="v">'+(v||0).toLocaleString()+'</div><div class="l">'+l+'</div></div>';}
+
+function loadList(){
+  var sort=document.getElementById('sort').value;
+  fetch('/api/explore?filter='+FILTER+'&sort='+sort).then(function(r){return r.json();}).then(function(d){
+    if(d.stats)loadStats(d.stats);
+    var box=document.getElementById('list');
+    if(!d.tokens||!d.tokens.length){box.innerHTML='<div class="faint">No tokens match yet.</div>';return;}
+    var rows=d.tokens.map(function(t){
+      var sg=(t.sigs||[]).map(function(s){return '<span class="tag">'+(SIG[s]||s)+'</span>';}).join(' ');
+      var ddc=t.drawdown>=0.9?'color:var(--red);font-weight:700':'';
+      var pl=t.traded?'<span style="color:'+(t.pnl>=0?'var(--green)':'var(--red)')+'">'+(t.pnl>=0?'+':'')+'$'+t.pnl+' '+t.wins+'/'+t.losses+'</span>':'<span class="faint">—</span>';
+      return '<div class="trow" onclick="openToken(\''+t.mint+'\')">'
+        +'<div><b>$'+ESC(t.sym||'?')+'</b> '+(t.smart>0?'<span class="badge bw">🔥'+t.smart+'</span> ':'')+'<span class="sg">'+sg+'</span></div>'
+        +'<div class="mono" style="text-align:right">'+cap(t.capLast)+'</div>'
+        +'<div class="mono" style="text-align:right;'+ddc+'">'+Math.round(t.drawdown*100)+'%↓</div>'
+        +'<div class="mono" style="text-align:right;font-size:12px">'+pl+'</div></div>';
+    }).join('');
+    box.innerHTML='<div class="klabel" style="margin-bottom:4px">'+d.count+' tokens · '+FILTER+' · sorted by '+sort+' <span class="faint" style="text-transform:none">(click any token)</span></div>'
+      +'<div class="trow" style="cursor:default;font-size:10px;color:#8a8178;border-bottom:1.5px solid var(--ink)"><div>token / signals</div><div style="text-align:right">cap now</div><div style="text-align:right">from peak</div><div style="text-align:right">lab P/L</div></div>'
+      +rows;
+  }).catch(function(){document.getElementById('list').innerHTML='<div class="faint">Couldn\'t load — retry.</div>';});
+}
+
+function openToken(m){
+  if(!m)return;
+  var box=document.getElementById('dossier');
+  box.innerHTML='<div class="card"><div class="faint">Loading dossier…</div></div>';
+  box.scrollIntoView({behavior:'smooth',block:'start'});
+  fetch('/api/explore?token='+encodeURIComponent(m)).then(function(r){return r.json();}).then(function(d){
+    if(d.error){box.innerHTML='<div class="card"><div class="faint">'+ESC(d.error)+'</div></div>';return;}
+    var fill=d.capMax>0?Math.max(2,Math.round(d.capLast/d.capMax*100)):100;
+    var sigs=Object.keys(d.signals||{}).filter(function(s){return SIG[s];}).map(function(s){return '<span class="tag">'+SIG[s]+' ×'+d.signals[s]+'</span>';}).join(' ');
+    var o=d.outcomes||{};
+    var traded=(o.sells||0)>0?'<span style="color:'+(o.pnl>=0?'var(--green)':'var(--red)')+';font-weight:700">'+(o.pnl>=0?'+':'')+'$'+Math.round(o.pnl)+'</span> net · '+(o.wins||0)+'W / '+(o.losses||0)+'L over '+(o.sells||0)+' exits':'<span class="faint">the lab hasn\'t closed a trade on this yet</span>';
+    var sm=d.smart?('<span style="color:var(--green)">'+d.smart.buying+' buying</span> · <span style="color:var(--red)">'+d.smart.selling+' selling</span> (proven winners)'):'<span class="faint">no proven-winner activity recorded</span>';
+    var wal=(d.wallets||[]).slice(0,18).map(function(w){
+      var col=w.net>=0?'var(--green)':'var(--red)';
+      var wb=w.winnerRank?'<span class="badge bw">winner #'+w.winnerRank+'</span> ':'';
+      return '<div class="wtab"><div>'+wb+'<a href="'+sol(w.addr)+'" target="_blank" rel="noopener" class="mono" style="text-decoration:none">'+sh(w.addr)+' ↗</a></div>'
+        +'<div class="mono" style="text-align:right;color:'+col+'">'+(w.net>=0?'+':'')+w.net+' SOL</div>'
+        +'<div class="mono faint" style="text-align:right">'+(w.n||'')+'tx</div></div>';
+    }).join('');
+    box.innerHTML='<div class="card">'
+      +'<div class="row" style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap"><div style="font-size:22px;font-weight:800">$'+ESC(d.sym||'?')+'</div><span class="faint">'+ESC((d.name||'').slice(0,30))+'</span>'
+      +'<span class="sp" style="flex:1"></span><span class="mono lk" onclick="copyA(\''+d.mint+'\',this)" style="font-size:11px">copy CA</span> <a href="'+dex(d.mint)+'" target="_blank" rel="noopener" class="lk" style="font-size:11px">chart ↗</a></div>'
+      +'<div class="klabel" style="margin-top:10px">market cap — peak → now</div>'
+      +'<div style="display:flex;gap:10px;align-items:center"><span class="mono faint">'+cap(d.capMax)+'</span><div class="bar" style="flex:1"><i style="width:'+fill+'%"></i></div><span class="mono" style="font-weight:700">'+cap(d.capLast)+'</span></div>'
+      +'<div class="mono" style="font-size:12px;color:'+(d.drawdown>=0.9?'var(--red)':'#6a635b')+'">'+(d.drawdown>0?Math.round(d.drawdown*100)+'% down from its peak':'at/near its peak')+' · seen '+(d.seen||0)+'× by the scanner</div>'
+      +(sigs?'<div class="klabel" style="margin-top:12px">signals it has fired</div><div>'+sigs+'</div>':'')
+      +'<div class="klabel" style="margin-top:12px">the lab\'s trades on it</div><div style="font-size:13px">'+traded+'</div>'
+      +'<div class="klabel" style="margin-top:12px">smart money</div><div style="font-size:13px">'+sm+'</div>'
+      +'<div class="klabel" style="margin-top:12px">who traded it — '+(d.traders||0)+' wallets seen <span class="faint" style="text-transform:none">(net SOL on this token; + = took profit/sold, − = spent/bought)</span></div>'
+      +(wal||'<span class="faint" style="font-size:12px">no wallet data yet — the wallet scanner reaches it as it runs</span>')
+      +'</div>';
+  }).catch(function(){box.innerHTML='<div class="card"><div class="faint">Couldn\'t load that token.</div></div>';});
+}
+loadList();
+</script>
+</body>
+</html>
