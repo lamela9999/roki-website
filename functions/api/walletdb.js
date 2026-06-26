@@ -25,7 +25,8 @@ function loadFromState(state) {
   return [...held];
 }
 
-export async function onRequestGet({ request, env }) {
+export async function onRequestGet(context) {
+  const { request, env } = context;
   const KV = env.ZEN_KV;
   if (!KV) return json({ error: 'Wallet DB needs KV storage.' }, 503);
   const url = new URL(request.url);
@@ -199,6 +200,10 @@ export async function onRequestGet({ request, env }) {
 
   // advance the trending cursor (separate key) so the next scan covers different tokens
   try { await KV.put('radar:db:wcursor', JSON.stringify({ i: (cursor + BATCH) % Math.max(1, trending.length || 1) })); } catch (e) { /**/ }
+
+  // redundancy: also nudge the lab to advance, so if THIS cron runs the lab keeps trading even
+  // if its own cron has stopped (non-blocking via waitUntil)
+  try { const labUrl = new URL('/api/lab?tick=1', request.url).toString(); if (context.waitUntil) context.waitUntil(fetch(labUrl)); } catch (e) { /**/ }
 
   return json({ analyzed, batch: batch.length, txSeen, walletsKnown: db.n, newWallets: newW, scans: db.scans, ts: nowTs }, 200, { 'cache-control': 'no-store' });
 }

@@ -1062,7 +1062,7 @@ function labFetch(advance){
     } else {if(st)st.textContent=(d&&d.error)?d.error:'no data yet — retry';}
   }).catch(function(){if(st)st.textContent='backend slow — retry in a moment';});
 }
-function labEnter(){labFetch(false);labLoadWallets();labLoadDB();labLoadSmart();if(labTimer)clearInterval(labTimer);labTimer=setInterval(function(){labFetch(true);labLoadWallets();labLoadDB();labLoadSmart();},30000);}
+function labEnter(){labFetch(false);labLoadWallets();labLoadDB();labLoadSmart();if(labTimer)clearInterval(labTimer);var n=0;labTimer=setInterval(function(){n++;labFetch(n%3!==0);labLoadWallets();labLoadDB();labLoadSmart();},30000);}
 function labLeave(){if(labTimer){clearInterval(labTimer);labTimer=null;}}
 
 /* ---------- init ---------- */
