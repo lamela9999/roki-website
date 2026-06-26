@@ -900,7 +900,7 @@ function fmtCap(v){v=+v||0;if(v>=1e9)return '$'+(v/1e9).toFixed(2)+'B';if(v>=1e6
 function fmtPx(p){p=+p||0;if(p<=0)return '$0';if(p>=1)return '$'+p.toFixed(3);if(p>=0.001)return '$'+p.toFixed(5);return '$'+p.toPrecision(2);}
 function fmtT(ts){if(!ts)return '—';try{return new Date(ts).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});}catch(e){return '—';}}
 function fmtQty(q){q=+q||0;if(q>=1e6)return (q/1e6).toFixed(2)+'M';if(q>=1e3)return (q/1e3).toFixed(1)+'K';return q.toFixed(q<1?4:1);}
-var LAB_SRC={'smart-money':'🔥 smart money','crashed':'🔪 crashed -90%','volume-spike':'⚡ spike','accumulation':'📈 accumulation','trending':'🔥 trending','fresh':'🌱 new','boosted':'📣 boosted','volume':'📊 high volume','new-boost':'📣 boosted','profile':'📋 listed'};
+var LAB_SRC={'smart-money':'🔥 smart money','crashed':'🔪 crashed -90%','volume-spike':'⚡ spike','accumulation':'📈 accumulation','trending':'🔥 trending','fresh':'🌱 new','boosted':'📣 boosted','volume':'📊 high volume','new-boost':'📣 boosted','profile':'📋 listed','search':'🔎 found'};
 function labSrcTag(src){if(!src)return '';var l=LAB_SRC[src]||src;return ' <span class="faint" style="font-size:9px;border:1px solid var(--hairline);border-radius:4px;padding:0 3px">'+l+'</span>';}
 function labUniverseLine(u){
   if(!u||!u.tags)return '';

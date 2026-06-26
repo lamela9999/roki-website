@@ -137,40 +137,37 @@ const QUOTE_MINTS = new Set([
 //   accumulation         — steady positive drift + buy-side pressure, no blow-off spike
 // GeckoTerminal is keyless & free (~30 req/min). All calls are best-effort; partial data is OK.
 export async function buildUniverse() {
-  const get = async (u, h) => { for (let i = 0; i < 3; i++) { try { const r = await fetch(u, h ? { headers: h } : undefined); if (r.ok) return await r.json(); } catch (e) { /**/ } await new Promise((s) => setTimeout(s, 250)); } return null; };
-  const gtH = { accept: 'application/json' };
+  const get = async (u, h, tries) => { tries = tries || 3; for (let i = 0; i < tries; i++) { try { const r = await fetch(u, h ? { headers: h } : undefined); if (r.ok) return await r.json(); } catch (e) { /**/ } await new Promise((s) => setTimeout(s, 200)); } return null; };
   const num = (x) => { const n = parseFloat(x); return isFinite(n) ? n : 0; };
   const out = new Map(); // mint -> Set(sources)
   const add = (mint, src) => { if (!mint || QUOTE_MINTS.has(mint)) return; const s = out.get(mint) || new Set(); s.add(src); out.set(mint, s); };
 
-  const [bt, bl, prof, tr, vol, np] = await Promise.all([
+  // DexScreener is the only feed reachable from Cloudflare (pump.fun & GeckoTerminal block CF).
+  // So: boosts (top+latest) + new token profiles + SEARCH across several queries to widen the net
+  // well beyond just paid promos. GeckoTerminal kept as a single best-effort fast-fail attempt.
+  const SEARCH = ['pump', 'SOL', 'moon', 'wif'];
+  const res = await Promise.all([
     get('https://api.dexscreener.com/token-boosts/top/v1'),
     get('https://api.dexscreener.com/token-boosts/latest/v1'),
     get('https://api.dexscreener.com/token-profiles/latest/v1'),
-    get('https://api.geckoterminal.com/api/v2/networks/solana/trending_pools?page=1', gtH),
-    get('https://api.geckoterminal.com/api/v2/networks/solana/pools?sort=h24_volume_usd_desc&page=1', gtH),
-    get('https://api.geckoterminal.com/api/v2/networks/solana/new_pools?page=1', gtH),
+    ...SEARCH.map((q) => get('https://api.dexscreener.com/latest/dex/search?q=' + encodeURIComponent(q))),
+    get('https://api.geckoterminal.com/api/v2/networks/solana/new_pools?page=1', { accept: 'application/json' }, 1),
   ]);
+  const bt = res[0], bl = res[1], prof = res[2];
+  const searches = res.slice(3, 3 + SEARCH.length);
+  const np = res[3 + SEARCH.length];
 
   for (const b of bt || []) if (b && b.chainId === 'solana' && b.tokenAddress) add(b.tokenAddress, 'boosted');
   for (const b of bl || []) if (b && b.chainId === 'solana' && b.tokenAddress) add(b.tokenAddress, 'new-boost');
   for (const b of prof || []) if (b && b.chainId === 'solana' && b.tokenAddress) add(b.tokenAddress, 'profile');
+  for (const s of searches) for (const p of (s && s.pairs) || []) { if (p && p.chainId === 'solana' && p.baseToken && p.baseToken.address) add(p.baseToken.address, 'search'); }
 
+  // GeckoTerminal new pools (best-effort — usually blocked from CF, free bonus when it works)
   const mintOf = (p) => { const id = p && p.relationships && p.relationships.base_token && p.relationships.base_token.data && p.relationships.base_token.data.id; return id ? String(id).replace(/^solana_/, '') : null; };
-  const derived = (p) => {
-    const a = p.attributes || {}; const v = a.volume_usd || {}; const pc = a.price_change_percentage || {}; const tx = a.transactions || {};
-    const tags = [];
-    const h1 = num(v.h1), h24 = num(v.h24);
-    if (h24 > 0 && h1 >= 2500 && (h1 * 24) / h24 >= 2.2) tags.push('volume-spike');
-    const h6 = num(pc.h6), pd = num(pc.h24); const t6 = tx.h6 || {}; const buys = num(t6.buys), sells = num(t6.sells);
-    if (!tags.length && pd >= 2 && pd <= 60 && h6 >= 0 && (buys + sells) > 0 && buys / (buys + sells) >= 0.55) tags.push('accumulation');
-    return tags;
-  };
-  const ingest = (feed, label) => { for (const p of (feed && feed.data) || []) { const m = mintOf(p); if (!m) continue; add(m, label); derived(p).forEach((t) => add(m, t)); } };
-  ingest(tr, 'trending'); ingest(vol, 'volume'); ingest(np, 'fresh');
+  for (const p of (np && np.data) || []) { const m = mintOf(p); if (m) add(m, 'fresh'); }
 
-  // diversity-first ordering so spikes/accumulation/trending aren't crowded out by boosts
-  const pri = (s) => s.has('volume-spike') ? 0 : s.has('accumulation') ? 1 : s.has('trending') ? 2 : s.has('boosted') ? 3 : s.has('volume') ? 4 : 5;
+  // diversity-first ordering so fresh/varied tokens aren't crowded out by the slow-changing boosts
+  const pri = (s) => s.has('new-boost') ? 0 : s.has('fresh') ? 1 : s.has('profile') ? 2 : s.has('boosted') ? 3 : 4;
   return [...out.entries()].map(([mint, s]) => ({ mint, sources: [...s], _p: pri(s) }))
     .sort((a, b) => a._p - b._p).map(({ mint, sources }) => ({ mint, sources }));
 }

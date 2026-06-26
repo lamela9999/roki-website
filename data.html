@@ -80,7 +80,7 @@ function cap(v){v=+v||0;return v>=1e9?'$'+(v/1e9).toFixed(2)+'B':v>=1e6?'$'+(v/1
 function sol(a){return 'https://solscan.io/account/'+a;}
 function dex(m){return 'https://dexscreener.com/solana/'+m;}
 function sh(a){return a.slice(0,4)+'…'+a.slice(-4);}
-var SIG={'smart-money':'🔥 smart money','crashed':'🔪 crashed','accumulation':'📈 accumulation','volume-spike':'⚡ spike','trending':'🔥 trending','fresh':'🌱 new','boosted':'📣 boosted'};
+var SIG={'smart-money':'🔥 smart money','crashed':'🔪 crashed','accumulation':'📈 accumulation','volume-spike':'⚡ spike','trending':'🔥 trending','fresh':'🌱 new','boosted':'📣 boosted','new-boost':'📣 boosted','profile':'📋 listed','search':'🔎 found'};
 function setF(f){FILTER=f;document.querySelectorAll('[data-f]').forEach(function(c){c.classList.toggle('on',c.dataset.f===f);});loadList();}
 function copyA(t,el){try{navigator.clipboard.writeText(t);}catch(e){}if(el){var o=el.textContent;el.textContent='copied ✓';setTimeout(function(){el.textContent=o;},1000);}}
 
