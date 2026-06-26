@@ -9,9 +9,17 @@ import { json, preflight } from './_utils.js';
 
 export const onRequestOptions = () => preflight();
 
-export async function onRequestGet({ request }) {
+export async function onRequestGet({ request, env }) {
   const url = new URL(request.url);
   const st = url.searchParams.get('st'); // optional Solana Tracker API key
+
+  // one-time: stash the Solana Tracker key in KV (private — never committed to the public repo)
+  const save = url.searchParams.get('savekey');
+  if (save) {
+    if (!env || !env.ZEN_KV) return json({ error: 'no KV' }, 503);
+    await env.ZEN_KV.put('radar:cfg:stkey', save);
+    return json({ saved: true, note: 'Solana Tracker key stored in KV. Discovery + /api/newlaunches now active. (Move it to the SOLANATRACKER_KEY env var later for best practice.)' }, 200, { 'cache-control': 'no-store' });
+  }
 
   const probe = async (name, u, headers) => {
     const t0 = Date.now();

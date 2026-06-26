@@ -348,6 +348,7 @@ footer.site b{color:var(--coral)}
     </div>
     <div id="boardResult"></div>
     <div id="boardDetail" class="mt16"></div>
+    <div id="newLaunches" style="margin-top:20px"></div>
   </section>
 
   <!-- PAPER BOT -->
@@ -430,7 +431,7 @@ function show(v){
   document.querySelectorAll('.view').forEach(function(s){s.classList.remove('active')});
   document.getElementById('view-'+v).classList.add('active');
   document.querySelectorAll('#nav button').forEach(function(b){b.classList.toggle('active',b.dataset.view===v)});
-  if(v==='discover')maybeLoadBoard();
+  if(v==='discover'){maybeLoadBoard();loadNewLaunches();}
   if(v==='paperbot'){labEnter();}else{labLeave();}
   if(v==='intel')loadSmartWallets();
   if(v==='intel')maybeLoadRegime();
@@ -1086,6 +1087,28 @@ function labFetch(advance){
 }
 function labEnter(){labFetch(false);labLoadWallets();labLoadDB();labLoadSmart();if(labTimer)clearInterval(labTimer);var n=0;labTimer=setInterval(function(){n++;labFetch(n%3!==0);labLoadWallets();labLoadDB();labLoadSmart();},30000);}
 function labLeave(){if(labTimer){clearInterval(labTimer);labTimer=null;}}
+
+/* ---------- NEW LAUNCHES (Solana Tracker graduated feed) ---------- */
+function nlRisk(r){if(r==null)return '<span class="faint">—</span>';var c=r>=8?'#B02A2A':r>=5?'#B8860B':'#0F7A45';return '<span class="mono" style="color:'+c+';font-weight:700">'+r+'/10</span>';}
+function loadNewLaunches(){
+  var box=document.getElementById('newLaunches');if(!box)return;
+  box.innerHTML='<div class="card"><div class="faint" style="font-size:13px">Loading fresh launches…</div></div>';
+  withTimeout(fetch('/api/newlaunches').then(function(r){return r.json();}),25000).then(function(d){
+    if(d.error){box.innerHTML='<div class="card"><h3>🆕 New Launches</h3><div class="faint" style="font-size:12px">'+escapeHtml(d.error)+'</div></div>';return;}
+    if(!d.tokens||!d.tokens.length){box.innerHTML='<div class="card"><h3>🆕 New Launches</h3><div class="faint" style="font-size:12px">No fresh graduations right now — retry shortly.</div></div>';return;}
+    var rows=d.tokens.map(function(t){
+      return '<div style="display:grid;grid-template-columns:1fr 66px 60px 52px 56px;gap:8px;align-items:center;border-bottom:1px solid var(--hairline);padding:8px 0;font-size:13px">'
+        +'<div><a href="https://dexscreener.com/solana/'+t.mint+'" target="_blank" rel="noopener" style="font-weight:700;text-decoration:none">$'+escapeHtml(t.sym)+' ↗</a> '+(t.twitter?'<a href="'+escapeHtml(t.twitter)+'" target="_blank" rel="noopener" style="font-size:11px;text-decoration:none">𝕏</a> ':'')+'<span class="wchip mono" style="font-size:9px;cursor:pointer" onclick="copyCA(\''+t.mint+'\',this)">copy</span></div>'
+        +'<div class="mono" style="text-align:right">$'+usdShort(t.mcap)+'<div class="faint" style="font-size:9px">mcap</div></div>'
+        +'<div class="mono" style="text-align:right">$'+usdShort(t.liq)+'<div class="faint" style="font-size:9px">liq</div></div>'
+        +'<div class="mono faint" style="text-align:right;font-size:12px">'+(t.ageH!=null?t.ageH+'h':'?')+'</div>'
+        +'<div style="text-align:right;font-size:11px">'+nlRisk(t.risk)+'<div class="faint" style="font-size:9px">risk</div></div></div>';
+    }).join('');
+    box.innerHTML='<div class="card"><div class="row wrap" style="align-items:baseline"><h3 style="margin:0">🆕 New Launches</h3><span class="faint mono" style="font-size:11px">just graduated to a DEX · live · '+d.count+'</span></div>'
+      +'<div class="note" style="margin:4px 0 6px"><span class="faint">Brand-new tokens (minutes–hours old) that just hit a DEX — newest first, with market cap, liquidity, age, and a <b>rug-risk score (0–10, higher = riskier)</b>. Powered by Solana Tracker. High risk by nature; many are rugs — verify before touching.</span></div>'
+      +rows+'</div>';
+  }).catch(function(){box.innerHTML='';});
+}
 
 /* ---------- SHOULD I BUY? — verdict tool ---------- */
 function verdictColor(k){return k==='strong'?'#0F7A45':k==='buy'?'#3a8f57':k==='caution'?'#B8860B':'#B02A2A';}

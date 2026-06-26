@@ -136,6 +136,15 @@ const QUOTE_MINTS = new Set([
 //   volume-spike         — last hour running >=2.2x the 24h average pace (sudden activity)
 //   accumulation         — steady positive drift + buy-side pressure, no blow-off spike
 // GeckoTerminal is keyless & free (~30 req/min). All calls are best-effort; partial data is OK.
+// Solana Tracker key: from the Cloudflare env secret SOLANATRACKER_KEY, else from KV (set once
+// via /api/sourcetest?savekey=). Kept OUT of the public repo either way.
+export async function getStKey(env) {
+  if (!env) return null;
+  if (env.SOLANATRACKER_KEY) return env.SOLANATRACKER_KEY;
+  if (env.ZEN_KV) { try { return await env.ZEN_KV.get('radar:cfg:stkey'); } catch (e) { /**/ } }
+  return null;
+}
+
 export async function buildUniverse(env) {
   const get = async (u, h, tries) => { tries = tries || 3; for (let i = 0; i < tries; i++) { try { const r = await fetch(u, h ? { headers: h } : undefined); if (r.ok) return await r.json(); } catch (e) { /**/ } await new Promise((s) => setTimeout(s, 200)); } return null; };
   const num = (x) => { const n = parseFloat(x); return isFinite(n) ? n : 0; };
@@ -149,7 +158,7 @@ export async function buildUniverse(env) {
   //  • Solana Tracker — purpose-built new/trending/graduating feed; activates if SOLANATRACKER_KEY
   //    is set in the Cloudflare env (free key → real new launches). Dormant until then.
   const SEARCH = ['pump', 'SOL', 'moon', 'wif'];
-  const stKey = env && env.SOLANATRACKER_KEY;
+  const stKey = await getStKey(env);
   const stH = stKey ? { 'x-api-key': stKey } : null;
   const gtH = { accept: 'application/json' };
   const res = await Promise.all([
@@ -159,13 +168,13 @@ export async function buildUniverse(env) {
     ...SEARCH.map((q) => get('https://api.dexscreener.com/latest/dex/search?q=' + encodeURIComponent(q))),
     get('https://api.geckoterminal.com/api/v2/networks/solana/new_pools?page=1', gtH, 2),
     get('https://api.geckoterminal.com/api/v2/networks/solana/trending_pools?page=1', gtH, 2),
-    stKey ? get('https://data.solanatracker.io/tokens/latest', stH, 1) : Promise.resolve(null),
-    stKey ? get('https://data.solanatracker.io/tokens/trending', stH, 1) : Promise.resolve(null),
+    // Solana Tracker: tokens that JUST graduated to a DEX — fresh, with liquidity + risk scores
+    stKey ? get('https://data.solanatracker.io/tokens/multi/graduated', stH, 1) : Promise.resolve(null),
   ]);
   let k = 0;
   const bt = res[k++], bl = res[k++], prof = res[k++];
   const searches = res.slice(k, k + SEARCH.length); k += SEARCH.length;
-  const np = res[k++], trend = res[k++], stLatest = res[k++], stTrending = res[k++];
+  const np = res[k++], trend = res[k++], stGrad = res[k++];
 
   for (const b of bt || []) if (b && b.chainId === 'solana' && b.tokenAddress) add(b.tokenAddress, 'boosted');
   for (const b of bl || []) if (b && b.chainId === 'solana' && b.tokenAddress) add(b.tokenAddress, 'new-boost');
@@ -176,14 +185,13 @@ export async function buildUniverse(env) {
   for (const p of (np && np.data) || []) { const m = mintOf(p); if (m) add(m, 'fresh'); }
   for (const p of (trend && trend.data) || []) { const m = mintOf(p); if (m) add(m, 'trending'); }
 
-  // Solana Tracker (defensive parse — shape verified later via /api/sourcetest?st=KEY)
-  const stMint = (it) => (it && (it.mint || (it.token && it.token.mint) || it.address || it.tokenAddress)) || null;
+  // Solana Tracker graduated tokens: each item is { token:{mint}, pools, risk, ... }
+  const stMint = (it) => (it && ((it.token && it.token.mint) || it.mint || it.address)) || null;
   const stArr = (d) => Array.isArray(d) ? d : (d && (d.data || d.tokens)) || [];
-  for (const it of stArr(stLatest)) add(stMint(it), 'st-new');
-  for (const it of stArr(stTrending)) add(stMint(it), 'st-trending');
+  for (const it of stArr(stGrad)) add(stMint(it), 'st-grad');
 
-  // diversity-first ordering: brand-new (Solana Tracker / GT fresh) first, slow boosts last
-  const pri = (s) => s.has('st-new') ? 0 : s.has('fresh') ? 0 : s.has('st-trending') ? 1 : s.has('new-boost') ? 1 : s.has('trending') ? 2 : s.has('profile') ? 3 : s.has('boosted') ? 4 : 5;
+  // diversity-first ordering: brand-new (just-graduated / GT fresh) first, slow boosts last
+  const pri = (s) => s.has('st-grad') ? 0 : s.has('fresh') ? 0 : s.has('new-boost') ? 1 : s.has('trending') ? 2 : s.has('profile') ? 3 : s.has('boosted') ? 4 : 5;
   return [...out.entries()].map(([mint, s]) => ({ mint, sources: [...s], _p: pri(s) }))
     .sort((a, b) => a._p - b._p).map(({ mint, sources }) => ({ mint, sources }));
 }
