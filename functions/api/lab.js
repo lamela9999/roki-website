@@ -240,8 +240,8 @@ function totalEquity(w) {
 }
 
 // ---- one scan of the candidate universe → rich metrics + per-archetype scores ----
-async function scanUniverse(env, nowTs, smartMap) {
-  smartMap = smartMap || {};
+async function scanUniverse(env, nowTs, smartMap, learnedEdge) {
+  smartMap = smartMap || {}; learnedEdge = learnedEdge || {};
   const dexGet = async (u) => { for (let i = 0; i < 3; i++) { try { const r = await fetch(u); if (r.ok) return await r.json(); } catch (e) { /**/ } await new Promise((res) => setTimeout(res, 250)); } return null; };
   const KV = env.ZEN_KV;
   // The DISCOVERY feed (buildUniverse: boosts/profiles/GeckoTerminal) is rate-limited from CF
@@ -314,9 +314,9 @@ async function scanUniverse(env, nowTs, smartMap) {
       FACTORS.forEach((f) => { if (Vv[f.k] != null) { const w = ARCH[a][f.g] || 50; wsum += w; vsum += w * Vv[f.k]; } });
       let c = wsum ? Math.round(vsum / wsum) : null;
       if (c != null) {
-        let bonus = 0; sources.forEach((s) => { if (SRC_BONUS[s] && SRC_BONUS[s][a]) bonus += SRC_BONUS[s][a]; });
+        let bonus = 0; sources.forEach((s) => { if (SRC_BONUS[s] && SRC_BONUS[s][a]) bonus += SRC_BONUS[s][a]; bonus += edgeAdj(learnedEdge, s); }); // learned: +/- by what each signal paid
         if (smartCount > 0) bonus += Math.min(22, Math.round(smart * 7)) + (SMART_EXTRA[a] || 0); // proven winners accumulating
-        if (bonus) c = Math.min(100, c + bonus);
+        if (bonus) c = Math.max(0, Math.min(100, c + bonus));
       }
       const rejected = gateLive && a !== 'degen';
       if (rejected && c != null) c = Math.min(c, 12);
@@ -415,8 +415,33 @@ async function updateTokenDB(env, universe, closures, nowTs) {
     for (let i = 0; i < keys.length - DB_MAX; i++) delete db.tokens[keys[i]];
   }
   db.n = Object.keys(db.tokens).length;
+  db.edge = computeEdge(db); // LEARN: what each signal has actually paid, from real outcomes
   try { await KV.put('radar:db:tokens', JSON.stringify(db)); } catch (e) { /**/ }
-  return { n: db.n, scans: db.scans };
+  return { n: db.n, scans: db.scans, edge: db.edge };
+}
+
+// The learning core: from every traded token in the DB, measure what each SIGNAL actually paid
+// (avg $ per closed trade on tokens where it fired, + win rate + sample size). This is the data
+// the bots learn from — signals that pay get boosted, signals that bleed get penalised.
+const EDGE_SIGS = ['smart-money', 'accumulation', 'volume-spike', 'trending', 'fresh', 'boosted'];
+function computeEdge(db) {
+  const agg = {};
+  for (const m in db.tokens) {
+    const t = db.tokens[m]; const trades = (t.wins || 0) + (t.losses || 0);
+    if (!trades) continue;
+    for (const s of EDGE_SIGS) {
+      if (t.sig && t.sig[s]) { const a = agg[s] = agg[s] || { pnl: 0, n: 0, wins: 0 }; a.pnl += t.pnl || 0; a.n += trades; a.wins += t.wins || 0; }
+    }
+  }
+  const edge = {};
+  for (const s in agg) { const a = agg[s]; edge[s] = { avg: +(a.pnl / a.n).toFixed(2), n: a.n, winRate: Math.round((a.wins / a.n) * 100) }; }
+  return edge;
+}
+// turn a signal's measured edge into a score adjustment (needs >=8 trades to trust it)
+function edgeAdj(edge, sig) {
+  const e = edge && edge[sig];
+  if (!e || e.n < 8) return 0;
+  return clamp(Math.round(e.avg / 12), -5, 6);
 }
 
 // ---- the daily lesson: review the day's trades, adjust own params, journal it ----
@@ -458,7 +483,8 @@ async function advance(state, env, nowTs) {
   // smart-money map: which tokens proven-winner wallets are accumulating now (built by walletdb)
   let smartMap = {};
   try { const sm = await env.ZEN_KV.get('radar:db:smartmap', 'json'); if (sm && sm.tokens) smartMap = sm.tokens; } catch (e) { /**/ }
-  const universe = await scanUniverse(env, nowTs, smartMap);
+  const learnedEdge = state.signalEdge || {}; // what each signal has actually paid (from outcomes)
+  const universe = await scanUniverse(env, nowTs, smartMap, learnedEdge);
   if (!universe || !universe.length) return false;
 
   const uPrice = {}, uScore = {};
@@ -542,8 +568,8 @@ async function advance(state, env, nowTs) {
     }
   }
 
-  // grow the research database (every scanned token + this tick's trade outcomes)
-  try { const dbStat = await updateTokenDB(env, universe, closures, nowTs); if (dbStat) state.db = dbStat; } catch (e) { /**/ }
+  // grow the research database + relearn what each signal pays (from real outcomes)
+  try { const dbStat = await updateTokenDB(env, universe, closures, nowTs); if (dbStat) { state.db = { n: dbStat.n, scans: dbStat.scans }; state.signalEdge = dbStat.edge || {}; } } catch (e) { /**/ }
 
   // keep `day` for age display; run a LEARNING REVIEW every LEARN_EVERY ticks (frequent + visible,
   // instead of once per real day) so the bots visibly adapt and the journal fills up quickly
@@ -606,6 +632,7 @@ function publicState(state, nowTs) {
     startedTs: state.startedTs, ageDays: +ageDays.toFixed(2), day: state.day, season: state.season,
     tick: state.tick, lastTickTs: state.lastTickTs, start: START, grad: GRAD, bust: BUST,
     reviews: state.reviews || 0, learnEvery: LEARN_EVERY,
+    signalEdge: state.signalEdge || {},
     strategyVersion: state.strategyVersion || 1, versions: state.versions || [],
     lessons: STRATEGY_LESSONS[state.strategyVersion || 1] || [],
     db: state.db ? { tokens: state.db.n || 0, scans: state.db.scans || 0 } : null,

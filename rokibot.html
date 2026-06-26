@@ -1048,8 +1048,14 @@ function labVersions(L){
     var col=s.pnlPct>=0?'#0F7A45':'#B02A2A';
     return '<div style="border-top:1px solid var(--hairline);padding:6px 0;font-size:11px"><b>v'+s.version+'</b> — final <span class="mono" style="color:'+col+';font-weight:700">'+(s.pnlPct>=0?'+':'')+s.pnlPct+'%</span> over '+(s.endedTick||0)+' rounds · best '+escapeHtml((s.leader||{}).name||'?')+' ('+((s.leader||{}).pnlPct)+'%) · worst '+escapeHtml((s.worst||{}).name||'?')+' ('+((s.worst||{}).pnlPct)+'%) · <a href="/api/lab?version='+s.version+'" target="_blank" rel="noopener" style="text-decoration:underline">full ledger</a></div>';
   }).join('');
+  // what the data has learned: each signal's real edge (avg $/trade, win%, sample)
+  var SIGLBL={'smart-money':'🔥 smart money','accumulation':'📈 accumulation','volume-spike':'⚡ volume spike','trending':'🔥 trending','fresh':'🌱 new launch','boosted':'📣 boosted'};
+  var edge=L.signalEdge||{};var ek=Object.keys(edge).sort(function(a,b){return (edge[b].avg||0)-(edge[a].avg||0);});
+  var edgeRows=ek.map(function(s){var e=edge[s];var col=e.avg>=0?'#0F7A45':'#B02A2A';var trust=e.n>=8;return '<div style="display:grid;grid-template-columns:1fr 70px 50px 60px;gap:6px;font-size:11px;padding:2px 0"><span>'+(SIGLBL[s]||s)+(trust?'':' <span class="faint" style="font-size:9px">(learning)</span>')+'</span><span class="mono" style="text-align:right;color:'+col+';font-weight:700">'+(e.avg>=0?'+':'')+'$'+e.avg+'/trade</span><span class="mono faint" style="text-align:right">'+e.winRate+'% W</span><span class="mono faint" style="text-align:right">'+e.n+' tr</span></div>';}).join('');
+  var edgeBlock=ek.length?'<div style="margin-top:10px"><div class="klabel">📈 what the data has learned <span class="faint" style="text-transform:none">— real $/trade by signal; feeds the score once ≥8 trades</span></div>'+edgeRows+'</div>':'';
   return '<div class="card" style="margin-bottom:16px"><div class="row wrap" style="align-items:baseline"><h3 style="margin:0">🧪 Strategy v'+v+'</h3><span class="faint mono" style="font-size:11px">growing research DB · '+dbN.toLocaleString()+' tokens tracked · '+dbS.toLocaleString()+' scans</span></div>'
     +(lessons?'<div class="note" style="margin:6px 0 0"><b>What v'+v+' fixed (learned from v'+(v-1)+'\'s real trades):</b><ul style="margin:4px 0 0;padding-left:16px">'+lessons+'</ul></div>':'')
+    +edgeBlock
     +(past?'<div style="margin-top:8px"><div class="klabel">past versions — checkable anytime</div>'+past+'</div>':'')
     +'</div>';
 }
