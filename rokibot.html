@@ -177,6 +177,7 @@ footer.site b{color:var(--coral)}
       <nav class="navlinks" id="nav">
         <button data-view="overview" class="active">Overview</button>
         <button data-view="configure">Configure</button>
+        <button data-view="verdict">🔮 Should I Buy?</button>
         <button data-view="discover">Discover</button>
         <button data-view="paperbot">🔬 Lab</button>
         <button data-view="intel">Intel</button>
@@ -186,6 +187,7 @@ footer.site b{color:var(--coral)}
       <select id="mobnav" class="mobnav" onchange="show(this.value)" aria-label="Navigate sections">
         <option value="overview">Overview</option>
         <option value="configure">Configure</option>
+        <option value="verdict">🔮 Should I Buy?</option>
         <option value="discover">Discover</option>
         <option value="paperbot">🔬 Lab</option>
         <option value="intel">Intel</option>
@@ -320,6 +322,18 @@ footer.site b{color:var(--coral)}
       <div class="disclaim" style="margin-bottom:14px"><span class="tick mid"></span><span><b>How a token gets scored:</b> cheap on-chain factors run first as a pre-filter → expensive social factors only on survivors → each factor is normalized 0–100 → multiplied by this archetype's weight → averaged into the composite. <b>Hard gates</b> (mint/freeze authority, LP) can auto-reject regardless of score. Bars below = each factor's <b>weight</b> for this personality; <span class="badge b-ok" style="font-size:8px;padding:1px 6px">live</span> = computed on real data now, <span class="badge b-prev" style="font-size:8px;padding:1px 6px">soon</span> = needs paid X-data or the Brain.</span></div>
       <div id="factors"></div>
     </div>
+  </section>
+
+  <!-- VERDICT -->
+  <section class="view" id="view-verdict">
+    <h1>Should I buy this? <span class="badge b-ok" style="vertical-align:middle">real · on-chain</span></h1>
+    <p class="muted" style="margin:0 0 14px;font-size:14px">Paste any Solana token contract — get a verdict in seconds. We check the <b>contract safety</b> (rug/authority/LP), <b>liquidity & holders</b>, whether <b>proven-winner wallets are buying or selling it</b> (cross-referenced live against our top-trader database), and what our trading data has <b>learned about its signals</b>. <span class="faint">Research signal, not financial advice — always verify the chart.</span></p>
+    <div class="flex gap8 wrap" style="margin:0 0 14px;align-items:center">
+      <input id="vMint" placeholder="Paste token contract address (mint)…" style="flex:1;min-width:240px;padding:10px 12px;border:1.5px solid var(--ink);border-radius:8px;font-family:var(--mono,monospace);font-size:13px" onkeydown="if(event.key==='Enter')verdictScan()">
+      <button class="btn primary small" onclick="verdictScan()">🔮 Get verdict</button>
+    </div>
+    <div class="faint" style="font-size:11px;margin:-6px 0 14px">Try: <span class="wchip mono" style="cursor:pointer" onclick="document.getElementById('vMint').value='6ehEcTMCc85aNF4x9CWx8HuvWGhxQtvKdhKVf2HDpump';verdictScan()">$TOESCOIN</span></div>
+    <div id="vResult"></div>
   </section>
 
   <!-- DISCOVER -->
@@ -1070,6 +1084,34 @@ function labFetch(advance){
 }
 function labEnter(){labFetch(false);labLoadWallets();labLoadDB();labLoadSmart();if(labTimer)clearInterval(labTimer);var n=0;labTimer=setInterval(function(){n++;labFetch(n%3!==0);labLoadWallets();labLoadDB();labLoadSmart();},30000);}
 function labLeave(){if(labTimer){clearInterval(labTimer);labTimer=null;}}
+
+/* ---------- SHOULD I BUY? — verdict tool ---------- */
+function verdictColor(k){return k==='strong'?'#0F7A45':k==='buy'?'#3a8f57':k==='caution'?'#B8860B':'#B02A2A';}
+function verdictRender(d){
+  if(!d||d.error)return '<div class="card"><div class="faint" style="font-size:13px">'+escapeHtml((d&&d.error)||'No result.')+'</div></div>';
+  var col=verdictColor(d.verdictKind);var m=d.market||{},sm=d.smart||{};
+  var pros=(d.pros||[]).map(function(x){return '<div style="font-size:12px;padding:2px 0;color:#0F7A45">✅ '+escapeHtml(x)+'</div>';}).join('');
+  var cons=(d.cons||[]).map(function(x){return '<div style="font-size:12px;padding:2px 0;color:#B02A2A">❌ '+escapeHtml(x)+'</div>';}).join('');
+  var notes=(d.notes||[]).map(function(x){return '<div class="faint" style="font-size:11px;padding:1px 0">· '+escapeHtml(x)+'</div>';}).join('');
+  var buyers=(sm.buyers||[]).slice(0,6).map(function(b){return '<a href="https://solscan.io/account/'+b.addr+'" target="_blank" rel="noopener" class="mono" style="font-size:10px;text-decoration:none">#'+b.rank+' '+b.addr.slice(0,4)+'…</a>';}).join(' ');
+  return '<div class="card" style="border-color:'+col+';box-shadow:3px 3px 0 '+col+'">'
+    +'<div class="row wrap" style="align-items:center"><div><div style="font-size:22px;font-weight:800">$'+escapeHtml(d.symbol||'?')+' <span class="faint" style="font-size:13px;font-weight:400">'+escapeHtml((d.name||'').slice(0,28))+'</span></div>'
+    +'<div class="mono faint" style="font-size:11px">'+fmtCap(m.mcap)+' mcap · '+fmtCap(m.liq)+' liq · '+(m.ageDays!=null?m.ageDays+'d':'?')+' · '+((m.pc24||0)>=0?'+':'')+(m.pc24||0)+'% 24h · <span class="wchip mono" style="cursor:pointer" onclick="copyCA(\''+d.mint+'\',this)">copy CA</span> · <a href="https://dexscreener.com/solana/'+d.mint+'" target="_blank" rel="noopener" style="text-decoration:underline">chart ↗</a></div></div>'
+    +'<div style="flex:1;min-width:10px"></div>'
+    +'<div style="text-align:center"><div class="mono" style="font-size:40px;font-weight:800;color:'+col+';line-height:1">'+d.score+'</div><div style="font-weight:800;color:'+col+';font-size:13px">'+escapeHtml(d.verdict)+'</div><div class="faint" style="font-size:9px">score /100</div></div></div>'
+    +((sm.buyerCount||sm.sellers)?'<div class="note" style="margin:10px 0 4px"><b>Smart money:</b> '+(sm.buyerCount?'<span style="color:#0F7A45">🔥 '+sm.buyerCount+' proven winner'+(sm.buyerCount>1?'s':'')+' buying</span> '+buyers:'')+(sm.sellers?' <span style="color:#B02A2A">· '+sm.sellers+' selling</span>':'')+' <span class="faint">('+(sm.source||'')+')</span></div>':'')
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:10px">'
+    +'<div><div class="klabel">in its favour</div>'+(pros||'<span class="faint" style="font-size:11px">—</span>')+'</div>'
+    +'<div><div class="klabel">against it</div>'+(cons||'<span class="faint" style="font-size:11px">no red flags found</span>')+'</div></div>'
+    +(notes?'<div style="margin-top:10px;border-top:1px solid var(--hairline);padding-top:6px"><div class="klabel">context</div>'+notes+'</div>':'')
+    +'<div class="faint" style="font-size:10px;margin-top:8px">'+escapeHtml(d.disclaimer||'')+'</div></div>';
+}
+function verdictScan(){
+  var m=(document.getElementById('vMint').value||'').trim();var box=document.getElementById('vResult');
+  if(!m){box.innerHTML='';return;}
+  box.innerHTML='<div class="disclaim"><span class="dot"></span><span>Running the full check on '+escapeHtml(m.slice(0,8))+'… <span class="faint">market · rug/authority · holders · smart money · learned signals</span></span></div>';
+  withTimeout(fetch('/api/verdict?mint='+encodeURIComponent(m)).then(function(r){return r.json();}),35000).then(function(d){box.innerHTML=verdictRender(d);}).catch(function(e){box.innerHTML='<div class="disclaim"><span class="tick mid"></span><span>Couldn\'t complete the check — try again. <span class="faint">('+escapeHtml(e&&e.message||'')+')</span></span></div>';});
+}
 
 /* ---------- init ---------- */
 renderArchbar();selectArch('balanced');renderChat();onDial(50);initGate();
