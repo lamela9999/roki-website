@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ROKI Lab — Verified Track Record</title>
+<meta name="description" content="10 trading archetypes, real live Solana prices, every single trade public and auditable. ROKI's transparent paper-trading track record — watch which strategy actually wins.">
+<meta property="og:title" content="ROKI Lab — Verified Track Record">
+<meta property="og:description" content="10 trading bots. Real live prices. Every trade public and verifiable. No cherry-picking — watch which strategy actually wins, and how the bot learns.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://roki.buzz/track">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="ROKI Lab — Verified Track Record">
+<meta name="twitter:description" content="10 trading bots, real live prices, every trade public. Watch which strategy actually wins.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter+Tight:wght@400;500;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--cream:#F5EFE6;--paper:#FBF6EC;--ink:#14110F;--coral:#E8534A;--green:#0F7A45;--red:#B02A2A;--hair:rgba(20,17,15,.14);--mono:'JetBrains Mono',monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--cream);color:var(--ink);font-family:'Inter Tight',system-ui,sans-serif;line-height:1.5}
+.mono{font-family:var(--mono)}
+.wrap{max-width:920px;margin:0 auto;padding:22px 18px 60px}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.logo{font-family:'Archivo Black';font-size:20px;letter-spacing:.01em}
+.logo .c{color:var(--coral)}
+header .sp{flex:1}
+header a{font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;text-decoration:none;color:var(--ink);padding:8px 12px;border:1.5px solid var(--ink);border-radius:8px;background:var(--paper);box-shadow:2px 2px 0 var(--ink)}
+header a.coral{background:var(--coral);color:#fff}
+h1{font-family:'Archivo Black';font-size:34px;margin:10px 0 6px;line-height:1.05}
+.sub{font-size:15px;max-width:640px;color:#4a443d}
+.badge{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;border:1.5px solid var(--green);color:var(--green);border-radius:6px;padding:2px 7px;vertical-align:middle}
+.card{background:var(--paper);border:1.5px solid var(--ink);border-radius:12px;box-shadow:3px 3px 0 var(--ink);padding:18px;margin:16px 0}
+.klabel{font-size:10px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:#8a8178}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.stat{background:var(--cream);border:1.5px solid var(--ink);border-radius:10px;padding:12px}
+.stat .v{font-family:var(--mono);font-size:24px;font-weight:700;line-height:1.1}
+.stat .l{font-size:11px;color:#6a635b;margin-top:2px}
+.row{display:grid;grid-template-columns:26px 1fr 90px 70px 60px;gap:8px;align-items:center;border-bottom:1px solid var(--hair);padding:9px 0;font-size:14px}
+.row .nm{font-weight:700}
+.faint{color:#8a8178}
+a.lk{color:var(--coral);text-decoration:underline;cursor:pointer}
+.note{font-size:13px;background:var(--cream);border:1.5px solid var(--ink);border-radius:8px;padding:10px 12px;margin-top:12px}
+.vrow{font-size:13px;border-top:1px solid var(--hair);padding:7px 0}
+footer{margin-top:30px;font-size:12px;color:#8a8178;text-align:center}
+@media(max-width:560px){h1{font-size:26px}.row{grid-template-columns:22px 1fr 76px 56px;}.row .wr{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="logo">ROKI <span class="c">LAB</span></span>
+    <span class="sp"></span>
+    <a href="/rokibot">The Lab ↗</a>
+    <a class="coral" href="/rokibot">🔮 Should I Buy?</a>
+  </header>
+
+  <h1>Verified Track Record</h1>
+  <p class="sub"><b>10 trading archetypes. Real live Solana prices. Every single trade public and auditable.</b> No cherry-picking, no hidden losers. Paper-traded 24/7 with realistic slippage + fees — watch which strategy actually wins, and how the bot learns from its own mistakes.</p>
+
+  <div id="hero" class="card"><div class="faint">Loading the live track record…</div></div>
+  <div id="stats" class="grid"></div>
+  <div id="board"></div>
+  <div id="versions"></div>
+  <div id="verify"></div>
+
+  <footer>ROKI Lab · paper-trading research, not financial advice · <a class="lk" href="/rokibot">open the live lab</a></footer>
+</div>
+
+<script>
+var ESC=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+function money(v){v=Math.round(v||0);var s=v<0?'-':'';return s+'$'+Math.abs(v).toLocaleString('en-US');}
+function pct(v){return (v>=0?'+':'')+(v||0).toFixed(1)+'%';}
+function col(v){return v>=0?'var(--green)':'var(--red)';}
+function go(){
+  fetch('/api/lab?peek=1').then(function(r){return r.json();}).then(render).catch(function(){
+    document.getElementById('hero').innerHTML='<div class="faint">Couldn\'t load right now — refresh in a moment.</div>';
+  });
+}
+function render(L){
+  if(!L||!L.bots){document.getElementById('hero').innerHTML='<div class="faint">No data yet.</div>';return;}
+  var bots=L.bots.slice().sort(function(a,b){return b.equity-a.equity;});
+  var grand=bots.reduce(function(s,b){return s+b.equity;},0), base=bots.length*L.start, gp=(grand/base-1)*100;
+  var best=bots[0];
+  var closed=bots.reduce(function(s,b){return s+(b.totalClosed||0);},0);
+  var wins=bots.reduce(function(s,b){return s+(b.wins||0);},0);
+  var wr=closed?Math.round(wins/closed*100):0;
+  // hero
+  document.getElementById('hero').innerHTML=
+    '<div class="row" style="grid-template-columns:1fr auto;border:none;padding:0">'
+    +'<div><div class="klabel">Best archetype · live</div><div style="font-size:26px;font-weight:800">'+ESC(best.name)+'</div>'
+    +'<div class="mono" style="font-size:22px;font-weight:700;color:'+col(best.pnlPct)+'">'+pct(best.pnlPct)+' · '+money(best.equity)+'</div></div>'
+    +'<div style="text-align:right"><span class="badge">● live</span><div class="faint mono" style="font-size:12px;margin-top:6px">Strategy v'+(L.strategyVersion||1)+'</div>'
+    +'<div class="faint mono" style="font-size:12px">'+L.tick+' rounds · '+(L.reviews||0)+' learning reviews</div>'
+    +'<div class="faint mono" style="font-size:12px">running '+(L.ageDays||0).toFixed(1)+' days</div></div></div>';
+  // stats
+  document.getElementById('stats').innerHTML=
+    stat(money(grand),'combined value (10 × '+money(L.start)+')')
+    +stat('<span style="color:'+col(gp)+'">'+pct(gp)+'</span>','combined P&L')
+    +stat(closed.toLocaleString(),'trades closed (all public)')
+    +stat(wr+'%','overall win rate')
+    +stat((L.activeCount||0)+' / '+bots.length,'bots still trading');
+  // board
+  var rows=bots.map(function(b,i){
+    var medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1);
+    var st=b.status==='graduated'?' 🏆':b.status==='busted'?' 💀':'';
+    return '<div class="row"><div class="mono">'+medal+'</div>'
+      +'<div><span class="nm">'+ESC(b.name)+'</span>'+st+' <span class="faint" style="font-size:11px">risk '+b.dial+'</span></div>'
+      +'<div class="mono" style="text-align:right;font-weight:700">'+money(b.equity)+'</div>'
+      +'<div class="mono" style="text-align:right;font-weight:700;color:'+col(b.pnlPct)+'">'+pct(b.pnlPct)+'</div>'
+      +'<div class="mono faint wr" style="text-align:right;font-size:12px">'+(b.winRate!=null?b.winRate+'% W':'—')+'</div></div>';
+  }).join('');
+  document.getElementById('board').innerHTML='<div class="card"><div class="klabel" style="margin-bottom:6px">live leaderboard — most → least profitable</div>'+rows
+    +'<div class="note">Each bot is a '+money(L.start)+' paper wallet trading the live trending Solana market with its own strategy (realistic slippage + 1% fee modeled). <b>Every trade is public</b> — open any bot in <a class="lk" href="/rokibot">the Lab</a> for its full ledger with entry/exit market cap, time, and net after costs.</div></div>';
+  // versions (the learning journey)
+  if(L.versions&&L.versions.length){
+    var vr=L.versions.map(function(s){return '<div class="vrow"><b>v'+s.version+'</b> — final <span class="mono" style="color:'+col(s.pnlPct)+';font-weight:700">'+pct(s.pnlPct)+'</span> over '+(s.endedTick||0)+' rounds · <a class="lk" href="/api/lab?version='+s.version+'">audit every trade ↗</a></div>';}).join('');
+    document.getElementById('versions').innerHTML='<div class="card"><div class="klabel">the learning journey — past strategy versions</div>'
+      +'<div class="faint" style="font-size:13px;margin:4px 0 6px">When a strategy\'s mistakes become clear, we ship a new version and archive the old run — permanently auditable. This is the bot improving in public.</div>'+vr+'</div>';
+  }
+  // verify
+  document.getElementById('verify').innerHTML='<div class="card"><div class="klabel">how to verify this is real</div>'
+    +'<ul style="margin:8px 0 0;padding-left:18px;font-size:14px">'
+    +'<li>Open <a class="lk" href="/rokibot">the live Lab</a> → click any bot → its <b>complete trade ledger</b>: every entry/exit with market cap, timestamp, and the real slippage+fee haircut.</li>'
+    +'<li>Cross-check any trade against the token\'s chart on DexScreener — the prices are real and live.</li>'
+    +'<li>Archived versions stay public at <span class="mono">/api/lab?version=N</span> — old runs can\'t be edited or deleted.</li>'
+    +'</ul></div>';
+}
+function stat(v,l){return '<div class="stat"><div class="v">'+v+'</div><div class="l">'+l+'</div></div>';}
+go();
+</script>
+</body>
+</html>
