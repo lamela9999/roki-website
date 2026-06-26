@@ -81,7 +81,10 @@ const SRC_BONUS = {
   trending: { narrative: 4, balanced: 2, momentum: 2 },
   fresh: { sniper: 3 },
 };
-const SRC_RANK = ['volume-spike', 'accumulation', 'trending', 'fresh', 'boosted', 'volume', 'new-boost', 'profile'];
+// extra score weight (on top of the base smart-money bonus) for the archetypes whose whole job is
+// to follow proven winners — when validated top wallets accumulate a token, these lean in hardest
+const SMART_EXTRA = { smart: 14, insider: 12, balanced: 6, momentum: 6, narrative: 4, whale: 4, conservative: 3, safety: 2, sniper: 2, degen: 2 };
+const SRC_RANK = ['smart-money', 'volume-spike', 'accumulation', 'trending', 'fresh', 'boosted', 'volume', 'new-boost', 'profile'];
 const primarySrc = (sources) => { for (const s of SRC_RANK) if (sources && sources.indexOf(s) >= 0) return s; return (sources && sources[0]) || 'trending'; };
 // Derive activity signals straight from the DexScreener pair (works from CF even when the
 // GeckoTerminal trending/volume feeds don't): a volume-spike = last hour running well above
@@ -120,7 +123,10 @@ function eligible(prof, M, scoreObj, bar) {
   if (!scoreObj || scoreObj.r || scoreObj.c == null) return false;
   if (M.mcap < prof.capMin || M.mcap > prof.capMax) return false;
   if (M.liq < prof.liqMin) return false;
-  if (!prof.trig(M)) return false;
+  // smart-money override: 2+ proven-winner wallets accumulating IS the signal — follow them even
+  // if the archetype's own trigger isn't firing (still must fit its cap band + liquidity floor)
+  const smartSignal = (M.smartCount || 0) >= 2;
+  if (!prof.trig(M) && !smartSignal) return false;
   return scoreObj.c >= bar;
 }
 
@@ -234,7 +240,8 @@ function totalEquity(w) {
 }
 
 // ---- one scan of the candidate universe → rich metrics + per-archetype scores ----
-async function scanUniverse(env, nowTs) {
+async function scanUniverse(env, nowTs, smartMap) {
+  smartMap = smartMap || {};
   const dexGet = async (u) => { for (let i = 0; i < 3; i++) { try { const r = await fetch(u); if (r.ok) return await r.json(); } catch (e) { /**/ } await new Promise((res) => setTimeout(res, 250)); } return null; };
   const KV = env.ZEN_KV;
   // The DISCOVERY feed (buildUniverse: boosts/profiles/GeckoTerminal) is rate-limited from CF
@@ -290,7 +297,9 @@ async function scanUniverse(env, nowTs) {
     const accum = sources.indexOf('accumulation') >= 0;
     const reawaken = ageDays != null && ageDays > 7 && spike;            // dormant token suddenly active
     const srcTrendy = sources.indexOf('trending') >= 0 || sources.indexOf('boosted') >= 0 || sources.indexOf('new-boost') >= 0;
-    const M = { mcap, liq, ageDays, vol24, vol6, vol1, pc1, pc6, pc24, buyRatio6, buyRatio24, spike, accum, reawaken, clean, srcTrendy };
+    const sm = smartMap[mint]; const smart = sm ? (sm.score || 0) : 0; const smartCount = sm ? (sm.count || 0) : 0;
+    if (smartCount > 0 && sources.indexOf('smart-money') < 0) sources.push('smart-money');
+    const M = { mcap, liq, ageDays, vol24, vol6, vol1, pc1, pc6, pc24, buyRatio6, buyRatio24, spike, accum, reawaken, clean, srcTrendy, smart, smartCount };
 
     const Vv = {
       liq: logScore(liq, 3000, 1000000), vol: logScore(vol24, 5000, 5000000),
@@ -304,7 +313,11 @@ async function scanUniverse(env, nowTs) {
       let wsum = 0, vsum = 0;
       FACTORS.forEach((f) => { if (Vv[f.k] != null) { const w = ARCH[a][f.g] || 50; wsum += w; vsum += w * Vv[f.k]; } });
       let c = wsum ? Math.round(vsum / wsum) : null;
-      if (c != null) { let bonus = 0; sources.forEach((s) => { if (SRC_BONUS[s] && SRC_BONUS[s][a]) bonus += SRC_BONUS[s][a]; }); if (bonus) c = Math.min(100, c + bonus); }
+      if (c != null) {
+        let bonus = 0; sources.forEach((s) => { if (SRC_BONUS[s] && SRC_BONUS[s][a]) bonus += SRC_BONUS[s][a]; });
+        if (smartCount > 0) bonus += Math.min(22, Math.round(smart * 7)) + (SMART_EXTRA[a] || 0); // proven winners accumulating
+        if (bonus) c = Math.min(100, c + bonus);
+      }
       const rejected = gateLive && a !== 'degen';
       if (rejected && c != null) c = Math.min(c, 12);
       scores[a] = { c, r: rejected };
@@ -442,7 +455,10 @@ function learn(w, day) {
 
 // ---- advance the whole lab one tick ----
 async function advance(state, env, nowTs) {
-  const universe = await scanUniverse(env, nowTs);
+  // smart-money map: which tokens proven-winner wallets are accumulating now (built by walletdb)
+  let smartMap = {};
+  try { const sm = await env.ZEN_KV.get('radar:db:smartmap', 'json'); if (sm && sm.tokens) smartMap = sm.tokens; } catch (e) { /**/ }
+  const universe = await scanUniverse(env, nowTs, smartMap);
   if (!universe || !universe.length) return false;
 
   const uPrice = {}, uScore = {};
@@ -461,8 +477,8 @@ async function advance(state, env, nowTs) {
       return s && !s.r && s.c != null && u.M.mcap >= pr.capMin && u.M.mcap <= pr.capMax && u.M.liq >= pr.liqMin && pr.trig(u.M);
     }).map((b) => b.id);
     const rating = Math.max(0, ...BOTS.map((b) => (u.scores[b.id] && u.scores[b.id].c) || 0));
-    const tags = []; if (u.M.spike) tags.push('volume-spike'); if (u.M.accum) tags.push('accumulation'); if (u.M.reawaken) tags.push('reawaken'); if (u.M.clean) tags.push('clean');
-    return { mint: u.mint, symbol: u.symbol, name: u.name, mcap: u.mcap, liq: u.liq, ageDays: u.M.ageDays != null ? +u.M.ageDays.toFixed(1) : null, pc24: +u.M.pc24.toFixed(1), src: u.src, rating, interested, tags };
+    const tags = []; if (u.M.smartCount > 0) tags.push('smart-money'); if (u.M.spike) tags.push('volume-spike'); if (u.M.accum) tags.push('accumulation'); if (u.M.reawaken) tags.push('reawaken'); if (u.M.clean) tags.push('clean');
+    return { mint: u.mint, symbol: u.symbol, name: u.name, mcap: u.mcap, liq: u.liq, ageDays: u.M.ageDays != null ? +u.M.ageDays.toFixed(1) : null, pc24: +u.M.pc24.toFixed(1), src: u.src, rating, interested, tags, smart: u.M.smartCount || 0 };
   }).sort((a, b) => b.rating - a.rating).slice(0, 24);
 
   // price any held tokens that fell out of the trending set

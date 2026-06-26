@@ -40,6 +40,17 @@ export async function onRequestGet({ request, env }) {
     return json({ addr, ...w, tokens: Object.keys(w.toks || {}) }, 200, { 'cache-control': 'no-store' });
   }
 
+  // ---- smart-money alerts: tokens proven-winner wallets are accumulating right now ----
+  if (url.searchParams.get('smart')) {
+    const smap = await KV.get('radar:db:smartmap', 'json').catch(() => null);
+    if (!smap || !smap.tokens) return json({ smartCount: 0, alerts: [] }, 200, { 'cache-control': 'public, max-age=30' });
+    const cutoff = nowTs - 6 * 60 * 60 * 1000; // last 6h
+    const alerts = Object.keys(smap.tokens).map((m) => ({ mint: m, ...smap.tokens[m] }))
+      .filter((t) => t.count > 0 && (t.updated || 0) > cutoff)
+      .sort((a, b) => b.score - a.score).slice(0, 30);
+    return json({ smartCount: smap.smartCount || 0, updated: smap.updated, alerts }, 200, { 'cache-control': 'public, max-age=30' });
+  }
+
   // ---- who aped a token: the wallets we've observed swapping it, ranked by net SOL on it ----
   const tokenMint = url.searchParams.get('token');
   if (tokenMint) {
@@ -97,6 +108,7 @@ export async function onRequestGet({ request, env }) {
 
   let analyzed = 0, newW = 0, txSeen = 0;
   const tokWalletsBatch = {}; // mint -> top wallets on THIS token (for the "who aped" view)
+  const perByMint = {};       // mint -> raw per-wallet flow (for the smart-money map below)
   for (const mint of batch) {
     try {
       const r = await fetch(`https://api.helius.xyz/v0/addresses/${mint}/transactions?api-key=${KEY}&type=SWAP&limit=${TX_PER}`);
@@ -127,6 +139,7 @@ export async function onRequestGet({ request, env }) {
       const tw = Object.keys(per).map((a) => ({ addr: a, net: +((per[a].out - per[a].in) / 1e9).toFixed(3), n: per[a].n }))
         .sort((x, y) => y.net - x.net).slice(0, 15);
       tokWalletsBatch[mint] = { sym, updated: nowTs, traders: Object.keys(per).length, wallets: tw };
+      perByMint[mint] = { per, sym };
     } catch (e) { /**/ }
   }
 
@@ -145,6 +158,38 @@ export async function onRequestGet({ request, env }) {
       const tk = Object.keys(twdb.tokens);
       if (tk.length > 2500) { tk.sort((a, b) => (twdb.tokens[a].updated || 0) - (twdb.tokens[b].updated || 0)); for (let i = 0; i < tk.length - 2500; i++) delete twdb.tokens[tk[i]]; }
       await KV.put('radar:db:tokenwallets', JSON.stringify(twdb));
+    } catch (e) { /**/ }
+  }
+
+  // ---- THE SMART-MONEY MAP: which proven-winner wallets are ACCUMULATING each token now ----
+  // "smart" = top SMART_TOP wallets by global net SOL (the validated winners). For each scanned
+  // token, find the smart wallets that are net BUYERS on it (spent more SOL than they took out =
+  // accumulating). That's the alpha signal the bots and the alerts consume.
+  if (Object.keys(perByMint).length) {
+    try {
+      const SMART_TOP = 150;
+      const ranked = Object.keys(db.wallets).map((a) => ({ a, net: db.wallets[a].netSol || 0, n: db.wallets[a].n || 0 }))
+        .filter((w) => w.net > 0 && w.n >= 3).sort((x, y) => y.net - x.net).slice(0, SMART_TOP);
+      const rankOf = {}; ranked.forEach((w, i) => { rankOf[w.a] = i + 1; }); // 1 = best
+      let smap = await KV.get('radar:db:smartmap', 'json').catch(() => null);
+      if (!smap || !smap.tokens) smap = { tokens: {} };
+      for (const mint of Object.keys(perByMint)) {
+        const { per, sym } = perByMint[mint];
+        const buyers = [];
+        for (const a of Object.keys(per)) {
+          if (rankOf[a] == null) continue;                 // only proven winners
+          const net = (per[a].out - per[a].in) / 1e9;      // <0 = accumulating this token
+          if (net < -0.05) buyers.push({ addr: a, rank: rankOf[a], tokenNet: +net.toFixed(2) });
+        }
+        buyers.sort((x, y) => x.rank - y.rank);
+        // weighted score: better-ranked accumulators count more
+        const score = +buyers.reduce((s, b) => s + (SMART_TOP + 1 - b.rank) / SMART_TOP, 0).toFixed(2);
+        smap.tokens[mint] = { sym, score, count: buyers.length, buyers: buyers.slice(0, 10), updated: nowTs };
+      }
+      const sk = Object.keys(smap.tokens);
+      if (sk.length > 2500) { sk.sort((a, b) => (smap.tokens[a].updated || 0) - (smap.tokens[b].updated || 0)); for (let i = 0; i < sk.length - 2500; i++) delete smap.tokens[sk[i]]; }
+      smap.updated = nowTs; smap.smartCount = ranked.length;
+      await KV.put('radar:db:smartmap', JSON.stringify(smap));
     } catch (e) { /**/ }
   }
 
