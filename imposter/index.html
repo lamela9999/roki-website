@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#f2f0e8" />
+<title>Roki Imposter Game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+
+  :root{
+    --bg:#f2f0e8; --bg-2:#ffffff;
+    --card:#ffffff; --card-2:#eceadf; --card-3:#e4e1d4;
+    --ink:#0a0a0a; --ink-dim:#55524a; --ink-faint:#8c8a7f;
+    --line:#0a0a0a; --line-2:#0a0a0a;
+    --accent:#ff3a1d; --accent-ink:#ffffff;
+    --brand:#ff3a1d; --good:#0a8f4a; --gold:#111111;
+    --yellow:#ffd400;
+    --radius:3px; --radius-sm:3px; --tap:58px;
+    --font:"Space Grotesk",-apple-system,system-ui,sans-serif;
+    --display:"Anton","Space Grotesk",sans-serif;
+    --hard:4px 4px 0 var(--ink);
+    --hard-sm:3px 3px 0 var(--ink);
+    --ease:cubic-bezier(.7,0,.2,1);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;margin:0;overflow-x:hidden;}
+  body{font-family:var(--font);color:var(--ink);background:var(--bg);
+    overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-font-smoothing:antialiased;}
+  #app{max-width:460px;min-height:100dvh;margin:0 auto;display:flex;flex-direction:column;position:relative;background:var(--bg);}
+  @media(min-width:500px){#app{border-left:2px solid var(--ink);border-right:2px solid var(--ink);}}
+  .screen{flex:1;display:flex;flex-direction:column;padding:24px 20px calc(24px + env(safe-area-inset-bottom));animation:slideIn .26s var(--ease);}
+  @keyframes slideIn{from{transform:translateX(46px);opacity:0}to{transform:none;opacity:1}}
+  @keyframes wipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+  @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+
+  .top{display:flex;align-items:center;gap:12px;margin-bottom:20px;min-height:46px;border-bottom:2px solid var(--ink);padding-bottom:14px;}
+  .top h1{font-family:var(--font);font-size:18px;margin:0;font-weight:700;flex:1;text-transform:uppercase;letter-spacing:-.3px;overflow-wrap:anywhere;}
+  .iconbtn{width:46px;height:46px;border-radius:var(--radius);border:2px solid var(--ink);background:var(--card);color:var(--ink);font-size:18px;display:grid;place-items:center;cursor:pointer;box-shadow:var(--hard-sm);transition:transform .08s, box-shadow .08s, background .08s, color .08s;font-weight:700;}
+  .iconbtn:active{transform:translate(3px,3px);box-shadow:none;background:var(--ink);color:var(--bg);}
+
+  .btn{appearance:none;width:100%;min-height:var(--tap);border-radius:var(--radius);font-family:var(--font);font-weight:700;font-size:16px;text-transform:uppercase;letter-spacing:.5px;color:var(--accent-ink);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;padding:0 18px;background:var(--accent);border:2px solid var(--ink);box-shadow:var(--hard);transition:transform .08s var(--ease), box-shadow .08s, background .08s, color .08s;}
+  .btn:active{transform:translate(4px,4px);box-shadow:none;}
+  .btn[disabled]{opacity:1;background:var(--card-3);color:var(--ink-faint);box-shadow:none;border-color:var(--ink-faint);cursor:not-allowed;}
+  .btn.secondary{background:var(--card);color:var(--ink);}
+  .btn.secondary:active{background:var(--ink);color:var(--bg);transform:translate(4px,4px);box-shadow:none;}
+  .btn.ghost{background:transparent;color:var(--ink);box-shadow:none;border:2px solid var(--ink);}
+  .btn.ghost:active{background:var(--ink);color:var(--bg);transform:translate(2px,2px);}
+  .btn.accent{background:var(--ink);color:var(--bg);}
+  .btn.accent:active{transform:translate(4px,4px);box-shadow:none;background:var(--accent);color:#fff;}
+  .btn.gold{background:var(--yellow);color:var(--ink);}
+  .btn.gold:active{background:var(--ink);color:var(--yellow);transform:translate(4px,4px);box-shadow:none;}
+  .btn.small{min-height:46px;font-size:13px;width:auto;padding:0 18px;box-shadow:var(--hard-sm);}
+  .btn.small:active{transform:translate(3px,3px);box-shadow:none;}
+
+  .stack{display:flex;flex-direction:column;gap:12px;}
+  .grow{flex:1;}.spacer{flex:1;}
+  .muted{color:var(--ink-dim);}.faint{color:var(--ink-faint);font-size:13px;line-height:1.5;font-weight:500;}.center{text-align:center;}
+
+  .card{background:var(--card);border:2px solid var(--ink);border-radius:var(--radius);padding:18px;}
+  .badge{font-family:var(--font);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;padding:5px 9px;border-radius:var(--radius);white-space:nowrap;background:var(--ink);color:var(--bg);border:2px solid var(--ink);}
+  .badge.soon{background:var(--card);color:var(--ink);}
+  .badge.pro{background:var(--yellow);color:var(--ink);}
+  .badge.free{background:var(--accent);color:#fff;}
+
+  .hero{text-align:center;margin:18px 0 30px;}
+  .hero .logo{display:inline-grid;place-items:center;width:84px;height:84px;font-size:42px;border-radius:var(--radius);border:2px solid var(--ink);background:var(--card);box-shadow:var(--hard);filter:grayscale(1) contrast(1.1);}
+  .hero h2{font-family:var(--display);font-size:clamp(56px,20vw,88px);margin:22px 0 6px;font-weight:400;color:var(--ink);letter-spacing:.5px;line-height:.86;text-transform:uppercase;text-shadow:5px 5px 0 var(--accent);overflow-wrap:anywhere;}
+  .hero p{margin:14px 0 0;color:var(--ink-dim);font-size:14px;font-weight:500;text-transform:uppercase;letter-spacing:1px;}
+
+  .mode{display:flex;align-items:center;gap:14px;text-align:left;width:100%;padding:16px;border-radius:var(--radius);border:2px solid var(--ink);background:var(--card);color:var(--ink);cursor:pointer;box-shadow:var(--hard);transition:transform .08s, box-shadow .08s;}
+  .mode:active{transform:translate(4px,4px);box-shadow:none;}
+  .mode[disabled]{opacity:.5;cursor:not-allowed;box-shadow:var(--hard-sm);}
+  .mode .mi{font-size:26px;width:54px;height:54px;flex:none;display:grid;place-items:center;border-radius:var(--radius);border:2px solid var(--ink);background:var(--card-2);filter:grayscale(1) contrast(1.1);}
+  .mode .mt{flex:1;}
+  .mode .mt b{font-family:var(--font);font-size:17px;font-weight:700;display:block;text-transform:uppercase;letter-spacing:-.2px;}
+  .mode .mt span{font-size:12.5px;color:var(--ink-dim);font-weight:500;}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .cat{text-align:left;border:2px solid var(--ink);background:var(--card);border-radius:var(--radius);padding:14px;cursor:pointer;color:var(--ink);display:flex;flex-direction:column;gap:8px;min-height:124px;position:relative;overflow:hidden;box-shadow:var(--hard-sm);transition:transform .08s, box-shadow .08s;}
+  .cat:active{transform:translate(3px,3px);box-shadow:none;}
+  .cat .cemoji{font-size:26px;width:46px;height:46px;display:grid;place-items:center;border-radius:var(--radius);border:2px solid var(--ink);background:var(--card-2);filter:grayscale(1) contrast(1.1);}
+  .cat .cname{font-family:var(--font);font-weight:700;font-size:15px;text-transform:uppercase;letter-spacing:-.2px;overflow-wrap:anywhere;}
+  .cat .cmeta{font-size:10.5px;color:var(--ink-faint);font-weight:600;margin-top:auto;text-transform:uppercase;letter-spacing:.3px;}
+  .cat .corner{position:absolute;top:10px;right:10px;}
+
+  .row{display:flex;align-items:center;gap:12px;padding:15px 0;border-bottom:2px solid var(--card-3);}
+  .row:last-child{border-bottom:0;}
+  .row .lbl{flex:1;}
+  .row .lbl b{display:block;font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:-.2px;}
+  .row .lbl span{font-size:12px;color:var(--ink-faint);font-weight:500;}
+
+  .stepper{display:flex;align-items:center;gap:9px;}
+  .stepper button{width:46px;height:46px;border-radius:var(--radius);border:2px solid var(--ink);background:var(--card);color:var(--ink);font-size:22px;cursor:pointer;display:grid;place-items:center;box-shadow:var(--hard-sm);transition:transform .08s, box-shadow .08s, background .08s, color .08s;font-weight:700;}
+  .stepper button:active{transform:translate(3px,3px);box-shadow:none;background:var(--ink);color:var(--bg);}
+  .stepper .val{min-width:34px;text-align:center;font-family:var(--display);font-size:26px;font-weight:400;}
+
+  .seg{display:flex;gap:8px;}
+  .seg button{flex:1;min-height:48px;border-radius:var(--radius);border:2px solid var(--ink);background:var(--card);color:var(--ink);font-weight:700;font-size:13px;font-family:var(--font);text-transform:uppercase;letter-spacing:.3px;cursor:pointer;transition:transform .08s, background .08s, color .08s;}
+  .seg button:active{transform:translate(2px,2px);}
+  .seg button.on{background:var(--ink);color:var(--bg);}
+
+  .sw{width:58px;height:32px;border-radius:var(--radius);background:var(--card);position:relative;cursor:pointer;border:2px solid var(--ink);flex:none;transition:background .15s;}
+  .sw::after{content:"";position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:1px;background:var(--ink);transition:transform .16s var(--ease), background .15s;}
+  .sw.on{background:var(--accent);}
+  .sw.on::after{transform:translateX(26px);background:#fff;}
+
+  .chip{display:inline-flex;align-items:center;gap:7px;padding:10px 14px;border-radius:var(--radius);border:2px solid var(--ink);background:var(--card);color:var(--ink);font-size:13.5px;font-weight:600;cursor:pointer;text-transform:uppercase;letter-spacing:.2px;transition:transform .08s, background .08s, color .08s;}
+  .chip:active{transform:translate(2px,2px);}
+  .chip.on{background:var(--ink);color:var(--bg);}
+  .chips{display:flex;flex-wrap:wrap;gap:9px;}
+
+  .locked{position:relative;}
+  .locked .lockveil{position:absolute;inset:-2px;border-radius:var(--radius);background:rgba(242,240,232,.78);display:flex;align-items:center;justify-content:center;gap:8px;border:2px dashed var(--ink);cursor:pointer;z-index:2;font-weight:700;color:var(--ink);font-size:13px;text-align:center;padding:14px;text-transform:uppercase;letter-spacing:.3px;}
+  .locked .inner{opacity:.45;pointer-events:none;filter:grayscale(1);}
+
+  .section-h{font-family:var(--font);font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink);font-weight:800;margin:26px 0 12px;display:flex;align-items:center;gap:9px;}
+  .section-h::before{content:"";width:14px;height:14px;background:var(--accent);border:2px solid var(--ink);flex:none;}
+
+  .upsell{border:2px solid var(--ink);background:var(--yellow);border-radius:var(--radius);padding:16px;display:flex;gap:12px;align-items:center;box-shadow:var(--hard-sm);}
+  .upsell>div:first-child{font-size:26px;}
+  .upsell .ut{flex:1;}
+  .upsell .ut b{display:block;font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:-.2px;}
+  .upsell .ut span{font-size:12.5px;color:var(--ink-dim);font-weight:500;}
+
+  .pass{align-items:center;justify-content:center;text-align:center;gap:6px;}
+  .passnum{font-family:var(--font);font-size:13px;color:var(--ink-dim);font-weight:700;letter-spacing:2px;text-transform:uppercase;}
+  .passname{font-family:var(--display);font-size:clamp(40px,13vw,58px);font-weight:400;margin:6px 0 28px;text-transform:uppercase;line-height:.9;letter-spacing:.5px;overflow-wrap:anywhere;}
+  .tapcard{width:100%;flex:1;max-height:60vh;cursor:pointer;border:2px solid var(--ink);border-radius:var(--radius);
+    background:var(--card);box-shadow:var(--hard);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:26px;text-align:center;transition:transform .08s, box-shadow .08s;overflow:hidden;}
+  .tapcard:active{transform:translate(4px,4px);box-shadow:none;}
+  .tapcard>*{animation:wipe .34s var(--ease) both;}
+  .tapcard .hint{font-family:var(--font);font-size:17px;color:var(--ink-dim);font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+  .tapcard .big{font-size:14px;color:var(--ink-faint);font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
+  .reveal-word{font-family:var(--display);font-size:clamp(40px,13vw,60px);font-weight:400;line-height:.9;color:var(--ink);text-transform:uppercase;letter-spacing:.5px;overflow-wrap:anywhere;}
+  .reveal-role{font-family:var(--display);font-size:clamp(40px,13vw,58px);font-weight:400;color:var(--accent);text-transform:uppercase;line-height:.9;}
+  .reveal-cat{font-size:14px;color:var(--ink-dim);margin-top:10px;font-weight:600;text-transform:uppercase;letter-spacing:.3px;}
+  .eye{font-size:54px;filter:grayscale(1) contrast(1.1);}
+  .pulse{animation:pop .4s var(--ease);}
+
+  .timerwrap{align-items:center;justify-content:center;text-align:center;}
+  .clock{font-family:var(--display);font-size:96px;font-weight:400;font-variant-numeric:tabular-nums;letter-spacing:1px;line-height:1;}
+  .ring{width:248px;height:248px;position:relative;display:grid;place-items:center;margin:14px auto 26px;}
+  .ring svg{position:absolute;inset:0;transform:rotate(-90deg);}
+  .ring .track{fill:none;stroke:var(--card-3);stroke-width:5;}
+  .ring .prog{fill:none;stroke:var(--accent);stroke-width:7;stroke-linecap:butt;transition:stroke-dashoffset 1s linear;}
+
+  .sb-row{display:flex;align-items:center;gap:13px;padding:14px 0;border-bottom:2px solid var(--card-3);}
+  .sb-row:last-child{border-bottom:0;}
+  .sb-row .rank{width:34px;font-family:var(--display);font-weight:400;color:var(--ink);text-align:center;font-size:26px;}
+  .sb-row .nm{flex:1;font-weight:700;text-transform:uppercase;letter-spacing:-.2px;font-size:15px;}
+  .sb-row .pts{display:flex;align-items:center;gap:10px;}
+  .sb-row .pts .n{font-family:var(--display);font-weight:400;min-width:30px;text-align:center;font-size:26px;}
+  .miniadd{width:38px;height:38px;border-radius:var(--radius);border:2px solid var(--ink);background:var(--card);color:var(--ink);font-size:18px;cursor:pointer;box-shadow:var(--hard-sm);transition:transform .08s, box-shadow .08s, background .08s, color .08s;font-weight:700;}
+  .miniadd:active{transform:translate(3px,3px);box-shadow:none;background:var(--ink);color:var(--bg);}
+
+  .overlay{position:fixed;inset:0;background:rgba(10,10,10,.4);display:flex;align-items:flex-end;justify-content:center;z-index:60;animation:fadeo .2s ease;}
+  @keyframes fadeo{from{opacity:0}to{opacity:1}}
+  .sheet{width:100%;max-width:460px;background:var(--bg-2);border-top-left-radius:var(--radius);border-top-right-radius:var(--radius);border:2px solid var(--ink);border-bottom:0;padding:14px 20px calc(24px + env(safe-area-inset-bottom));max-height:92dvh;overflow-y:auto;animation:slideup .26s var(--ease);}
+  .sheet h2{font-family:var(--display);font-weight:400;text-transform:uppercase;letter-spacing:.5px;font-size:34px;}
+  @keyframes slideup{from{transform:translateY(60px)}to{transform:none}}
+  .grabber{width:60px;height:5px;border-radius:0;background:var(--ink);margin:6px auto 16px;}
+  .product{border:2px solid var(--ink);background:var(--card);border-radius:var(--radius);padding:17px;display:flex;flex-direction:column;gap:5px;position:relative;box-shadow:var(--hard-sm);}
+  .product.feat{background:var(--yellow);}
+  .product .pttl{font-family:var(--font);font-weight:800;font-size:16px;display:flex;align-items:center;gap:8px;text-transform:uppercase;letter-spacing:-.2px;}
+  .product .pprice{font-family:var(--display);font-size:34px;font-weight:400;margin-top:4px;}
+  .product .pprice small{font-size:12px;font-weight:600;color:var(--ink-faint);font-family:var(--font);text-transform:uppercase;}
+  .product .pdesc{font-size:13px;color:var(--ink-dim);line-height:1.5;font-weight:500;}
+  .product .owned{color:var(--good);font-weight:800;font-size:14px;text-transform:uppercase;}
+  .disclose{font-size:11px;color:var(--ink-faint);line-height:1.5;margin-top:2px;font-weight:500;}
+
+  .toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);border:2px solid var(--ink);color:var(--bg);padding:13px 20px;border-radius:var(--radius);font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;z-index:90;box-shadow:var(--hard-sm);max-width:88%;text-align:center;}
+
+  .ownbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;}
+  .hidden{display:none !important;}
+
+  input[type=range]{-webkit-appearance:none;appearance:none;height:34px;background:transparent;width:100%;}
+  input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:0;background:var(--card);border:2px solid var(--ink);}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;margin-top:-10px;border-radius:var(--radius);background:var(--accent);border:2px solid var(--ink);box-shadow:var(--hard-sm);cursor:pointer;}
+  input[type=range]::-moz-range-track{height:8px;border-radius:0;background:var(--card);border:2px solid var(--ink);}
+  input[type=range]::-moz-range-thumb{width:22px;height:22px;border:2px solid var(--ink);border-radius:var(--radius);background:var(--accent);cursor:pointer;}
+
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <div id="overlay-root"></div>
+  <div id="toast-root"></div>
+
+      <script src="wordbank.js"></script>
+  <script src="content/geography.js"></script>
+  <script src="content/food.js"></script>
+  <script src="content/animals.js"></script>
+  <script src="content/jobs.js"></script>
+  <script src="content/objects.js"></script>
+  <script src="content/places.js"></script>
+  <script src="content/drawing/objects_vehicles_symbols.js"></script>
+  <script src="content/drawing/animals_nature_food.js"></script>
+  <script src="content/football/legends.js"></script>
+  <script src="content/football/era_epl.js"></script>
+  <script src="content/football/era_laliga.js"></script>
+  <script src="content/football/era_seriea.js"></script>
+  <script src="content/football/era_bundesliga.js"></script>
+  <script src="content/football/era_ligue1.js"></script>
+  <script src="content/football/cur_epl.js"></script>
+  <script src="content/football/cur_laliga.js"></script>
+  <script src="content/football/cur_seriea.js"></script>
+  <script src="content/football/cur_bundesliga.js"></script>
+  <script src="content/football/cur_ligue1.js"></script>
+  <script src="content/football/clubs.js"></script>
+  <script src="content/football/national.js"></script>
+  <script src="content/nba/atlantic.js"></script>
+  <script src="content/nba/central.js"></script>
+  <script src="content/nba/southeast.js"></script>
+  <script src="content/nba/northwest.js"></script>
+  <script src="content/nba/pacific.js"></script>
+  <script src="content/nba/southwest.js"></script>
+  <script src="content/tennis.js"></script>
+  <script src="content/boxing.js"></script>
+  <script src="content/ufc.js"></script>
+  <script src="content/f1.js"></script>
+  <script src="content/anime/naruto.js"></script>
+  <script src="content/anime/onepiece.js"></script>
+  <script src="content/anime/bleach.js"></script>
+  <script src="content/anime/jjk.js"></script>
+  <script src="content/anime/aot.js"></script>
+  <script src="content/anime/dragonball.js"></script>
+  <script src="content/anime/mha.js"></script>
+  <script src="content/anime/demonslayer.js"></script>
+  <script src="content/anime/deathnote.js"></script>
+  <script src="content/anime/chainsawman.js"></script>
+  <script src="content/anime/sololeveling.js"></script>
+  <script src="content/anime/frieren.js"></script>
+  <script src="content/anime/spyfamily.js"></script>
+  <script src="content/anime/hunterxhunter.js"></script>
+  <script src="content/anime/bluelock.js"></script>
+  <script src="content/anime/tokyorevengers.js"></script>
+  <script src="content/anime/vinlandsaga.js"></script>
+  <script src="content/anime/jojo.js"></script>
+  <script src="content/anime/fma.js"></script>
+  <script src="content/anime/onepunchman.js"></script>
+  <script src="content/anime/mobpsycho.js"></script>
+  <script src="content/anime/haikyu.js"></script>
+  <script src="content/anime/blackclover.js"></script>
+  <script src="content/anime/fairytail.js"></script>
+  <script src="content/anime/tokyoghoul.js"></script>
+  <script src="content/anime/sds.js"></script>
+  <script src="content/anime/sao.js"></script>
+  <script src="content/anime/rezero.js"></script>
+  <script src="content/anime/drstone.js"></script>
+  <script src="content/anime/fireforce.js"></script>
+  <script src="content/anime/promisedneverland.js"></script>
+  <script src="content/anime/codegeass.js"></script>
+  <script src="content/anime/evangelion.js"></script>
+  <script src="content/anime/steinsgate.js"></script>
+  <script src="content/anime/tensura.js"></script>
+  <script src="content/anime/dandadan.js"></script>
+  <script src="content/anime/kaiju8.js"></script>
+  <script src="content/anime/oshinoko.js"></script>
+  <script src="content/anime/konosuba.js"></script>
+  <script src="content/anime/sakamoto.js"></script>
+  <script src="content/anime/inuyasha.js"></script>
+  <script src="content/anime/cowboybebop.js"></script>
+  <script src="content/anime/bungostray.js"></script>
+  <script src="content/games.js"></script>
+  <script src="content/games/titles.js"></script>
+  <script src="content/games/modern_chars.js"></script>
+  <script src="content/films.js"></script>
+  <script src="content/films/ch_starwars.js"></script>
+  <script src="content/films/ch_harrypotter.js"></script>
+  <script src="content/films/ch_lotr.js"></script>
+  <script src="content/films/ch_disney.js"></script>
+  <script src="content/films/ch_bond.js"></script>
+  <script src="content/films/ch_action.js"></script>
+  <script src="content/music.js"></script>
+  <script src="content/kpop.js"></script>
+  <script src="content/superheroes/avengers.js"></script>
+  <script src="content/superheroes/xmen.js"></script>
+  <script src="content/superheroes/spiderverse.js"></script>
+  <script src="content/superheroes/marvelvillains.js"></script>
+  <script src="content/superheroes/dcheroes.js"></script>
+  <script src="content/superheroes/dcvillains.js"></script>
+  <script src="content/famous.js"></script>
+  <script src="content/internet.js"></script>
+  <script src="content/history.js"></script>
+  <script src="content/nature.js"></script>
+  <script src="content/science.js"></script>
+  <script src="content/cars.js"></script>
+
+  <script>
+  "use strict";
+  // ======================================================================
+  //  i18n — UI strings (content terms live in wordbank.js)
+  // ======================================================================
+  const I18N = {
+    en: {
+      tagline: "The pass-and-play imposter game",
+      offline: "Offline", offlineSub: "Play in the room, right now",
+      online: "Online", onlineSub: "Real-time lobby & leaderboards",
+      comingSoon: "Coming soon",
+      settings: "Settings", language: "Language", restore: "Restore purchases",
+      manage: "Manage packs", store: "Store", about: "About",
+      aboutText: "Pass one phone around the room. Everyone sees a secret word — except the imposter, who must blend in. Talk it out, then vote. v1 is fully offline.",
+      chooseCat: "Choose a category", free: "Free", owned: "Owned", pro: "Pro",
+      randomAll: "Random across all subgroups & difficulties",
+      setup: "Round setup", players: "Players", imposters: "Imposters",
+      subgroups: "Subgroups", subgroupsSub: "Turn off what your group doesn't know",
+      difficulty: "Difficulty", difficultySub: "How deep do you want to go",
+      drawMode: "Drawing mode", drawModeSub: "Only words you can sketch on paper",
+      years: "Years / Era", yearsSub: "Filter by time",
+      showLabel: "Show", showSub: "Game names or characters", optNames: "Names", optChars: "Characters", optBoth: "Both",
+      unlockToPick: "Unlock to pick exactly what your group knows",
+      startRound: "Start round", poolEmpty: "No words match these filters",
+      poolCount: n => `${n} word${n===1?"":"s"} in the pool`,
+      needWords: "Enable at least one subgroup with words",
+      passTo: "Pass the phone to", player: "Player",
+      tapReveal: "Tap to reveal your role", keepSecret: "Keep it secret. Tap to hide.",
+      youAre: "You're the", theImposter: "IMPOSTER", theWordIs: "The word is",
+      bluffHint: cat => `Category: ${cat} — blend in.`, tapHide: "Tap to hide",
+      next: "Next player", everyoneSeen: "Everyone has seen their role",
+      toDiscuss: "Start discussion", discuss: "Discuss", discussSub: "Talk it out. Find the imposter.",
+      noTimer: "No timer", startTimer: "Start timer", addMin: "+1 min", reset: "Reset",
+      timesUp: "Time's up!", revealAnswer: "Reveal answer", reveal: "The reveal",
+      theWordWas: "The word was", impWas: n => `The imposter${n>1?"s were":" was"}`,
+      playAgain: "Play again", sameCat: "New round, same category", scoreboard: "Scoreboard",
+      tonightBoard: "Tonight's scoreboard", noScores: "No points yet. Add points after a round.",
+      addPlayer: "Add player", clearBoard: "Clear board", done: "Done", back: "Back",
+      whoImposter: "Who was caught? Tap to award points (host decides).",
+      buy: "Unlock", buyNow: "Get it",
+      packTitle: c => `${c} Pack`, packDesc: c => `Full control of the ${c} category — subgroup toggles + difficulty filter, forever.`,
+      weekendTitle: "Weekend Pass", weekendDesc: "Full control across every category for a week. For party weekends.",
+      everythingTitle: "Everything, Forever", everythingDesc: "Control across all categories, permanently. Pays for itself in ~11 weeks vs the pass.",
+      autoRenew: "Auto-renews weekly at $2.99 until cancelled. Cancel anytime in settings. This v1 build is a stub — no real charge.",
+      stub: "Demo build — purchases are simulated, nothing is charged.",
+      purchased: "Unlocked! (simulated)", restored: "Nothing to restore in this demo",
+      activeUntil: d => `Active until ${d}`, passActive: "Weekend Pass active",
+      everythingOwned: "You own Everything, Forever ✦", lockedCta: "Tap to unlock",
+      bestValue: "Best value", oneTime: "one-time", weekly: "weekly",
+      catName: id => (WB.categories.find(c=>c.id===id)?.name[LANG]||id),
+    },
+    ru: {
+      tagline: "Игра в импостера «передай телефон»",
+      offline: "Офлайн", offlineSub: "Играйте в комнате прямо сейчас",
+      online: "Онлайн", onlineSub: "Лобби в реальном времени и таблицы лидеров",
+      comingSoon: "Скоро",
+      settings: "Настройки", language: "Язык", restore: "Восстановить покупки",
+      manage: "Управление паками", store: "Магазин", about: "Об игре",
+      aboutText: "Передавайте один телефон по кругу. Все видят секретное слово — кроме импостера, который должен слиться с остальными. Обсудите и голосуйте. v1 полностью офлайн.",
+      chooseCat: "Выберите категорию", free: "Бесплатно", owned: "Куплено", pro: "Pro",
+      randomAll: "Случайно по всем подгруппам и сложностям",
+      setup: "Настройка раунда", players: "Игроки", imposters: "Импостеры",
+      subgroups: "Подгруппы", subgroupsSub: "Отключите то, что ваша компания не знает",
+      difficulty: "Сложность", difficultySub: "Насколько глубоко копаем",
+      drawMode: "Режим рисования", drawModeSub: "Только слова, которые можно нарисовать",
+      years: "Годы / Эпоха", yearsSub: "Фильтр по времени",
+      showLabel: "Показывать", showSub: "Названия игр или персонажей", optNames: "Названия", optChars: "Персонажи", optBoth: "Оба",
+      unlockToPick: "Откройте, чтобы выбрать именно то, что знает ваша компания",
+      startRound: "Начать раунд", poolEmpty: "Нет слов под эти фильтры",
+      poolCount: n => `${n} слов в пуле`,
+      needWords: "Включите хотя бы одну подгруппу со словами",
+      passTo: "Передайте телефон", player: "Игрок",
+      tapReveal: "Нажмите, чтобы увидеть свою роль", keepSecret: "Держите в секрете. Нажмите, чтобы скрыть.",
+      youAre: "Вы —", theImposter: "ИМПОСТЕР", theWordIs: "Слово:",
+      bluffHint: cat => `Категория: ${cat} — притворяйтесь.`, tapHide: "Нажмите, чтобы скрыть",
+      next: "Следующий игрок", everyoneSeen: "Все увидели свои роли",
+      toDiscuss: "Начать обсуждение", discuss: "Обсуждение", discussSub: "Обсуждайте. Найдите импостера.",
+      noTimer: "Без таймера", startTimer: "Запустить таймер", addMin: "+1 мин", reset: "Сброс",
+      timesUp: "Время вышло!", revealAnswer: "Показать ответ", reveal: "Развязка",
+      theWordWas: "Слово было:", impWas: n => `Импостер${n>1?"ами были":"ом был"}`,
+      playAgain: "Играть ещё", sameCat: "Новый раунд, та же категория", scoreboard: "Счёт",
+      tonightBoard: "Счёт за вечер", noScores: "Пока нет очков. Начисляйте после раунда.",
+      addPlayer: "Добавить игрока", clearBoard: "Очистить", done: "Готово", back: "Назад",
+      whoImposter: "Кого поймали? Нажмите, чтобы начислить очки (решает хост).",
+      buy: "Открыть", buyNow: "Купить",
+      packTitle: c => `Пак «${c}»`, packDesc: c => `Полный контроль категории «${c}» — переключатели подгрупп и фильтр сложности, навсегда.`,
+      weekendTitle: "Пропуск на выходные", weekendDesc: "Полный контроль во всех категориях на неделю. Для вечеринок.",
+      everythingTitle: "Всё и навсегда", everythingDesc: "Контроль во всех категориях навсегда. Окупается за ~11 недель против пропуска.",
+      autoRenew: "Автопродление еженедельно за $2.99 до отмены. Отменить можно в настройках. В этой v1-сборке покупка — заглушка, деньги не списываются.",
+      stub: "Демо-сборка — покупки симулируются, ничего не списывается.",
+      purchased: "Открыто! (симуляция)", restored: "В демо нечего восстанавливать",
+      activeUntil: d => `Активно до ${d}`, passActive: "Пропуск активен",
+      everythingOwned: "У вас «Всё и навсегда» ✦", lockedCta: "Нажмите, чтобы открыть",
+      bestValue: "Лучшая цена", oneTime: "разово", weekly: "в неделю",
+      catName: id => (WB.categories.find(c=>c.id===id)?.name[LANG]||id),
+    },
+  };
+
+  // ======================================================================
+  //  State + persistence
+  // ======================================================================
+  const WB = window.WORDBANK;
+  const LS = {
+    lang: "imp.lang",
+    own: "imp.ownership",
+  };
+  let LANG = localStorage.getItem(LS.lang) || (navigator.language||"en").slice(0,2);
+  if (!WB.languages.includes(LANG)) LANG = "en";
+  const t = () => I18N[LANG];
+
+  // ownership: { everything:bool, passExpiry:ms|null, packs:[catId] }
+  function loadOwn() {
+    try { return Object.assign({ everything:false, passExpiry:null, packs:[] }, JSON.parse(localStorage.getItem(LS.own)||"{}")); }
+    catch { return { everything:false, passExpiry:null, packs:[] }; }
+  }
+  let OWN = loadOwn();
+  function saveOwn() { localStorage.setItem(LS.own, JSON.stringify(OWN)); }
+  function passActive() { return OWN.passExpiry && OWN.passExpiry > Date.now(); }
+  // NOTE: Date.now() is fine here — this is runtime app code in the browser,
+  // not a workflow script. Pass expiry is a wall-clock concept.
+  function isFreeCat(catId) { const c = WB.categories.find(x=>x.id===catId); return !!(c && c.free); }
+  function isPaidFor(catId) { return isFreeCat(catId) || OWN.everything || passActive() || OWN.packs.includes(catId); }
+
+  // transient round/session state
+  let S = {
+    screen: "home",
+    category: null,
+    players: 4,
+    imposters: 1,
+    enabledSubs: {},          // catId -> Set of subgroup ids (paid control)
+    diffOn: { 1:true, 2:true, 3:true },
+    drawOnly: false,
+    yearRange: {},            // catId -> {lo, hi} (paid control; only for year-categories)
+    kindFilter: {},           // catId -> "both"|"title"|"char" (only for categories whose subgroups carry a kind)
+    // round
+    word: null, roles: [], revealIndex: 0,
+    timerSec: 0, timerLeft: 0, timerId: null, timerTotal: 180,
+    // session scoreboard
+    scores: {},               // "Player 1" -> points
+  };
+
+  // ======================================================================
+  //  Filtering — the whole UX (subgroups = which, difficulty = how deep)
+  // ======================================================================
+  function catWords(catId) {
+    return WB.words.filter(w => w.category === catId && w.term[LANG]); // missing lang excluded
+  }
+  function defaultSubs(catId) {
+    const c = WB.categories.find(x=>x.id===catId);
+    return new Set(c.subgroups.map(s=>s.id));
+  }
+  function getEnabledSubs(catId) {
+    if (!S.enabledSubs[catId]) S.enabledSubs[catId] = defaultSubs(catId);
+    return S.enabledSubs[catId];
+  }
+  // Year axis: a category "has years" if any of its words carry a numeric year.
+  function catYearBounds(catId) {
+    const ys = catWords(catId).filter(w => typeof w.year === "number").map(w => w.year);
+    if (!ys.length) return null;
+    return { min: Math.min(...ys), max: Math.max(...ys) };
+  }
+  function getYearRange(catId) {
+    const b = catYearBounds(catId);
+    if (!b) return null;
+    if (!S.yearRange[catId]) S.yearRange[catId] = { lo: b.min, hi: b.max };
+    return S.yearRange[catId];
+  }
+  // Kind axis: some categories (Video Games) tag subgroups as "title" vs "char".
+  function catSubKinds(catId) {
+    const c = WB.categories.find(x=>x.id===catId); if (!c) return [];
+    const set = new Set(); c.subgroups.forEach(s => { if (s.kind) set.add(s.kind); }); return [...set];
+  }
+  function catHasKinds(catId) { return catSubKinds(catId).length > 1; }
+  function subKind(catId, subId) {
+    const c = WB.categories.find(x=>x.id===catId); const s = c && c.subgroups.find(x=>x.id===subId); return s ? s.kind : null;
+  }
+  function getKindFilter(catId) {
+    if (!S.kindFilter[catId]) S.kindFilter[catId] = "both";
+    return S.kindFilter[catId];
+  }
+  function buildPool(catId) {
+    const paid = isPaidFor(catId);
+    let pool = catWords(catId);
+    if (paid) {
+      const subs = getEnabledSubs(catId);
+      pool = pool.filter(w => subs.has(w.subgroup));
+      pool = pool.filter(w => S.diffOn[w.difficulty]);
+      // year axis — only for categories that carry years; words without a year stay in
+      const yr = getYearRange(catId);
+      if (yr) pool = pool.filter(w => typeof w.year !== "number" || (w.year >= yr.lo && w.year <= yr.hi));
+    }
+    // kind filter (names vs characters) — available to everyone, like drawing mode
+    if (catHasKinds(catId)) {
+      const kf = getKindFilter(catId);
+      if (kf !== "both") pool = pool.filter(w => subKind(catId, w.subgroup) === kf);
+    }
+    // drawing mode is a filter available to everyone (it's a playstyle filter)
+    if (S.drawOnly) pool = pool.filter(w => w.playstyles.includes("draw"));
+    return pool;
+  }
+
+  // ======================================================================
+  //  Helpers
+  // ======================================================================
+  const $ = (sel, root=document) => root.querySelector(sel);
+  const el = (html) => { const d=document.createElement("div"); d.innerHTML=html.trim(); return d.firstElementChild; };
+  function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+  function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
+  function go(screen){ S.screen=screen; render(); window.scrollTo(0,0); }
+  function toast(msg){
+    const r=$("#toast-root"); r.innerHTML="";
+    const tEl=el(`<div class="toast">${msg}</div>`); r.appendChild(tEl);
+    setTimeout(()=>{ tEl.style.opacity="0"; tEl.style.transition="opacity .3s"; setTimeout(()=>tEl.remove(),300); }, 2200);
+  }
+  function fmtDate(ms){ const d=new Date(ms); return d.toLocaleDateString(LANG==="ru"?"ru-RU":"en-US",{month:"short",day:"numeric"}); }
+  function mmss(s){ const m=Math.floor(s/60), ss=s%60; return `${m}:${ss<10?"0":""}${ss}`; }
+
+  // ======================================================================
+  //  Screens
+  // ======================================================================
+  function render(){
+    const app = $("#app");
+    app.innerHTML = "";
+    app.appendChild(SCREENS[S.screen]());
+  }
+
+  const SCREENS = {
+    // ---------------------------------------------------------------- HOME
+    home(){
+      const T=t();
+      const s = el(`<div class="screen">
+        <div class="top">
+          <h1></h1>
+          <button class="iconbtn" id="lang">${LANG==="en"?"🇬🇧":"🇷🇺"}</button>
+          <button class="iconbtn" id="settings">⚙️</button>
+        </div>
+        <div class="hero">
+          <div class="logo" style="filter:none;background:var(--card-2);padding:8px"><img src="roki-logo.png" alt="Roki" style="width:100%;height:100%;object-fit:contain" /></div>
+          <h2>ROKI<br>IMPOSTER</h2>
+          <p>${T.tagline}</p>
+        </div>
+        <div class="stack">
+          <button class="mode" id="m-offline">
+            <span class="mi">📴</span>
+            <span class="mt"><b>${T.offline}</b><span>${T.offlineSub}</span></span>
+            <span class="badge free">✓</span>
+          </button>
+          <button class="mode" id="m-online" disabled>
+            <span class="mi">🌐</span>
+            <span class="mt"><b>${T.online}</b><span>${T.onlineSub}</span></span>
+            <span class="badge soon">${T.comingSoon}</span>
+          </button>
+        </div>
+        <div class="spacer"></div>
+        <button class="btn gold small" id="store" style="align-self:center;margin-top:20px">✦ ${T.store}</button>
+        <p class="faint center" style="margin-top:14px">${ownershipLine()}</p>
+      </div>`);
+      $(".top h1", s).textContent = "";
+      s.querySelector("#m-offline").onclick = ()=>go("categories");
+      s.querySelector("#lang").onclick = toggleLang;
+      s.querySelector("#settings").onclick = openSettings;
+      s.querySelector("#store").onclick = ()=>openStore();
+      return s;
+    },
+
+    // ---------------------------------------------------------- CATEGORIES
+    categories(){
+      const T=t();
+      const s = el(`<div class="screen">
+        <div class="top">
+          <button class="iconbtn" id="back">‹</button>
+          <h1>${T.chooseCat}</h1>
+        </div>
+        <div class="grid" id="grid"></div>
+        <p class="faint center" style="margin-top:18px">${LANG==="ru"?"Бесплатные категории — полный контроль · Остальные — откройте, чтобы настраивать":"Free categories: full control · Others: unlock to curate"}</p>
+      </div>`);
+      const grid = $("#grid", s);
+      WB.categories.forEach(c=>{
+        const n = catWords(c.id).length;
+        const paid = isPaidFor(c.id);
+        const corner = c.free
+          ? `<span class="badge free corner">${T.free}</span>`
+          : paid
+            ? `<span class="badge free corner">${T.owned}</span>`
+            : `<span class="badge pro corner">${T.pro}</span>`;
+        const card = el(`<button class="cat">
+          ${corner}
+          <span class="cemoji">${c.icon}</span>
+          <span class="cname">${c.name[LANG]}</span>
+          <span class="cmeta">${c.subgroups.length} ${LANG==="ru"?"подгрупп":"subgroups"} · ${n} ${LANG==="ru"?"слов":"words"}</span>
+        </button>`);
+        card.onclick = ()=>{ S.category=c.id; go("setup"); };
+        grid.appendChild(card);
+      });
+      $("#back", s).onclick=()=>go("home");
+      return s;
+    },
+
+    // --------------------------------------------------------------- SETUP
+    setup(){
+      const T=t();
+      const c = WB.categories.find(x=>x.id===S.category);
+      const paid = isPaidFor(S.category);
+      const pool = buildPool(S.category);
+
+      const s = el(`<div class="screen">
+        <div class="top">
+          <button class="iconbtn" id="back">‹</button>
+          <h1>${c.icon} ${c.name[LANG]}</h1>
+          ${c.free?`<span class="badge free">${T.free}</span>`:paid?`<span class="badge free">${T.owned}</span>`:`<span class="badge pro">🔒 ${T.pro}</span>`}
+        </div>
+        <div class="card">
+          <div class="row">
+            <div class="lbl"><b>${T.players}</b><span>3–12</span></div>
+            <div class="stepper" id="st-players">
+              <button data-d="-1">−</button><div class="val">${S.players}</div><button data-d="1">+</button>
+            </div>
+          </div>
+          <div class="row">
+            <div class="lbl"><b>${T.imposters}</b><span>1–2</span></div>
+            <div class="stepper" id="st-imp">
+              <button data-d="-1">−</button><div class="val">${S.imposters}</div><button data-d="1">+</button>
+            </div>
+          </div>
+          <div class="row">
+            <div class="lbl"><b>${T.drawMode}</b><span>${T.drawModeSub}</span></div>
+            <button class="sw ${S.drawOnly?"on":""}" id="draw"></button>
+          </div>
+          ${catHasKinds(S.category) ? `
+          <div class="row" style="border-bottom:0;padding-bottom:6px">
+            <div class="lbl"><b>${T.showLabel}</b><span>${T.showSub}</span></div>
+          </div>
+          <div class="seg" id="kindseg">
+            <button data-k="both">${T.optBoth}</button>
+            <button data-k="title">${T.optNames}</button>
+            <button data-k="char">${T.optChars}</button>
+          </div>` : ``}
+        </div>
+
+        <div class="section-h">${T.subgroups} <span class="badge ${paid?'free':'pro'}">${paid?'':'🔒 '}${paid?T.owned:T.pro}</span></div>
+        <div id="subsblock"></div>
+
+        <div class="section-h">${T.difficulty}</div>
+        <div id="diffblock"></div>
+
+        <div id="yearblock"></div>
+
+        <div id="upsell-slot"></div>
+
+        <div class="spacer" style="min-height:14px"></div>
+        <div id="poolinfo" class="faint center" style="margin-bottom:10px"></div>
+        <button class="btn" id="start">${T.startRound}</button>
+      </div>`);
+
+      // steppers
+      $("#st-players", s).querySelectorAll("button").forEach(b=>b.onclick=()=>{
+        S.players = Math.min(12, Math.max(3, S.players + (+b.dataset.d)));
+        if (S.imposters >= S.players) S.imposters = Math.max(1, S.players-2);
+        SCREENS_refreshSetup(s);
+      });
+      $("#st-imp", s).querySelectorAll("button").forEach(b=>b.onclick=()=>{
+        S.imposters = Math.min(2, Math.max(1, S.imposters + (+b.dataset.d)));
+        S.imposters = Math.min(S.imposters, S.players-2 >=1 ? S.players-1 : 1);
+        SCREENS_refreshSetup(s);
+      });
+      $("#draw", s).onclick=()=>{ S.drawOnly=!S.drawOnly; SCREENS_refreshSetup(s); };
+      const kseg = $("#kindseg", s);
+      if(kseg){
+        kseg.querySelectorAll("button").forEach(b=>{
+          if(b.dataset.k===getKindFilter(S.category)) b.classList.add("on");
+          b.onclick=()=>{ S.kindFilter[S.category]=b.dataset.k; SCREENS_refreshSetup(s); };
+        });
+      }
+
+      buildSubsBlock(s, c, paid);
+      buildDiffBlock(s, paid);
+      buildYearBlock(s, paid);
+      buildUpsell(s, paid);
+      refreshPoolInfo(s);
+
+      $("#back", s).onclick=()=>go("categories");
+      $("#start", s).onclick=()=>startRound(s);
+      return s;
+    },
+
+    // --------------------------------------------------------- PASS/REVEAL
+    reveal(){
+      const T=t();
+      const idx = S.revealIndex;
+      const total = S.players;
+      const isImp = S.roles[idx] === "imposter";
+      const c = WB.categories.find(x=>x.id===S.category);
+      const s = el(`<div class="screen pass">
+        <div class="passnum">${T.player} ${idx+1} / ${total}</div>
+        <div class="passname">${T.passTo} ${idx+1}</div>
+        <div class="tapcard" id="card">
+          <div class="eye pulse">👁️</div>
+          <div class="hint">${T.tapReveal}</div>
+          <div class="big faint">${idx+1} / ${total}</div>
+        </div>
+        <button class="btn ghost" id="reset" style="margin-top:18px;max-width:180px;align-self:center">↺ ${T.reset}</button>
+      </div>`);
+
+      let shown=false;
+      const card = $("#card", s);
+      const revealContent = isImp
+        ? `<div class="reveal-role">🕵️ ${T.theImposter}</div>
+           <div class="reveal-cat">${T.bluffHint(c.name[LANG])}</div>
+           <div class="big faint" style="margin-top:14px">${T.tapHide}</div>`
+        : `<div class="faint">${T.theWordIs}</div>
+           <div class="reveal-word">${S.word.term[LANG]}</div>
+           <div class="big faint" style="margin-top:14px">${T.tapHide}</div>`;
+
+      card.onclick = ()=>{
+        if(!shown){
+          shown=true;
+          card.innerHTML = revealContent;
+          card.style.background = isImp
+            ? "linear-gradient(160deg, #ffffff, #ece9e0)"
+            : "linear-gradient(160deg, var(--card-2), var(--card))";
+        } else {
+          // hide + advance
+          if(idx+1 >= total){ go("discuss"); }
+          else { S.revealIndex++; go("reveal"); }
+        }
+      };
+      $("#reset", s).onclick=()=>{ if(confirm(T.reset+"?")){ S.revealIndex=0; go("setup"); } };
+      return s;
+    },
+
+    // ------------------------------------------------------------- DISCUSS
+    discuss(){
+      const T=t();
+      stopTimer();
+      const s = el(`<div class="screen timerwrap">
+        <div class="top" style="width:100%">
+          <h1 style="text-align:center">${T.discuss}</h1>
+        </div>
+        <p class="muted center" style="margin-top:-6px">${T.discussSub}</p>
+        <div class="ring">
+          <svg viewBox="0 0 230 230">
+            <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#ff4d6d"/><stop offset="1" stop-color="#ff7a3c"/>
+            </linearGradient></defs>
+            <circle class="track" cx="115" cy="115" r="100"/>
+            <circle class="prog" id="prog" cx="115" cy="115" r="100"
+              stroke-dasharray="628" stroke-dashoffset="0"/>
+          </svg>
+          <div class="clock" id="clock">${mmss(S.timerTotal)}</div>
+        </div>
+        <div class="seg" id="durs" style="margin-bottom:14px">
+          <button data-s="60">1:00</button>
+          <button data-s="120">2:00</button>
+          <button data-s="180">3:00</button>
+          <button data-s="300">5:00</button>
+        </div>
+        <div class="stack" style="width:100%">
+          <button class="btn accent" id="toggle">▶ ${T.startTimer}</button>
+          <button class="btn" id="revealAns">${T.revealAnswer}</button>
+          <button class="btn ghost" id="skip">${T.noTimer} — ${T.revealAnswer}</button>
+        </div>
+      </div>`);
+
+      const durBtns = $("#durs", s).querySelectorAll("button");
+      durBtns.forEach(b=>{
+        if(+b.dataset.s===S.timerTotal) b.classList.add("on");
+        b.onclick=()=>{
+          S.timerTotal=+b.dataset.s; S.timerLeft=S.timerTotal;
+          stopTimer();
+          durBtns.forEach(x=>x.classList.remove("on")); b.classList.add("on");
+          updateClock(s); $("#toggle",s).innerHTML=`▶ ${T.startTimer}`;
+        };
+      });
+
+      S.timerLeft = S.timerLeft || S.timerTotal;
+      updateClock(s);
+
+      $("#toggle", s).onclick=()=>{
+        if(S.timerId){ stopTimer(); $("#toggle",s).innerHTML=`▶ ${T.startTimer}`; }
+        else { startTimer(s); $("#toggle",s).innerHTML=`⏸ ${T.reset==="Reset"?"Pause":"Пауза"}`; }
+      };
+      $("#revealAns", s).onclick=()=>{ stopTimer(); go("answer"); };
+      $("#skip", s).onclick=()=>{ stopTimer(); go("answer"); };
+      return s;
+    },
+
+    // -------------------------------------------------------------- ANSWER
+    answer(){
+      const T=t();
+      const impIdx = S.roles.map((r,i)=>r==="imposter"?i+1:null).filter(Boolean);
+      const c = WB.categories.find(x=>x.id===S.category);
+      const s = el(`<div class="screen">
+        <div class="top"><h1 style="text-align:center">${T.reveal}</h1></div>
+        <div class="card center" style="padding:26px 18px">
+          <div class="faint">${T.theWordWas}</div>
+          <div class="reveal-word" style="margin:8px 0 4px">${S.word.term[LANG]}</div>
+          <div class="reveal-cat">${c.icon} ${c.name[LANG]}${S.word.playstyles.includes("draw")?" · ✏️":""}</div>
+        </div>
+        <div class="card center" style="margin-top:14px;padding:22px 18px">
+          <div class="faint">${T.impWas(impIdx.length)}</div>
+          <div class="reveal-role" style="margin-top:8px">🕵️ ${impIdx.map(i=>`${T.player} ${i}`).join(", ")}</div>
+        </div>
+
+        <div class="section-h">${T.scoreboard}</div>
+        <p class="faint" style="margin-top:-4px">${T.whoImposter}</p>
+        <div id="awardboard"></div>
+
+        <div class="spacer"></div>
+        <div class="stack" style="margin-top:18px">
+          <button class="btn" id="again">↻ ${T.sameCat}</button>
+          <button class="btn secondary" id="score">📊 ${T.scoreboard}</button>
+          <button class="btn ghost" id="home">⌂ ${LANG==="ru"?"Меню":"Menu"}</button>
+        </div>
+      </div>`);
+
+      // quick award row for the players this round
+      const board = $("#awardboard", s);
+      for(let i=1;i<=S.players;i++){
+        const nm = `${T.player} ${i}`;
+        if(!(nm in S.scores)) S.scores[nm]=0;
+        const role = S.roles[i-1]==="imposter" ? "🕵️" : "";
+        const row = el(`<div class="sb-row">
+          <div class="rank">${i}</div>
+          <div class="nm">${nm} ${role}</div>
+          <div class="pts"><span class="n">${S.scores[nm]}</span>
+            <button class="miniadd">＋</button></div>
+        </div>`);
+        row.querySelector(".miniadd").onclick=()=>{
+          S.scores[nm]++; row.querySelector(".n").textContent=S.scores[nm];
+        };
+        board.appendChild(row);
+      }
+
+      $("#again", s).onclick=()=>go("setup");
+      $("#score", s).onclick=()=>go("scoreboard");
+      $("#home", s).onclick=()=>go("home");
+      return s;
+    },
+
+    // ---------------------------------------------------------- SCOREBOARD
+    scoreboard(){
+      const T=t();
+      const entries = Object.entries(S.scores).sort((a,b)=>b[1]-a[1]);
+      const s = el(`<div class="screen">
+        <div class="top">
+          <button class="iconbtn" id="back">‹</button>
+          <h1>${T.tonightBoard}</h1>
+        </div>
+        <div class="card" id="list"></div>
+        <div class="stack" style="margin-top:16px">
+          <button class="btn secondary" id="addp">＋ ${T.addPlayer}</button>
+          <button class="btn ghost" id="clear">${T.clearBoard}</button>
+        </div>
+      </div>`);
+      const list = $("#list", s);
+      if(!entries.length){
+        list.innerHTML = `<p class="faint center" style="padding:20px 0">${T.noScores}</p>`;
+      } else {
+        entries.forEach(([nm,pts],i)=>{
+          const medal = i===0?"🥇":i===1?"🥈":i===2?"🥉":"";
+          const row = el(`<div class="sb-row">
+            <div class="rank">${medal||(i+1)}</div>
+            <div class="nm">${nm}</div>
+            <div class="pts">
+              <button class="miniadd minus">−</button>
+              <span class="n">${pts}</span>
+              <button class="miniadd">＋</button>
+            </div>
+          </div>`);
+          const n = row.querySelector(".n");
+          row.querySelectorAll(".miniadd")[1].onclick=()=>{ S.scores[nm]++; n.textContent=S.scores[nm]; };
+          row.querySelector(".minus").onclick=()=>{ S.scores[nm]=Math.max(0,S.scores[nm]-1); n.textContent=S.scores[nm]; };
+          list.appendChild(row);
+        });
+      }
+      $("#back", s).onclick=()=>go("answer");
+      $("#addp", s).onclick=()=>{
+        const name = prompt(T.addPlayer+":");
+        if(name && name.trim()){ S.scores[name.trim()]=S.scores[name.trim()]||0; go("scoreboard"); }
+      };
+      $("#clear", s).onclick=()=>{ if(confirm(T.clearBoard+"?")){ S.scores={}; go("scoreboard"); } };
+      return s;
+    },
+  };
+
+  // ======================================================================
+  //  Setup-screen builders (subgroups / difficulty / upsell)
+  // ======================================================================
+  function buildSubsBlock(s, c, paid){
+    const T=t();
+    const block = $("#subsblock", s);
+    block.innerHTML="";
+    const subs = getEnabledSubs(c.id);
+
+    const inner = el(`<div class="card"><div class="chips"></div></div>`);
+    const chips = inner.querySelector(".chips");
+    // when a kind (names/characters) is selected, only show that mode's subgroups
+    const kf = catHasKinds(c.id) ? getKindFilter(c.id) : "both";
+    const shownSubs = kf === "both" ? c.subgroups : c.subgroups.filter(sub => sub.kind === kf);
+    shownSubs.forEach(sub=>{
+      const n = catWords(c.id).filter(w=>w.subgroup===sub.id).length;
+      const on = subs.has(sub.id);
+      const chip = el(`<button class="chip ${on?"on":""}">${sub.name[LANG]} <span style="opacity:.6">${n}</span></button>`);
+      chip.onclick=()=>{
+        if(!paid) return;
+        if(subs.has(sub.id)) subs.delete(sub.id); else subs.add(sub.id);
+        if(subs.size===0) subs.add(sub.id); // never allow empty
+        SCREENS_refreshSetup(s);
+      };
+      chips.appendChild(chip);
+    });
+
+    if(!paid){
+      const wrap = el(`<div class="locked"></div>`);
+      inner.classList.add("inner");
+      wrap.appendChild(inner);
+      const veil = el(`<div class="lockveil">🔒 ${T.unlockToPick}</div>`);
+      veil.onclick=()=>openStore(c.id);
+      wrap.appendChild(veil);
+      block.appendChild(wrap);
+    } else {
+      block.appendChild(inner);
+    }
+  }
+
+  function buildDiffBlock(s, paid){
+    const T=t();
+    const block = $("#diffblock", s);
+    block.innerHTML="";
+    const labels = { 1:["1", LANG==="ru"?"Casual":"Casual"], 2:["2", LANG==="ru"?"Фанат":"Fan"], 3:["3", LANG==="ru"?"Хардкор":"Nerd"] };
+
+    const inner = el(`<div class="card"><div class="seg"></div></div>`);
+    const seg = inner.querySelector(".seg");
+    [1,2,3].forEach(d=>{
+      const on = S.diffOn[d];
+      const b = el(`<button class="${on?"on":""}">${labels[d][0]} · ${labels[d][1]}</button>`);
+      b.onclick=()=>{
+        if(!paid) return;
+        const willEmpty = Object.entries(S.diffOn).filter(([k,v])=>v).length===1 && S.diffOn[d];
+        if(willEmpty) return; // keep at least one
+        S.diffOn[d]=!S.diffOn[d];
+        SCREENS_refreshSetup(s);
+      };
+      seg.appendChild(b);
+    });
+
+    if(!paid){
+      const wrap = el(`<div class="locked"></div>`);
+      inner.classList.add("inner");
+      wrap.appendChild(inner);
+      const veil = el(`<div class="lockveil">🔒 ${T.difficultySub}</div>`);
+      veil.onclick=()=>openStore(S.category);
+      wrap.appendChild(veil);
+      block.appendChild(wrap);
+    } else {
+      block.appendChild(inner);
+    }
+  }
+
+  // Year/era range slider — only rendered for categories that carry year data.
+  function buildYearBlock(s, paid){
+    const T=t();
+    const block = $("#yearblock", s);
+    block.innerHTML="";
+    const b = catYearBounds(S.category);
+    if(!b || b.min===b.max) return; // no year axis for this category
+    const yr = getYearRange(S.category);
+    yr.lo = Math.max(b.min, Math.min(yr.lo, b.max));
+    yr.hi = Math.min(b.max, Math.max(yr.hi, b.min));
+    const fmt = y => y<0 ? (-y+" BC") : (""+y);
+
+    block.appendChild(el(`<div class="section-h">${T.years} <span style="text-transform:none;letter-spacing:0;color:var(--ink-faint);font-weight:600">${T.yearsSub}</span></div>`));
+
+    const inner = el(`<div class="card">
+      <div style="display:flex;justify-content:space-between;font-weight:800;font-size:18px;margin-bottom:12px">
+        <span id="yrlo">${fmt(yr.lo)}</span><span class="faint" style="font-size:18px">—</span><span id="yrhi">${fmt(yr.hi)}</span>
+      </div>
+      <label class="faint" style="font-size:12px">${LANG==="ru"?"С":"From"}</label>
+      <input type="range" id="rlo" min="${b.min}" max="${b.max}" value="${yr.lo}" step="1" style="width:100%;accent-color:var(--accent)">
+      <label class="faint" style="font-size:12px;margin-top:8px;display:block">${LANG==="ru"?"По":"To"}</label>
+      <input type="range" id="rhi" min="${b.min}" max="${b.max}" value="${yr.hi}" step="1" style="width:100%;accent-color:var(--accent)">
+    </div>`);
+
+    const rlo = inner.querySelector("#rlo"), rhi = inner.querySelector("#rhi");
+    const loLab = inner.querySelector("#yrlo"), hiLab = inner.querySelector("#yrhi");
+    function update(){
+      let lo=+rlo.value, hi=+rhi.value;
+      if(lo>hi){ if(this===rlo){ hi=lo; rhi.value=hi; } else { lo=hi; rlo.value=lo; } }
+      yr.lo=lo; yr.hi=hi;
+      loLab.textContent=fmt(lo); hiLab.textContent=fmt(hi);
+      refreshPoolInfo(s);
+    }
+    rlo.oninput=update; rhi.oninput=update;
+
+    if(!paid){
+      const wrap = el(`<div class="locked"></div>`);
+      inner.classList.add("inner");
+      wrap.appendChild(inner);
+      const veil = el(`<div class="lockveil">🔒 ${T.yearsSub}</div>`);
+      veil.onclick=()=>openStore(S.category);
+      wrap.appendChild(veil);
+      block.appendChild(wrap);
+    } else {
+      block.appendChild(inner);
+    }
+  }
+
+  function buildUpsell(s, paid){
+    const T=t();
+    const slot = $("#upsell-slot", s);
+    slot.innerHTML="";
+    if(paid) return;
+    const c = WB.categories.find(x=>x.id===S.category);
+    const up = el(`<div class="upsell" style="margin-top:18px">
+      <div style="font-size:26px">✦</div>
+      <div class="ut"><b>${T.packTitle(c.name[LANG])} — $3.99</b><span>${T.unlockToPick}</span></div>
+      <button class="btn small accent" id="up-buy">${T.buy}</button>
+    </div>`);
+    up.querySelector("#up-buy").onclick=()=>openStore(S.category);
+    slot.appendChild(up);
+  }
+
+  function refreshPoolInfo(s){
+    const T=t();
+    const pool = buildPool(S.category);
+    const info = $("#poolinfo", s);
+    const start = $("#start", s);
+    if(pool.length===0){
+      info.innerHTML = `⚠️ ${T.poolEmpty}`;
+      start.disabled = true;
+    } else {
+      info.innerHTML = `${T.poolCount(pool.length)}${S.drawOnly?" · ✏️":""}`;
+      start.disabled = false;
+    }
+  }
+
+  // re-render the dynamic parts of setup without losing scroll
+  function SCREENS_refreshSetup(s){
+    const c = WB.categories.find(x=>x.id===S.category);
+    const paid = isPaidFor(S.category);
+    // update steppers + switch text by re-rendering whole screen is simplest:
+    const scrollY = window.scrollY;
+    const fresh = SCREENS.setup();
+    s.replaceWith(fresh);
+    window.scrollTo(0, scrollY);
+  }
+
+  // ======================================================================
+  //  Round logic
+  // ======================================================================
+  function startRound(s){
+    const T=t();
+    const pool = buildPool(S.category);
+    if(!pool.length){ toast(T.poolEmpty); return; }
+    S.word = pick(pool);
+    // assign roles
+    const roles = Array(S.players).fill("crew");
+    const idxs = shuffle([...Array(S.players).keys()]).slice(0, S.imposters);
+    idxs.forEach(i=>roles[i]="imposter");
+    S.roles = roles;
+    S.revealIndex = 0;
+    go("reveal");
+  }
+
+  // ======================================================================
+  //  Timer
+  // ======================================================================
+  function startTimer(s){
+    stopTimer();
+    if(!S.timerLeft) S.timerLeft = S.timerTotal;
+    S.timerId = setInterval(()=>{
+      S.timerLeft--;
+      updateClock(s);
+      if(S.timerLeft<=0){
+        stopTimer();
+        const clk = $("#clock", s); if(clk){ clk.textContent = t().timesUp; clk.style.fontSize="34px"; clk.style.color="var(--brand)"; }
+        if(navigator.vibrate) navigator.vibrate([200,100,200]);
+        const tg = $("#toggle", s); if(tg) tg.innerHTML = `▶ ${t().startTimer}`;
+        S.timerLeft = S.timerTotal;
+      }
+    }, 1000);
+  }
+  function stopTimer(){ if(S.timerId){ clearInterval(S.timerId); S.timerId=null; } }
+  function updateClock(s){
+    const clk = $("#clock", s); if(!clk) return;
+    clk.style.fontSize=""; clk.style.color="";
+    clk.textContent = mmss(Math.max(0,S.timerLeft));
+    const prog = $("#prog", s);
+    if(prog){
+      const frac = S.timerLeft/S.timerTotal;
+      prog.setAttribute("stroke-dashoffset", String(628*(1-frac)));
+    }
+  }
+
+  // ======================================================================
+  //  Settings + Language
+  // ======================================================================
+  function toggleLang(){ setLang(LANG==="en"?"ru":"en"); }
+  function setLang(l){ LANG=l; localStorage.setItem(LS.lang,l); render(); }
+
+  function ownershipLine(){
+    const T=t();
+    if(OWN.everything) return T.everythingOwned;
+    if(passActive()) return `${T.passActive} · ${T.activeUntil(fmtDate(OWN.passExpiry))}`;
+    if(OWN.packs.length) return OWN.packs.map(p=>T.catName(p)).join(" · ") + " ✓";
+    return T.stub;
+  }
+
+  function openSettings(){
+    const T=t();
+    const sheet = el(`<div class="overlay"><div class="sheet">
+      <div class="grabber"></div>
+      <h2 style="margin:0 0 16px">${T.settings}</h2>
+
+      <div class="section-h" style="margin-top:6px">${T.language}</div>
+      <div class="seg" id="langseg">
+        <button data-l="en" class="${LANG==="en"?"on":""}">English</button>
+        <button data-l="ru" class="${LANG==="ru"?"on":""}">Русский</button>
+      </div>
+
+      <div class="section-h">${T.manage}</div>
+      <div id="ownstate" class="card"></div>
+
+      <div class="stack" style="margin-top:18px">
+        <button class="btn gold" id="op>store">✦ ${T.store}</button>
+        <button class="btn ghost" id="restore">${T.restore}</button>
+      </div>
+
+      <div class="section-h">${T.about}</div>
+      <p class="faint" style="margin-top:-4px">${T.aboutText}</p>
+
+      <button class="btn secondary" id="close" style="margin-top:10px">${T.done}</button>
+    </div></div>`);
+
+    // ownership state
+    const os = sheet.querySelector("#ownstate");
+    os.innerHTML = `<p class="faint" style="margin:0">${ownershipLine()}</p>`;
+    if(OWN.everything || passActive() || OWN.packs.length){
+      const reset = el(`<button class="btn ghost small" style="margin-top:10px">${LANG==="ru"?"Сбросить покупки (демо)":"Reset purchases (demo)"}</button>`);
+      reset.onclick=()=>{ OWN={everything:false,passExpiry:null,packs:[]}; saveOwn(); closeOverlay(); render(); toast(LANG==="ru"?"Сброшено":"Reset"); };
+      os.appendChild(reset);
+    }
+
+    sheet.querySelectorAll("#langseg button").forEach(b=>b.onclick=()=>{ setLang(b.dataset.l); closeOverlay(); openSettings(); });
+    sheet.querySelector("#op>store")?.addEventListener("click",()=>{ closeOverlay(); openStore(); });
+    // id with > is invalid selector char; bind via fallback
+    Array.from(sheet.querySelectorAll(".btn.gold")).forEach(b=>b.onclick=()=>{ closeOverlay(); openStore(); });
+    sheet.querySelector("#restore").onclick=()=>toast(T.restored);
+    sheet.querySelector("#close").onclick=closeOverlay;
+    sheet.onclick=(e)=>{ if(e.target===sheet) closeOverlay(); };
+    showOverlay(sheet);
+  }
+
+  // ======================================================================
+  //  Store (stubbed payments)
+  // ======================================================================
+  function openStore(focusCat){
+    const T=t();
+    const cat = focusCat ? WB.categories.find(c=>c.id===focusCat) : null;
+    const packOwned = cat && OWN.packs.includes(cat.id);
+
+    const sheet = el(`<div class="overlay"><div class="sheet">
+      <div class="grabber"></div>
+      <h2 style="margin:0 0 4px">✦ ${T.store}</h2>
+      <p class="faint" style="margin:0 0 16px">${T.stub}</p>
+      <div class="stack" id="products"></div>
+      <button class="btn secondary" id="close" style="margin-top:18px">${T.done}</button>
+    </div></div>`);
+    const prods = sheet.querySelector("#products");
+
+    // 1) category pack (only when a category is in focus)
+    if(cat){
+      const p = el(`<div class="product">
+        <div class="pttl">${cat.icon} ${T.packTitle(cat.name[LANG])}</div>
+        <div class="pdesc">${T.packDesc(cat.name[LANG])}</div>
+        <div class="pprice">$3.99 <small>${T.oneTime}</small></div>
+        <div class="act"></div>
+      </div>`);
+      mountBuy(p, packOwned || OWN.everything || passActive(), ()=>{
+        if(!OWN.packs.includes(cat.id)) OWN.packs.push(cat.id);
+        saveOwn(); afterBuy();
+      });
+      prods.appendChild(p);
+    }
+
+    // 2) weekend pass
+    const wp = el(`<div class="product">
+      <div class="pttl">🎟️ ${T.weekendTitle}</div>
+      <div class="pdesc">${T.weekendDesc}</div>
+      <div class="pprice">$2.99 <small>${T.weekly}</small></div>
+      <div class="disclose">${T.autoRenew}</div>
+      <div class="act"></div>
+    </div>`);
+    mountBuy(wp, OWN.everything || passActive(), ()=>{
+      OWN.passExpiry = Date.now() + 7*24*60*60*1000;
+      saveOwn(); afterBuy();
+    }, passActive()? T.activeUntil(fmtDate(OWN.passExpiry)) : null);
+    prods.appendChild(wp);
+
+    // 3) everything forever (featured)
+    const ev = el(`<div class="product feat">
+      <div class="pttl">♾️ ${T.everythingTitle} <span class="badge" style="background:rgba(255,209,102,.15);color:var(--gold);border-color:rgba(255,209,102,.4)">${T.bestValue}</span></div>
+      <div class="pdesc">${T.everythingDesc}</div>
+      <div class="pprice">$29.99 <small>${T.oneTime}</small></div>
+      <div class="act"></div>
+    </div>`);
+    mountBuy(ev, OWN.everything, ()=>{ OWN.everything=true; saveOwn(); afterBuy(); });
+    prods.appendChild(ev);
+
+    function afterBuy(){ closeOverlay(); render(); toast(T.purchased); }
+
+    sheet.querySelector("#close").onclick=closeOverlay;
+    sheet.onclick=(e)=>{ if(e.target===sheet) closeOverlay(); };
+    showOverlay(sheet);
+
+    function mountBuy(card, owned, onBuy, activeLabel){
+      const act = card.querySelector(".act");
+      if(owned){
+        act.innerHTML = `<div class="owned">✓ ${activeLabel||T.owned}</div>`;
+      } else {
+        const b = el(`<button class="btn ${card.classList.contains('feat')?'gold':'accent'}" style="margin-top:6px">${T.buyNow}</button>`);
+        b.onclick=onBuy;
+        act.appendChild(b);
+      }
+    }
+  }
+
+  // ======================================================================
+  //  Overlay plumbing
+  // ======================================================================
+  function showOverlay(node){ const r=$("#overlay-root"); r.innerHTML=""; r.appendChild(node); }
+  function closeOverlay(){ $("#overlay-root").innerHTML=""; }
+
+  // ======================================================================
+  //  Boot
+  // ======================================================================
+  render();
+  </script>
+</body>
+</html>

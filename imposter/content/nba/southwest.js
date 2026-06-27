@@ -1,0 +1,68 @@
+/* NBA — Southwest */
+addWords("nba", [
+  // Dallas Mavericks
+  ["mavs", 1, "Luka Dončić", "Лука Дончич"],
+  ["mavs", 1, "Dirk Nowitzki", "Дирк Новицки"],
+  ["mavs", 2, "Kyrie Irving", "Кайри Ирвинг"],
+  ["mavs", 2, "Jason Kidd", "Джейсон Кидд"],
+  ["mavs", 2, "Steve Nash", "Стив Нэш"],
+  ["mavs", 2, "Anthony Davis", "Энтони Дэвис"],
+  ["mavs", 3, "Michael Finley", "Майкл Финли"],
+  ["mavs", 3, "Jason Terry", "Джейсон Терри"],
+  ["mavs", 3, "Mark Aguirre", "Марк Агирре"],
+  ["mavs", 3, "Rolando Blackman", "Роландо Блэкмен"],
+  ["mavs", 3, "Tyson Chandler", "Тайсон Чендлер"],
+  ["mavs", 3, "Shawn Marion", "Шон Мэрион"],
+
+  // Houston Rockets
+  ["rockets", 1, "Hakeem Olajuwon", "Хаким Оладжьювон"],
+  ["rockets", 1, "James Harden", "Джеймс Харден"],
+  ["rockets", 2, "Yao Ming", "Яо Мин"],
+  ["rockets", 2, "Tracy McGrady", "Трейси Макгрэйди"],
+  ["rockets", 2, "Clyde Drexler", "Клайд Дрекслер"],
+  ["rockets", 2, "Chris Paul", "Крис Пол"],
+  ["rockets", 3, "Moses Malone", "Мозес Мэлоун"],
+  ["rockets", 3, "Ralph Sampson", "Ральф Сэмпсон"],
+  ["rockets", 3, "Steve Francis", "Стив Фрэнсис"],
+  ["rockets", 3, "Robert Horry", "Роберт Хорри"],
+  ["rockets", 3, "Kenny Smith", "Кенни Смит"],
+  ["rockets", 3, "Alperen Şengün", "Алперен Шенгюн"],
+
+  // Memphis Grizzlies
+  ["grizzlies", 1, "Ja Morant", "Джа Морант"],
+  ["grizzlies", 2, "Marc Gasol", "Марк Газоль"],
+  ["grizzlies", 2, "Mike Conley", "Майк Конли"],
+  ["grizzlies", 2, "Zach Randolph", "Зак Рэндольф"],
+  ["grizzlies", 2, "Pau Gasol", "Пау Газоль"],
+  ["grizzlies", 3, "Tony Allen", "Тони Аллен"],
+  ["grizzlies", 3, "Jaren Jackson Jr.", "Джарен Джексон-мл."],
+  ["grizzlies", 3, "Shareef Abdur-Rahim", "Шариф Абдур-Рахим"],
+  ["grizzlies", 3, "Rudy Gay", "Руди Гэй"],
+  ["grizzlies", 3, "Desmond Bane", "Дезмонд Бэйн"],
+  ["grizzlies", 3, "Mike Bibby", "Майк Бибби"],
+
+  // New Orleans Pelicans
+  ["pelicans", 1, "Zion Williamson", "Зайон Уильямсон"],
+  ["pelicans", 1, "Anthony Davis", "Энтони Дэвис"],
+  ["pelicans", 2, "Chris Paul", "Крис Пол"],
+  ["pelicans", 2, "Brandon Ingram", "Брэндон Ингрэм"],
+  ["pelicans", 2, "DeMarcus Cousins", "Демаркус Казинс"],
+  ["pelicans", 3, "Jrue Holiday", "Джру Холидэй"],
+  ["pelicans", 3, "Tyreke Evans", "Тайрик Эванс"],
+  ["pelicans", 3, "David West", "Дэвид Уэст"],
+  ["pelicans", 3, "Peja Stojaković", "Педжа Стоякович"],
+  ["pelicans", 3, "CJ McCollum", "Си-Джей Маккаллум"],
+
+  // San Antonio Spurs
+  ["spurs", 1, "Tim Duncan", "Тим Дункан"],
+  ["spurs", 1, "Victor Wembanyama", "Виктор Вембаньяма"],
+  ["spurs", 2, "Tony Parker", "Тони Паркер"],
+  ["spurs", 2, "Manu Ginóbili", "Ману Джинобили"],
+  ["spurs", 2, "David Robinson", "Дэвид Робинсон"],
+  ["spurs", 2, "Kawhi Leonard", "Кавай Леонард"],
+  ["spurs", 3, "George Gervin", "Джордж Гервин"],
+  ["spurs", 3, "LaMarcus Aldridge", "Ламаркус Олдридж"],
+  ["spurs", 3, "Sean Elliott", "Шон Эллиотт"],
+  ["spurs", 3, "Bruce Bowen", "Брюс Боуэн"],
+  ["spurs", 3, "DeMar DeRozan", "Демар Дерозан"],
+]);

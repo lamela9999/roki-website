@@ -1,0 +1,22 @@
+/* Spy x Family */
+addWords("anime", [
+  ["spyfamily", 1, "Loid Forger", "Лоид Форджер"],
+  ["spyfamily", 1, "Yor Forger", "Йор Форджер"],
+  ["spyfamily", 1, "Anya Forger", "Аня Форджер"],
+  ["spyfamily", 1, "Bond Forger", "Бонд Форджер"],
+  ["spyfamily", 2, "Yuri Briar", "Юри Брайар"],
+  ["spyfamily", 2, "Damian Desmond", "Дамиан Десмонд"],
+  ["spyfamily", 2, "Becky Blackbell", "Бекки Блэкбелл"],
+  ["spyfamily", 2, "Fiona Frost", "Фиона Фрост"],
+  ["spyfamily", 2, "Franky Franklin", "Фрэнки Франклин"],
+  ["spyfamily", 2, "Sylvia Sherwood", "Сильвия Шервуд"],
+  ["spyfamily", 2, "Donovan Desmond", "Донован Десмонд"],
+  ["spyfamily", 2, "Henry Henderson", "Генри Хендерсон"],
+  ["spyfamily", 3, "Emile Elman", "Эмиль Элман"],
+  ["spyfamily", 3, "Ewen Egeburg", "Эвен Эгебург"],
+  ["spyfamily", 3, "Camilla", "Камилла"],
+  ["spyfamily", 3, "Sharon", "Шэрон"],
+  ["spyfamily", 3, "Millie", "Милли"],
+  ["spyfamily", 3, "Loid's Handler", "Куратор Лоида"],
+  ["spyfamily", 3, "Nightfall", "Ночная Пташка"],
+]);

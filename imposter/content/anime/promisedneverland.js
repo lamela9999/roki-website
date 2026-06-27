@@ -1,0 +1,22 @@
+// The Promised Neverland characters
+addWords("anime", [
+  ["promisedneverland", 1, "Emma", "Эмма"],
+  ["promisedneverland", 1, "Norman", "Норман"],
+  ["promisedneverland", 1, "Ray", "Рэй"],
+  ["promisedneverland", 2, "Isabella", "Изабелла"],
+  ["promisedneverland", 2, "Sister Krone", "Сестра Кроне"],
+  ["promisedneverland", 2, "Phil", "Фил"],
+  ["promisedneverland", 2, "Don", "Дон"],
+  ["promisedneverland", 2, "Gilda", "Гильда"],
+  ["promisedneverland", 2, "Mujika", "Муджика"],
+  ["promisedneverland", 2, "Sonju", "Сонджу"],
+  ["promisedneverland", 2, "Yugo", "Юго"],
+  ["promisedneverland", 3, "Anna", "Анна"],
+  ["promisedneverland", 3, "Nat", "Нат"],
+  ["promisedneverland", 3, "Thoma", "Тома"],
+  ["promisedneverland", 3, "Lannion", "Ланнион"],
+  ["promisedneverland", 3, "Yvette", "Иветт"],
+  ["promisedneverland", 3, "Conny", "Конни"],
+  ["promisedneverland", 3, "Peter Ratri", "Питер Ратри"],
+  ["promisedneverland", 3, "Andrew", "Эндрю"],
+]);

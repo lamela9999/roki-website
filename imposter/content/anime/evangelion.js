@@ -1,0 +1,21 @@
+// Neon Genesis Evangelion characters
+addWords("anime", [
+  ["evangelion", 1, "Shinji Ikari", "Синдзи Икари"],
+  ["evangelion", 1, "Rei Ayanami", "Рэй Аянами"],
+  ["evangelion", 1, "Asuka Langley Soryu", "Аска Лэнгли Сорю"],
+  ["evangelion", 1, "Misato Katsuragi", "Мисато Кацураги"],
+  ["evangelion", 2, "Gendo Ikari", "Гэндо Икари"],
+  ["evangelion", 2, "Kaworu Nagisa", "Каору Нагиса"],
+  ["evangelion", 2, "Ritsuko Akagi", "Рицко Акаги"],
+  ["evangelion", 2, "Kozo Fuyutsuki", "Кодзо Фуюцки"],
+  ["evangelion", 2, "Toji Suzuhara", "Тодзи Судзухара"],
+  ["evangelion", 2, "Kensuke Aida", "Кэнсукэ Айда"],
+  ["evangelion", 2, "Hikari Horaki", "Хикари Хораки"],
+  ["evangelion", 2, "Ryoji Kaji", "Рёдзи Кадзи"],
+  ["evangelion", 3, "Yui Ikari", "Юй Икари"],
+  ["evangelion", 3, "Naoko Akagi", "Наоко Акаги"],
+  ["evangelion", 3, "Maya Ibuki", "Майя Ибуки"],
+  ["evangelion", 3, "Makoto Hyuga", "Макото Хюга"],
+  ["evangelion", 3, "Shigeru Aoba", "Сигэру Аоба"],
+  ["evangelion", 3, "Pen Pen", "Пен-Пен"],
+]);

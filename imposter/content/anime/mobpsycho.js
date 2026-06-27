@@ -1,0 +1,23 @@
+// Mob Psycho 100 characters
+addWords("anime", [
+  ["mobpsycho", 1, "Shigeo Kageyama (Mob)", "Сигэо Кагэяма (Моб)"],
+  ["mobpsycho", 1, "Reigen Arataka", "Рэйгэн Аратака"],
+  ["mobpsycho", 1, "Dimple", "Димпл"],
+  ["mobpsycho", 2, "Ritsu Kageyama", "Рицу Кагэяма"],
+  ["mobpsycho", 2, "Teruki Hanazawa", "Тэруки Ханадзава"],
+  ["mobpsycho", 2, "Ichi Mezato", "Ити Мэдзато"],
+  ["mobpsycho", 2, "Katsuya Serizawa", "Кацуя Сэридзава"],
+  ["mobpsycho", 2, "Tome Kurata", "Томэ Курата"],
+  ["mobpsycho", 2, "Musashi Goda", "Мусаси Года"],
+  ["mobpsycho", 2, "Sho Suzuki", "Сё Судзуки"],
+  ["mobpsycho", 2, "Toichiro Suzuki", "Тоитиро Судзуки"],
+  ["mobpsycho", 2, "Keiji Mogami", "Кэйдзи Могами"],
+  ["mobpsycho", 3, "Takane Matsuo", "Такэнэ Мацуо"],
+  ["mobpsycho", 3, "Ryohei Shimizu", "Рёхэй Симидзу"],
+  ["mobpsycho", 3, "Tenga Onigawara", "Тэнга Онигавара"],
+  ["mobpsycho", 3, "Rei Kurosaki", "Рэй Куросаки"],
+  ["mobpsycho", 3, "Hiroshi Shibata", "Хироси Сибата"],
+  ["mobpsycho", 3, "Miyagawa", "Миягава"],
+  ["mobpsycho", 3, "Minori Asagiri", "Минори Асагири"],
+  ["mobpsycho", 3, "Joseph", "Джозеф"],
+]);

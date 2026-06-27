@@ -1,0 +1,23 @@
+/* Death Note */
+addWords("anime", [
+  ["deathnote", 1, "Light Yagami", "Лайт Ягами"],
+  ["deathnote", 1, "L", "Л"],
+  ["deathnote", 1, "Ryuk", "Рюк"],
+  ["deathnote", 2, "Misa Amane", "Миса Аманэ"],
+  ["deathnote", 2, "Near", "Нир"],
+  ["deathnote", 2, "Mello", "Мелло"],
+  ["deathnote", 2, "Teru Mikami", "Тэру Миками"],
+  ["deathnote", 2, "Soichiro Yagami", "Соитиро Ягами"],
+  ["deathnote", 2, "Touta Matsuda", "Тоута Мацуда"],
+  ["deathnote", 2, "Shuichi Aizawa", "Сюити Аидзава"],
+  ["deathnote", 2, "Kanzo Mogi", "Кандзо Моги"],
+  ["deathnote", 2, "Hideki Ide", "Хидэки Идэ"],
+  ["deathnote", 2, "Rem", "Рэм"],
+  ["deathnote", 3, "Watari", "Ватари"],
+  ["deathnote", 3, "Kiyomi Takada", "Киёми Такада"],
+  ["deathnote", 3, "Sayu Yagami", "Саю Ягами"],
+  ["deathnote", 3, "Roger Ruvie", "Роджер Рувье"],
+  ["deathnote", 3, "Matt", "Мэтт"],
+  ["deathnote", 3, "Gelus", "Джелус"],
+  ["deathnote", 3, "Wedy", "Уэди"],
+]);
