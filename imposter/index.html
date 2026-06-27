@@ -540,10 +540,10 @@
             <span class="mt"><b>${T.offline}</b><span>${T.offlineSub}</span></span>
             <span class="badge free">✓</span>
           </button>
-          <button class="mode" id="m-online" disabled>
+          <button class="mode" id="m-online">
             <span class="mi">🌐</span>
-            <span class="mt"><b>${T.online}</b><span>${T.onlineSub}</span></span>
-            <span class="badge soon">${T.comingSoon}</span>
+            <span class="mt"><b>${T.online}</b><span>${LANG==="ru"?"Каждый со своего телефона":"Everyone on their own phone"}</span></span>
+            <span class="badge free">${LANG==="ru"?"НОВОЕ":"NEW"}</span>
           </button>
         </div>
         <div class="spacer"></div>
@@ -552,6 +552,7 @@
       </div>`);
       $(".top h1", s).textContent = "";
       s.querySelector("#m-offline").onclick = ()=>go("categories");
+      s.querySelector("#m-online").onclick = ()=>ONLINE.start();
       s.querySelector("#lang").onclick = toggleLang;
       s.querySelector("#settings").onclick = openSettings;
       s.querySelector("#store").onclick = ()=>openStore();
@@ -874,6 +875,118 @@
         if(name && name.trim()){ S.scores[name.trim()]=S.scores[name.trim()]||0; go("scoreboard"); }
       };
       $("#clear", s).onclick=()=>{ if(confirm(T.clearBoard+"?")){ S.scores={}; go("scoreboard"); } };
+      return s;
+    },
+
+    // ===================================================================
+    //  ONLINE multiplayer screens (each player on their own phone)
+    // ===================================================================
+    onlineMenu(){
+      const ru=LANG==="ru";
+      const s=el(`<div class="screen">
+        <div class="top"><button class="iconbtn" id="back">‹</button><h1>${ru?"Онлайн":"Online"}</h1></div>
+        <div class="hero" style="margin:6px 0 22px"><div class="heroart" style="width:46%"><img src="imposter-logo.png" alt="" /></div></div>
+        <div class="card">
+          <div class="row" style="border:0;padding:4px 0"><div class="lbl"><b>${ru?"Ваше имя":"Your name"}</b></div></div>
+          <input id="oname" maxlength="14" placeholder="${ru?"Имя":"Name"}" style="width:100%;min-height:50px;border:2px solid var(--ink);border-radius:var(--radius);background:var(--card);color:var(--ink);font-family:var(--font);font-weight:700;font-size:16px;padding:0 14px;text-transform:uppercase;outline:none" />
+        </div>
+        <div class="stack" style="margin-top:16px">
+          <button class="btn" id="ocreate">${ru?"Создать комнату":"Create room"}</button>
+          <div style="display:flex;gap:10px">
+            <input id="ocode" maxlength="4" placeholder="${ru?"КОД":"CODE"}" style="flex:1;min-width:0;min-height:56px;border:2px solid var(--ink);border-radius:var(--radius);background:var(--card);color:var(--ink);font-family:var(--display);font-size:26px;letter-spacing:5px;text-align:center;text-transform:uppercase;outline:none" />
+            <button class="btn secondary" id="ojoin" style="width:auto;flex:none;padding:0 22px">${ru?"Войти":"Join"}</button>
+          </div>
+        </div>
+        <p class="faint center" style="margin-top:20px">${ru?"Каждый играет со своего телефона — роли приватны.":"Everyone plays from their own phone — roles stay private."}</p>
+      </div>`);
+      $("#back",s).onclick=()=>go("home");
+      $("#ocreate",s).onclick=()=>{ const n=($("#oname",s).value||"").replace(/[<>]/g,"").trim()||(ru?"Хост":"Host"); ONLINE.host(n); };
+      $("#ojoin",s).onclick=()=>{ const n=($("#oname",s).value||"").replace(/[<>]/g,"").trim()||(ru?"Игрок":"Player"); const code=($("#ocode",s).value||"").trim(); if(code.length<4){ toast(ru?"Введите код из 4 букв":"Enter the 4-letter code"); return; } ONLINE.joinRoom(code,n); };
+      return s;
+    },
+    onlineConnecting(){
+      const ru=LANG==="ru";
+      const s=el(`<div class="screen pass">
+        <div class="eye pulse">📡</div>
+        <div class="passname" style="margin-top:14px">${ru?"Подключение…":"Connecting…"}</div>
+        <div class="faint">${ru?"Связываемся с комнатой":"Linking up the room"}</div>
+        <button class="btn ghost" id="cancel" style="margin-top:26px;max-width:200px;align-self:center">${ru?"Отмена":"Cancel"}</button>
+      </div>`);
+      $("#cancel",s).onclick=()=>ONLINE.leave();
+      return s;
+    },
+    onlineLobby(){
+      const ru=LANG==="ru";
+      const isHost=OS.isHost;
+      const hostId=OS.room.players[0]?OS.room.players[0].id:null;
+      const s=el(`<div class="screen">
+        <div class="top"><button class="iconbtn" id="leave">‹</button><h1>${ru?"Лобби":"Lobby"}</h1></div>
+        <div class="card center" style="padding:18px">
+          <div class="faint">${ru?"Код комнаты":"Room code"}</div>
+          <div style="font-family:var(--display);font-size:56px;letter-spacing:6px;line-height:1">${OS.code}</div>
+          <div class="faint">${ru?"Поделитесь кодом с друзьями":"Share this code with friends"}</div>
+        </div>
+        <div class="section-h">${ru?"Игроки":"Players"} (${OS.room.players.length})</div>
+        <div class="card" id="plist"></div>
+        <div id="hostctrl"></div>
+        <div class="spacer" style="min-height:14px"></div>
+        <div id="lobbyfoot"></div>
+      </div>`);
+      $("#plist",s).innerHTML = OS.room.players.length
+        ? OS.room.players.map((p,i)=>`<div class="sb-row"><div class="rank">${i+1}</div><div class="nm">${p.name}${p.id===OS.me.id?(ru?" (вы)":" (you)"):""}${p.id===hostId?" 👑":""}</div></div>`).join("")
+        : `<p class="faint center" style="padding:14px 0">${ru?"Ждём игроков…":"Waiting for players…"}</p>`;
+      const hc=$("#hostctrl",s);
+      if(isHost){
+        if(!OS.room.category){ OS.room.category=WB.categories[0].id; ONLINE.pubState(); }
+        hc.innerHTML=`<div class="section-h">${ru?"Категория":"Category"}</div>
+          <select id="ocat" style="width:100%;min-height:52px;border:2px solid var(--ink);border-radius:var(--radius);background:var(--card);color:var(--ink);font-family:var(--font);font-weight:700;font-size:15px;padding:0 12px;outline:none">${WB.categories.map(c=>`<option value="${c.id}" ${OS.room.category===c.id?"selected":""}>${c.icon} ${c.name[LANG]}</option>`).join("")}</select>
+          <div class="card" style="margin-top:12px"><div class="row" style="border:0"><div class="lbl"><b>${ru?"Импостеры":"Imposters"}</b><span>1–2</span></div><div class="stepper" id="oimp"><button data-d="-1">−</button><div class="val">${OS.room.imposters}</div><button data-d="1">+</button></div></div></div>`;
+        $("#ocat",s).onchange=function(){ OS.room.category=this.value; ONLINE.pubState(); };
+        $("#oimp",s).querySelectorAll("button").forEach(b=>b.onclick=()=>{ OS.room.imposters=Math.min(2,Math.max(1,OS.room.imposters+(+b.dataset.d))); ONLINE.pubState(); render(); });
+        $("#lobbyfoot",s).innerHTML=`<button class="btn" id="ostart">${ru?"Начать игру":"Start game"}</button>`;
+        $("#ostart",s).onclick=()=>ONLINE.hostStart();
+      } else {
+        hc.innerHTML=`<div class="card center faint" style="padding:20px">${ru?"Ждём, пока хост начнёт…":"Waiting for the host to start…"}</div>`;
+      }
+      $("#leave",s).onclick=()=>ONLINE.leave();
+      return s;
+    },
+    onlineRole(){
+      const ru=LANG==="ru";
+      const r=OS.myRole||{};
+      const imp=r.role==="imposter";
+      const s=el(`<div class="screen pass">
+        <div class="passnum">${ru?"Ваша роль":"Your role"} · ${OS.me?OS.me.name:""}</div>
+        <div class="tapcard" style="cursor:default">
+          ${imp
+            ? `<div class="reveal-role">🕵️ ${ru?"ИМПОСТЕР":"IMPOSTER"}</div><div class="reveal-cat">${ru?"Категория":"Category"}: ${r.category||""}</div>`
+            : `<div class="faint">${ru?"Слово:":"The word is"}</div><div class="reveal-word">${r.word||"…"}</div>`}
+        </div>
+        <div id="rolefoot" style="margin-top:18px;width:100%"></div>
+      </div>`);
+      const ff=$("#rolefoot",s);
+      if(OS.isHost){ ff.innerHTML=`<button class="btn" id="orev">${ru?"Показать ответ":"Reveal answer"}</button>`; $("#orev",s).onclick=()=>ONLINE.hostReveal(); }
+      else { ff.innerHTML=`<p class="faint center">${ru?"Обсуждайте вслух. Хост покажет ответ.":"Talk it out loud — the host reveals the answer."}</p>`; }
+      return s;
+    },
+    onlineResult(){
+      const ru=LANG==="ru";
+      const rv=OS.room.reveal||{};
+      const s=el(`<div class="screen">
+        <div class="top"><h1 style="text-align:center;width:100%">${ru?"Развязка":"The reveal"}</h1></div>
+        <div class="card center" style="padding:24px"><div class="faint">${ru?"Слово было:":"The word was"}</div><div class="reveal-word" style="margin-top:6px">${rv.word||""}</div></div>
+        <div class="card center" style="margin-top:12px;padding:20px"><div class="faint">${ru?"Импостер(ы):":"Imposter(s):"}</div><div class="reveal-role" style="margin-top:6px;font-size:30px">🕵️ ${(rv.imposters||[]).join(", ")}</div></div>
+        <div class="spacer"></div>
+        <div id="resfoot" class="stack" style="margin-top:18px"></div>
+      </div>`);
+      const ff=$("#resfoot",s);
+      if(OS.isHost){
+        ff.innerHTML=`<button class="btn" id="oagain">${ru?"Ещё раунд":"Play again"}</button><button class="btn ghost" id="omenu">${ru?"Выйти":"Leave"}</button>`;
+        $("#oagain",s).onclick=()=>ONLINE.hostAgain(); $("#omenu",s).onclick=()=>ONLINE.leave();
+      } else {
+        ff.innerHTML=`<p class="faint center">${ru?"Ждём хоста для нового раунда…":"Waiting for the host…"}</p><button class="btn ghost" id="omenu2">${ru?"Выйти":"Leave"}</button>`;
+        $("#omenu2",s).onclick=()=>ONLINE.leave();
+      }
       return s;
     },
   };
@@ -1225,6 +1338,115 @@
   // ======================================================================
   function showOverlay(node){ const r=$("#overlay-root"); r.innerHTML=""; r.appendChild(node); }
   function closeOverlay(){ $("#overlay-root").innerHTML=""; }
+
+  // ======================================================================
+  //  ONLINE multiplayer — host-authoritative over a public MQTT broker
+  //  (real-time, cross-device, no account, no server to host).
+  //  Privacy: clients subscribe ONLY to shared state + their own role topic,
+  //  so the secret word never reaches a non-crew device. Public broker = fine
+  //  for casual play; swap BROKER for a private one before a paid launch.
+  // ======================================================================
+  let OS = { code:null, me:null, isHost:false,
+    room:{ phase:"lobby", players:[], category:null, imposters:1, reveal:null },
+    secret:null, myRole:null };
+
+  const BROKER = "wss://broker.emqx.io:8084/mqtt";
+  const NET = {
+    client:null,
+    async _lib(){
+      if(window.mqtt) return;
+      await new Promise((res,rej)=>{ const sc=document.createElement("script");
+        sc.src="https://cdn.jsdelivr.net/npm/mqtt@5/dist/mqtt.min.js";
+        sc.onload=res; sc.onerror=()=>rej(new Error("lib")); document.head.appendChild(sc); });
+    },
+    base(){ return "roki/imp/"+OS.code+"/"; },
+    async open(onReady,onErr){
+      try{ await this._lib(); }catch(e){ onErr&&onErr(LANG==="ru"?"Нет сети":"Network blocked"); return; }
+      let done=false; const finish=(ok,msg)=>{ if(done) return; done=true; ok?onReady&&onReady():onErr&&onErr(msg); };
+      let c; try{
+        c = mqtt.connect(BROKER,{ clientId:"roki_"+OS.me.id+"_"+Math.floor(Math.random()*1e9),
+          connectTimeout:8000, keepalive:30, clean:true, reconnectPeriod:4000 });
+      }catch(e){ finish(false,"Connect error"); return; }
+      this.client=c;
+      const subs=[this.base()+"state"];
+      if(OS.isHost) subs.push(this.base()+"join");
+      subs.push(this.base()+"role/"+OS.me.id);
+      c.on("connect",()=>{ c.subscribe(subs,{qos:0},()=>finish(true)); });
+      c.on("message",(t,p)=>this._msg(t,p));
+      c.on("error",()=>finish(false, LANG==="ru"?"Ошибка связи":"Connection error"));
+      setTimeout(()=>finish(false, LANG==="ru"?"Превышено время":"Connection timed out"), 9500);
+    },
+    pub(sub,obj,retain){ if(this.client) try{ this.client.publish(this.base()+sub, JSON.stringify(obj), {qos:0, retain:!!retain}); }catch(e){} },
+    _msg(t,payload){
+      const b=this.base(); if(t.indexOf(b)!==0) return;
+      const sub=t.slice(b.length); let d; try{ d=JSON.parse(payload.toString()); }catch(e){ return; }
+      if(sub==="state") ONLINE.onState(d);
+      else if(sub==="join" && OS.isHost) ONLINE.onJoin(d);
+      else if(sub==="role/"+OS.me.id) ONLINE.onRole(d);
+    },
+    close(){ try{ this.client&&this.client.end(true); }catch(e){} this.client=null; },
+  };
+
+  const ONLINE = {
+    _id(){ return "p"+Math.floor(Math.random()*1e9).toString(36); },
+    _code(){ const A="ABCDEFGHJKMNPQRSTUVWXYZ23456789"; let s=""; for(let i=0;i<4;i++) s+=A[Math.floor(Math.random()*A.length)]; return s; },
+    start(){ go("onlineMenu"); },
+    pubState(){ NET.pub("state", OS.room, true); },
+    host(name){
+      OS={ code:this._code(), me:{id:this._id(),name}, isHost:true,
+        room:{ phase:"lobby", players:[], category:null, imposters:1, reveal:null }, secret:null, myRole:null };
+      OS.room.players.push({id:OS.me.id,name});
+      go("onlineConnecting");
+      NET.open(()=>{ this.pubState(); go("onlineLobby"); }, (err)=>{ toast(err); go("onlineMenu"); });
+    },
+    joinRoom(code,name){
+      OS={ code:code.toUpperCase(), me:{id:this._id(),name}, isHost:false,
+        room:{ phase:"lobby", players:[], category:null, imposters:1, reveal:null }, secret:null, myRole:null };
+      go("onlineConnecting");
+      NET.open(()=>{ NET.pub("join",{id:OS.me.id,name}); /* state arrives retained */ }, (err)=>{ toast(err); go("onlineMenu"); });
+    },
+    onJoin(p){ // host only
+      if(!OS.room.players.some(x=>x.id===p.id)) OS.room.players.push({id:p.id,name:p.name});
+      this.pubState(); // (re)broadcast so the joiner gets current lobby
+      if(S.screen==="onlineLobby") render();
+    },
+    onState(st){
+      OS.room=st;
+      const map={lobby:"onlineLobby",reveal:"onlineRole",result:"onlineResult"};
+      const target=map[st.phase];
+      if(target && S.screen!==target) go(target);
+      else if(["onlineLobby","onlineRole","onlineResult"].includes(S.screen)) render();
+    },
+    onRole(r){ OS.myRole=r; if(S.screen==="onlineRole") render(); else if(OS.room.phase==="reveal") go("onlineRole"); },
+    hostStart(){
+      const ru=LANG==="ru";
+      const n=OS.room.players.length;
+      if(n<3){ toast(ru?"Нужно минимум 3 игрока":"Need at least 3 players"); return; }
+      const pool=buildPool(OS.room.category);
+      if(!pool.length){ toast(t().poolEmpty); return; }
+      const word=pick(pool);
+      const c=WB.categories.find(x=>x.id===OS.room.category);
+      const impCount=Math.min(OS.room.imposters, n-2>=1?n-1:1);
+      const impIdx=shuffle(OS.room.players.map((_,i)=>i)).slice(0, impCount);
+      OS.room.players.forEach((p,i)=>{
+        const role = impIdx.includes(i) ? {role:"imposter", category:c.name[LANG]} : {role:"crew", word:word.term[LANG]};
+        if(p.id===OS.me.id) OS.myRole=role; else NET.pub("role/"+p.id, role, true);
+      });
+      OS.secret={ word:word.term[LANG], imposterIds:impIdx.map(i=>OS.room.players[i].id) };
+      OS.room.reveal=null; OS.room.phase="reveal"; this.pubState();
+      go("onlineRole");
+    },
+    hostReveal(){
+      const names=(OS.secret?OS.secret.imposterIds:[]).map(id=>{ const p=OS.room.players.find(x=>x.id===id); return p?p.name:"?"; });
+      OS.room.reveal={ word:OS.secret?OS.secret.word:"", imposters:names };
+      OS.room.phase="result"; this.pubState(); go("onlineResult");
+    },
+    hostAgain(){
+      OS.room.players.forEach(p=>{ if(p.id!==OS.me.id) NET.pub("role/"+p.id,{},true); });
+      OS.room.reveal=null; OS.secret=null; OS.myRole=null; OS.room.phase="lobby"; this.pubState(); go("onlineLobby");
+    },
+    leave(){ NET.close(); OS={ code:null, me:null, isHost:false, room:{ phase:"lobby", players:[], category:null, imposters:1, reveal:null }, secret:null, myRole:null }; go("home"); },
+  };
 
   // ======================================================================
   //  Boot
