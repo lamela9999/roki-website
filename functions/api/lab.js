@@ -18,7 +18,7 @@ const V = 5;                       // schema version. Bumping does NOT wipe — 
 // STRATEGY version. Bumping THIS archives the finished run (checkable via ?version=N) and starts
 // a fresh run with the new strategy — that's the deliberate "v1 did this, now we try v2" cycle,
 // separate from the schema version above. Each bump records the lessons that drove the change.
-const STRATEGY_VERSION = 2;
+const STRATEGY_VERSION = 3;
 const STRATEGY_LESSONS = {
   2: [
     'Chasing volume-spikes lost ~41% on average (33 trades) — v2 removes spikes as a buy trigger entirely.',
@@ -27,6 +27,12 @@ const STRATEGY_LESSONS = {
     '$100k–1M caps bled worst (-37%); $1–10M held best (-6%) — v2 shifts every cap band upward.',
     'Thin pools cost ~5%/side in slippage — v2 raises liquidity floors hard (12k–60k) for deeper, cheaper fills.',
     'Sniping the first candle was -91% — v2 sniper waits for age, real liquidity and buy-pressure before entering.',
+  ],
+  3: [
+    'v2 lost 41.5% over 447 trades with a 10–13% win rate: we were buying TOPS. Every attention signal (boosted -$25/trade, spike -$20, trending) bled — promoted tokens are exit liquidity. v3 makes promotion a PENALTY, never a buy reason.',
+    'The Falling Knife Catcher was the ONLY profitable bot (+13%): buying after a crash works; buying attention dies. v3 rebuilds most archetypes around dip/pullback/crash entries.',
+    'The smart-money signal was ANTI-predictive (-$19.7/trade, n=326): net-SOL "winners" are often the dumpers. v3 removes the smart-money buy override and rescoring winners by ROI + consistency instead of raw SOL taken out.',
+    'Too many thin trades — fees + slippage ate everything. v3: fewer positions (max 4), pickier bar (55–75), deeper liquidity floors.',
   ],
 };
 const START = 2000;                // each wallet starts here
@@ -74,18 +80,18 @@ const FACTORS = [
   { k: 'liq', g: 'On-chain health' }, { k: 'vol', g: 'On-chain health' }, { k: 'pressure', g: 'On-chain health' },
   { k: 'age', g: 'On-chain health' }, { k: 'priceTrend', g: 'Momentum' }, { k: 'lifecycle', g: 'Momentum' },
 ];
-// how much each discovery signal nudges each archetype's score (spikes suit momentum/degen,
-// quiet accumulation suits whales/conservatives) — so the broadened universe changes behaviour
-// v2: volume-spike bonus REMOVED (it averaged -41%). Accumulation boosted + widened (only
-// signal that held up). Trending kept small; fresh small for sniper.
+// v3 signal weights, set by MEASURED outcomes (447 trades): small accumulation bonus (least-bad
+// signal), big bonus for crashed (the only profitable entry), and attention (boosts/trending/
+// spikes) is now a PENALTY — those entries averaged -$20 to -$25 per trade.
 const SRC_BONUS = {
-  accumulation: { smart: 9, insider: 9, whale: 8, conservative: 8, safety: 6, balanced: 6, momentum: 4, narrative: 4, degen: 4 },
-  trending: { narrative: 4, balanced: 2, momentum: 2 },
-  fresh: { sniper: 3 },
+  accumulation: { smart: 6, insider: 6, balanced: 4, whale: 3, conservative: 3 },
+  crashed: { knife: 12, degen: 6, balanced: 4 },
 };
-// extra score weight (on top of the base smart-money bonus) for the archetypes whose whole job is
-// to follow proven winners — when validated top wallets accumulate a token, these lean in hardest
-const SMART_EXTRA = { smart: 14, insider: 12, balanced: 6, momentum: 6, narrative: 4, whale: 4, conservative: 3, safety: 2, sniper: 2, degen: 2, knife: 8 };
+// flat score penalties for attention signals (applied to every archetype)
+const ATTN_PENALTY = { 'volume-spike': -10, boosted: -8, 'new-boost': -6, trending: -5 };
+// v3: smart-money score boost neutralized (measured -$19.7/trade, 10% win rate, n=326). Kept at
+// tiny values only so the signal keeps accruing measurable data via edgeAdj.
+const SMART_EXTRA = { smart: 2, insider: 2 };
 const SRC_RANK = ['smart-money', 'volume-spike', 'accumulation', 'trending', 'fresh', 'boosted', 'volume', 'new-boost', 'profile'];
 const primarySrc = (sources) => { for (const s of SRC_RANK) if (sources && sources.indexOf(s) >= 0) return s; return (sources && sources[0]) || 'trending'; };
 // Derive activity signals straight from the DexScreener pair (works from CF even when the
@@ -100,39 +106,39 @@ function deriveTags(p) {
   return tags;
 }
 
-// STRATEGY v2 — rebuilt from v1's real results (v1 lost ~30% in a day). The data said:
-//   • buying AFTER a volume-spike averaged -41% → stop chasing spikes (removed as a trigger)
-//   • accumulation was the only ~breakeven signal → make it the primary buy trigger, widely
-//   • stops were too wide (tokens fell ~25% before exit) → tighter stops elsewhere (baseParams)
-//   • $100k–1M caps bled worst (-37%), $1–10M held best (-6%) → shift bands up
-//   • thin pools cost ~5%/side slippage → raise liquidity floors hard (deeper pools)
-//   • sniping the first candle was -91% → require confirmation (age, liquidity, buy-pressure)
+// STRATEGY v3 — rebuilt from v2's 447 real trades (v2 lost 41.5%, win rate 10–13%). The data:
+//   • ALL attention entries bled (boosted -$25/tr, spike -$20, trending -$23) → promoted tokens
+//     are exit liquidity. v3: attention is a PENALTY; no archetype buys because of promotion.
+//   • The knife (buy after a 90% crash) was the ONLY profitable bot (+13%) → buy blood, not
+//     attention: most archetypes now enter on dips/pullbacks/crashes, not green candles.
+//   • Smart-money signal was anti-predictive (-$19.7/tr, n=326) → buy override removed; winner
+//     scoring rebuilt on ROI+consistency (rankWinners in _utils).
+//   • Costs ate thin trades → fewer positions (max 4), pickier bar, deeper liquidity floors.
 // `trig(M)` is the signal that makes it buy. M = raw per-token metrics from scanUniverse.
 const PROFILE = {
-  degen:        { capMin: 50e3,  capMax: 3e6,   liqMin: 12e3, hold: 6,  trig: (m) => m.accum || (m.ageDays != null && m.ageDays < 2 && m.pc6 > 3 && m.pc6 < 40 && m.buyRatio6 > 0.55 && !m.spike), label: 'early movers, not blow-off tops' },
-  sniper:       { capMin: 40e3,  capMax: 2e6,   liqMin: 15e3, hold: 6,  trig: (m) => m.ageDays != null && m.ageDays >= 0.3 && m.ageDays < 7 && m.clean && m.liq >= 15e3 && m.buyRatio6 > 0.55 && m.pc24 > -8, label: 'confirmed early launches' },
-  insider:      { capMin: 50e3,  capMax: 3e6,   liqMin: 12e3, hold: 18, trig: (m) => m.accum && m.clean,                                                                     label: 'early quiet accumulation' },
-  smart:        { capMin: 100e3, capMax: 8e6,   liqMin: 20e3, hold: 20, trig: (m) => m.accum && m.clean,                                                                     label: 'clean accumulation' },
-  momentum:     { capMin: 200e3, capMax: 25e6,  liqMin: 30e3, hold: 10, trig: (m) => m.pc6 > 3 && m.pc6 < 35 && m.pc1 > -2 && m.buyRatio6 > 0.55 && !m.spike,                 label: 'sustained momentum, not spikes' },
-  narrative:    { capMin: 150e3, capMax: 25e6,  liqMin: 20e3, hold: 14, trig: (m) => m.srcTrendy && m.pc24 > 0 && m.pc24 < 60 && !m.spike,                                    label: 'hot narratives, pre-blowoff' },
-  balanced:     { capMin: 100e3, capMax: 50e6,  liqMin: 15e3, hold: 24, trig: (m) => m.accum || (m.pc6 > 0 && m.pc6 < 30 && m.buyRatio6 > 0.52),                              label: 'steady, mid-cap tilt' },
-  whale:        { capMin: 1e6,   capMax: 300e6, liqMin: 60e3, hold: 36, trig: (m) => m.liq >= 60e3 && m.pc6 <= 2 && m.pc6 >= -12 && m.pc24 > -20,                             label: 'deep-liquidity dips' },
-  // Falling Knife Catcher: a token we once saw much higher (>=90% down from its peak in our DB),
-  // now bottomed in the $3k–60k range but still has liquidity + signs of life. Buys the bottom,
-  // takes most profit on the bounce, keeps a MOON BAG that rides to a big target or breakeven.
-  knife:        { capMin: 3e3,   capMax: 60e3,  liqMin: 2500, hold: 80, tp: 35, sl: 30, moonBag: true, moonTP: 160,
-                  trig: (m) => m.drawdown >= 0.9 && m.liq >= 2500 && m.buyRatio6 >= 0.5,                                                                                     label: 'crashed tokens, bottom-fishing' },
-  conservative: { capMin: 500e3, capMax: 300e6, liqMin: 50e3, hold: 40, trig: (m) => m.clean && m.ageDays != null && m.ageDays > 2 && m.pc6 < 1 && m.pc6 > -15,              label: 'established pullbacks' },
-  safety:       { capMin: 500e3, capMax: 300e6, liqMin: 60e3, hold: 40, trig: (m) => m.clean && m.liq >= 60e3 && m.pc24 >= -10 && m.pc24 <= 25,                              label: 'safest, deep + clean' },
+  // v3: nearly every archetype buys RED (dips, pullbacks, crashes) — the only entries that paid.
+  degen:        { capMin: 30e3,  capMax: 2e6,   liqMin: 15e3, hold: 14, tp: 45, sl: 22, trig: (m) => m.drawdown >= 0.5 && m.pc6 > -8 && m.buyRatio6 >= 0.5,                   label: 'half-price young movers (≥50% off peak)' },
+  sniper:       { capMin: 60e3,  capMax: 2e6,   liqMin: 25e3, hold: 10, tp: 30, sl: 15, trig: (m) => m.ageDays != null && m.ageDays >= 0.5 && m.ageDays < 6 && m.clean && m.pc6 < 0 && m.pc24 > -40 && m.buyRatio6 >= 0.5, label: 'young launches on their first pullback' },
+  insider:      { capMin: 100e3, capMax: 5e6,   liqMin: 25e3, hold: 20, trig: (m) => m.accum && m.clean && m.pc6 < 10,                                                        label: 'quiet accumulation, clean, not extended' },
+  smart:        { capMin: 150e3, capMax: 10e6,  liqMin: 30e3, hold: 20, trig: (m) => m.accum && m.clean && m.buyRatio24 > 0.5,                                                label: 'confirmed accumulation' },
+  momentum:     { capMin: 300e3, capMax: 25e6,  liqMin: 40e3, hold: 12, trig: (m) => m.pc24 > 10 && m.pc6 <= 0 && m.pc6 > -15,                                                label: 'uptrends, bought on the pullback' },
+  narrative:    { capMin: 300e3, capMax: 25e6,  liqMin: 30e3, hold: 14, trig: (m) => m.srcTrendy && m.pc6 < -5 && m.pc24 > -25,                                               label: 'hyped names on red candles only' },
+  balanced:     { capMin: 150e3, capMax: 50e6,  liqMin: 25e3, hold: 24, trig: (m) => (m.drawdown >= 0.4 && m.buyRatio6 > 0.5) || (m.accum && m.clean),                        label: 'discounts + accumulation' },
+  whale:        { capMin: 1e6,   capMax: 300e6, liqMin: 80e3, hold: 36, trig: (m) => m.liq >= 80e3 && m.pc6 <= -3 && m.pc24 > -25,                                            label: 'deep-liquidity dips' },
+  // The v2 champion (+13% while everything bled): tokens ≥85% off their peak, still liquid, still
+  // breathing. Buys the bottom, takes 70% at TP, rides a MOON BAG to +160% or breakeven.
+  knife:        { capMin: 3e3,   capMax: 100e3, liqMin: 3e3,  hold: 80, tp: 35, sl: 30, moonBag: true, moonTP: 160,
+                  trig: (m) => m.drawdown >= 0.85 && m.liq >= 3e3 && m.buyRatio6 >= 0.5,                                                                                     label: 'crashed tokens, bottom-fishing' },
+  conservative: { capMin: 1e6,   capMax: 300e6, liqMin: 60e3, hold: 40, trig: (m) => m.clean && m.ageDays != null && m.ageDays > 3 && m.pc6 < -2 && m.pc24 > -20,            label: 'established pullbacks' },
+  safety:       { capMin: 1e6,   capMax: 300e6, liqMin: 80e3, hold: 40, trig: (m) => m.clean && m.liq >= 80e3 && m.pc24 >= -15 && m.pc24 <= 10 && m.buyRatio24 >= 0.5,       label: 'deep, calm, clean' },
 };
 // does this archetype want this token? (cap band + liquidity floor + its trigger + quality bar)
+// v3: the smart-money buy override is GONE — the signal measured anti-predictive (-$19.7/trade).
 function eligible(prof, M, scoreObj, bar) {
   if (!scoreObj || scoreObj.r || scoreObj.c == null) return false;
   if (M.mcap < prof.capMin || M.mcap > prof.capMax) return false;
   if (M.liq < prof.liqMin) return false;
-  // smart-money override: 2+ proven-winner wallets accumulating IS the signal — follow them even
-  // if the archetype's own trigger isn't firing (still must fit its cap band + liquidity floor)
-  const smartSignal = (M.smartCount || 0) >= 2;
+  const smartSignal = false;
   if (!prof.trig(M) && !smartSignal) return false;
   return scoreObj.c >= bar;
 }
@@ -148,14 +154,14 @@ function baseParams(dial) {
   const d = dial;
   return {
     posPct: clPos((1 + d / 100 * 24) / 100),    // 1%..25% of equity
-    threshold: clT(70 - d / 100 * 25),          // 70..45 entry bar
+    threshold: clT(75 - d / 100 * 20),          // v3: 75..55 entry bar (pickier — costs ate v2)
     tp: clTP(20 + d / 100 * 60),                // +20%..+80%
     sl: clSL(6 + d / 100 * 16),                 // v2: -6%..-22% (was -8..-50; stops were too wide)
     slip: +((0.5 + d / 100 * 4.5) / 100).toFixed(4), // 0.5%..5% (fixed, not learned)
     maxHold: Math.round(40 - d / 100 * 28),     // ticks held before time-stop (degen flips fast)
   };
 }
-const maxPosOf = (p) => Math.max(2, Math.min(8, Math.floor(0.6 / p.posPct)));
+const maxPosOf = (p) => Math.max(2, Math.min(4, Math.floor(0.5 / p.posPct))); // v3: fewer, bigger bets
 
 function freshWallet(dial) {
   return {
@@ -323,8 +329,13 @@ async function scanUniverse(env, nowTs, smartMap, learnedEdge, capMaxOf) {
       FACTORS.forEach((f) => { if (Vv[f.k] != null) { const w = ARCH[a][f.g] || 50; wsum += w; vsum += w * Vv[f.k]; } });
       let c = wsum ? Math.round(vsum / wsum) : null;
       if (c != null) {
-        let bonus = 0; sources.forEach((s) => { if (SRC_BONUS[s] && SRC_BONUS[s][a]) bonus += SRC_BONUS[s][a]; bonus += edgeAdj(learnedEdge, s); }); // learned: +/- by what each signal paid
-        if (smartCount > 0) bonus += Math.min(22, Math.round(smart * 7)) + (SMART_EXTRA[a] || 0); // proven winners accumulating
+        let bonus = 0;
+        sources.forEach((s) => {
+          if (SRC_BONUS[s] && SRC_BONUS[s][a]) bonus += SRC_BONUS[s][a];
+          if (ATTN_PENALTY[s]) bonus += ATTN_PENALTY[s];        // v3: attention = exit liquidity
+          bonus += edgeAdj(learnedEdge, s);                     // learned: +/- by what each signal paid
+        });
+        if (smartCount > 0) bonus += (SMART_EXTRA[a] || 0);     // v3: neutralized (was anti-predictive)
         if (bonus) c = Math.max(0, Math.min(100, c + bonus));
       }
       const rejected = gateLive && a !== 'degen';

@@ -136,6 +136,42 @@ const QUOTE_MINTS = new Set([
 //   volume-spike         — last hour running >=2.2x the 24h average pace (sudden activity)
 //   accumulation         — steady positive drift + buy-side pressure, no blow-off spike
 // GeckoTerminal is keyless & free (~30 req/min). All calls are best-effort; partial data is OK.
+// v3 winner scoring: raw net-SOL crowned dumpers/insiders (the smart-money signal measured
+// ANTI-predictive: -$19.7/trade over 326 trades). A "winner" now needs real money in (≥1 SOL),
+// a track record (≥5 swaps), and a profitable ROI (≥1.15×) — ranked by ROI weighted by
+// consistency (√ of trade count) so one lucky exit can't top the list.
+export function rankWinners(wallets, topN) {
+  topN = topN || 200;
+  return Object.keys(wallets || {}).map((a) => {
+    const w = wallets[a] || {};
+    const inS = +w.inSol || 0, outS = +w.outSol || 0, n = +w.n || 0;
+    const roi = inS >= 1 ? outS / inS : 0;
+    return { addr: a, roi: +roi.toFixed(3), n, netSol: +(w.netSol || 0), score: roi * Math.sqrt(Math.min(n, 50)) };
+  }).filter((w) => w.n >= 5 && w.roi >= 1.15)
+    .sort((x, y) => y.score - x.score)
+    .slice(0, topN);
+}
+
+// Solana Tracker graduated feed, KV-cached 20 min so the whole site shares ONE upstream call —
+// protects the free-tier quota (a 2-min polling loop burned a month's credits in days).
+export async function getGraduated(env) {
+  const KV = env && env.ZEN_KV;
+  if (KV) { const c = await KV.get('radar:cache:stgrad', 'json').catch(() => null); if (c && c.ts > Date.now() - 20 * 60 * 1000) return c.arr; }
+  const key = await getStKey(env);
+  if (!key) return null;
+  try {
+    const r = await fetch('https://data.solanatracker.io/tokens/multi/graduated', { headers: { 'x-api-key': key } });
+    if (r.ok) {
+      const d = await r.json();
+      const arr = Array.isArray(d) ? d : (d && (d.data || d.tokens)) || [];
+      if (arr.length && KV) await KV.put('radar:cache:stgrad', JSON.stringify({ ts: Date.now(), arr })).catch(() => {});
+      if (arr.length) return arr;
+    }
+  } catch (e) { /**/ }
+  if (KV) { const c = await KV.get('radar:cache:stgrad', 'json').catch(() => null); if (c) return c.arr; } // stale > nothing
+  return null;
+}
+
 // Solana Tracker key: from the Cloudflare env secret SOLANATRACKER_KEY, else from KV (set once
 // via /api/sourcetest?savekey=). Kept OUT of the public repo either way.
 export async function getStKey(env) {
@@ -158,8 +194,6 @@ export async function buildUniverse(env) {
   //  • Solana Tracker — purpose-built new/trending/graduating feed; activates if SOLANATRACKER_KEY
   //    is set in the Cloudflare env (free key → real new launches). Dormant until then.
   const SEARCH = ['pump', 'SOL', 'moon', 'wif'];
-  const stKey = await getStKey(env);
-  const stH = stKey ? { 'x-api-key': stKey } : null;
   const gtH = { accept: 'application/json' };
   const res = await Promise.all([
     get('https://api.dexscreener.com/token-boosts/top/v1'),
@@ -168,8 +202,8 @@ export async function buildUniverse(env) {
     ...SEARCH.map((q) => get('https://api.dexscreener.com/latest/dex/search?q=' + encodeURIComponent(q))),
     get('https://api.geckoterminal.com/api/v2/networks/solana/new_pools?page=1', gtH, 2),
     get('https://api.geckoterminal.com/api/v2/networks/solana/trending_pools?page=1', gtH, 2),
-    // Solana Tracker: tokens that JUST graduated to a DEX — fresh, with liquidity + risk scores
-    stKey ? get('https://data.solanatracker.io/tokens/multi/graduated', stH, 1) : Promise.resolve(null),
+    // Solana Tracker just-graduated tokens — via the shared 20-min KV cache (quota-safe)
+    getGraduated(env),
   ]);
   let k = 0;
   const bt = res[k++], bl = res[k++], prof = res[k++];

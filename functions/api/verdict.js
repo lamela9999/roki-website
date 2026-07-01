@@ -5,7 +5,7 @@
 // LEARNED signal edge (what each signal has actually paid). Returns a score + verdict + the
 // evidence-backed reasons (pros/cons). Read-only, paper-research; never financial advice.
 
-import { json, preflight, pickPair, solRpc } from './_utils.js';
+import { json, preflight, pickPair, solRpc, rankWinners } from './_utils.js';
 
 export const onRequestOptions = () => preflight();
 
@@ -62,12 +62,8 @@ export async function onRequestGet({ request, env }) {
     const top10 = (accts.length && total) ? accts.slice(0, 10).reduce((s, a) => s + Number(a.amount), 0) / total : null;
 
     // ---- smart money: cached map first, else LIVE Helius scan cross-referenced vs our winner DB ----
-    const winners = {}; // addr -> rank
-    if (wdb && wdb.wallets) {
-      Object.keys(wdb.wallets).map((a) => ({ a, net: wdb.wallets[a].netSol || 0, n: wdb.wallets[a].n || 0 }))
-        .filter((w) => w.net > 0 && w.n >= 3).sort((x, y) => y.net - x.net).slice(0, 300)
-        .forEach((w, i) => { winners[w.a] = i + 1; });
-    }
+    const winners = {}; // addr -> rank (v3: ROI + consistency scoring, not raw net SOL)
+    if (wdb && wdb.wallets) rankWinners(wdb.wallets, 300).forEach((w, i) => { winners[w.addr] = i + 1; });
     let smartBuyers = [], smartSellers = 0, smartSource = 'none';
     const cached = smap && smap.tokens && smap.tokens[mint];
     if (cached) {

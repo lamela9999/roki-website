@@ -1031,7 +1031,9 @@ function labRender(){
   var gbase=LAB.bots.length*LAB.start;var gpnl=grand-gbase;
   var grad=LAB.bots.filter(function(b){return b.status==='graduated';}).length;
   var bust=LAB.bots.filter(function(b){return b.status==='busted';}).length;
-  var head='<div class="card" style="margin-bottom:16px"><div class="row wrap" style="align-items:flex-start">'
+  var staleMin=LAB.lastTickTs?Math.round((Date.now()-LAB.lastTickTs)/60000):null;
+  var staleBanner=(staleMin!=null&&staleMin>30)?'<div class="card" style="margin-bottom:16px;border-color:#B02A2A;box-shadow:3px 3px 0 #B02A2A"><b style="color:#B02A2A">⚠️ Engine offline</b> <span style="font-size:13px">— data frozen for '+(staleMin>=120?Math.round(staleMin/60)+'h':staleMin+'m')+'. The heartbeat on the droplet needs a restart: <span class="mono" style="font-size:11px">pm2 restart roki-engine</span> (see engine/README.md).</span></div>':'';
+  var head=staleBanner+'<div class="card" style="margin-bottom:16px"><div class="row wrap" style="align-items:flex-start">'
     +'<div><div class="klabel">'+LAB.tick+' rounds traded · '+(LAB.reviews||0)+' learning reviews'+(LAB.season>1?' · Season '+LAB.season:'')+'</div>'
     +'<div class="mono" style="font-size:28px;font-weight:700">'+lm(grand)+'</div>'
     +'<div class="mono" style="font-weight:700;color:'+(gpnl>=0?'#0F7A45':'#B02A2A')+'">'+(gpnl>=0?'+':'')+lm(gpnl)+' combined ('+(gpnl/gbase*100>=0?'+':'')+(gpnl/gbase*100).toFixed(1)+'%)</div></div>'

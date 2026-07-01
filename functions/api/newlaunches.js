@@ -2,7 +2,7 @@
 // market cap, liquidity, age, holders, and a RUG-RISK SCORE (data DexScreener can't give us).
 // Powered by Solana Tracker (key from SOLANATRACKER_KEY env or KV). Read-only, research only.
 
-import { json, preflight, getStKey } from './_utils.js';
+import { json, preflight, getStKey, getGraduated } from './_utils.js';
 
 export const onRequestOptions = () => preflight();
 
@@ -12,10 +12,9 @@ export async function onRequestGet({ env }) {
   const key = await getStKey(env);
   if (!key) return json({ error: 'Solana Tracker key not set — add SOLANATRACKER_KEY (or save via /api/sourcetest?savekey=).', tokens: [] }, 200, { 'cache-control': 'no-store' });
 
-  let d = null;
-  try { const r = await fetch('https://data.solanatracker.io/tokens/multi/graduated', { headers: { 'x-api-key': key } }); if (r.ok) d = await r.json(); } catch (e) { /**/ }
-  const arr = Array.isArray(d) ? d : (d && (d.data || d.tokens)) || [];
-  if (!arr.length) return json({ count: 0, tokens: [], note: 'No data right now — retry shortly (free-tier rate limit).' }, 200, { 'cache-control': 'no-store' });
+  // shared 20-min KV cache — ONE upstream call for the whole site, protects the free quota
+  const arr = (await getGraduated(env)) || [];
+  if (!arr.length) return json({ count: 0, tokens: [], note: 'Feed quiet right now (quota or upstream) — it self-restores; retry later.' }, 200, { 'cache-control': 'no-store' });
 
   const now = Date.now();
   const tokens = arr.map((it) => {

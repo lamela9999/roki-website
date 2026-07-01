@@ -7,7 +7,7 @@
 // Pure read/compose over the research DBs we already store (radar:db:tokens / :tokenwallets /
 // :smartmap / :wallets). The "data center" the lab is accumulating, made browsable + verifiable.
 
-import { json, preflight } from './_utils.js';
+import { json, preflight, rankWinners } from './_utils.js';
 
 export const onRequestOptions = () => preflight();
 const SIG_SHOW = ['smart-money', 'accumulation', 'volume-spike', 'crashed', 'trending', 'fresh'];
@@ -25,13 +25,9 @@ export async function onRequestGet({ request, env }) {
   ]);
   const tokens = (tdb && tdb.tokens) || {};
 
-  // rank of each proven-winner wallet (top 300 by net SOL, 3+ trades)
+  // rank of each proven-winner wallet (v3: ROI + consistency, not raw net SOL)
   const winners = {};
-  if (wdb && wdb.wallets) {
-    Object.keys(wdb.wallets).map((a) => ({ a, net: wdb.wallets[a].netSol || 0, n: wdb.wallets[a].n || 0 }))
-      .filter((w) => w.net > 0 && w.n >= 3).sort((x, y) => y.net - x.net).slice(0, 300)
-      .forEach((w, i) => { winners[w.a] = i + 1; });
-  }
+  if (wdb && wdb.wallets) rankWinners(wdb.wallets, 300).forEach((w, i) => { winners[w.addr] = i + 1; });
 
   // ---- single wallet ----
   const wa = url.searchParams.get('wallet');

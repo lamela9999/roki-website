@@ -9,7 +9,7 @@
 // Net SOL across observed tokens is a recent-window performance PROXY (not lifetime PnL) — it
 // sharpens as the DB accumulates. Decoupled from the lab tick to respect CF subrequest limits.
 
-import { json, preflight, buildUniverse } from './_utils.js';
+import { json, preflight, buildUniverse, rankWinners } from './_utils.js';
 
 export const onRequestOptions = () => preflight();
 
@@ -163,15 +163,13 @@ export async function onRequestGet(context) {
   }
 
   // ---- THE SMART-MONEY MAP: which proven-winner wallets are ACCUMULATING each token now ----
-  // "smart" = top SMART_TOP wallets by global net SOL (the validated winners). For each scanned
-  // token, find the smart wallets that are net BUYERS on it (spent more SOL than they took out =
-  // accumulating). That's the alpha signal the bots and the alerts consume.
+  // v3 "winner" = ROI ≥1.15× on ≥1 SOL in, ≥5 swaps, ranked by ROI×consistency (rankWinners) —
+  // the old raw-net-SOL ranking crowned dumpers and measured anti-predictive (-$19.7/trade).
   if (Object.keys(perByMint).length) {
     try {
       const SMART_TOP = 150;
-      const ranked = Object.keys(db.wallets).map((a) => ({ a, net: db.wallets[a].netSol || 0, n: db.wallets[a].n || 0 }))
-        .filter((w) => w.net > 0 && w.n >= 3).sort((x, y) => y.net - x.net).slice(0, SMART_TOP);
-      const rankOf = {}; ranked.forEach((w, i) => { rankOf[w.a] = i + 1; }); // 1 = best
+      const ranked = rankWinners(db.wallets, SMART_TOP);
+      const rankOf = {}; ranked.forEach((w, i) => { rankOf[w.addr] = i + 1; }); // 1 = best
       let smap = await KV.get('radar:db:smartmap', 'json').catch(() => null);
       if (!smap || !smap.tokens) smap = { tokens: {} };
       for (const mint of Object.keys(perByMint)) {
