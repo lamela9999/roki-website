@@ -215,18 +215,19 @@ function migrate(state, nowTs) {
 }
 
 // When the STRATEGY_VERSION in code is newer than the saved run, archive the finished run
-// (summary kept in state.versions for the UI; full per-bot ledgers returned for KV) and start a
-// fresh run with the new strategy. Returns { key, data } to persist, or null if nothing to do.
-function applyStrategyVersion(state, nowTs) {
+// (summary kept in state.versions for the UI; full per-bot ledgers written to KV HERE, before
+// the reset) and start a fresh run with the new strategy. The v2 archive was LOST because the
+// untrimmed 383-tick ledger exceeded KV's value cap and the write failed silently after the
+// reset — so now: trim, write FIRST, verify, and retry smaller before touching the bots.
+async function applyStrategyVersion(state, env, nowTs) {
   const from = state.strategyVersion || 1;
-  if (from >= STRATEGY_VERSION) return null;
+  if (from >= STRATEGY_VERSION) return false;
+  const KV = env.ZEN_KV;
   const perBot = BOTS.map((b) => {
     const w = state.bots[b.id]; const eq = Math.round(totalEquity(w));
     return { id: b.id, name: b.name, equity: eq, pnlPct: +((eq / START - 1) * 100).toFixed(1), wins: w.wins, losses: w.losses, trades: (w.trades || []).length, status: w.status };
   });
   const startEq = BOTS.length * START, endEq = perBot.reduce((s, x) => s + x.equity, 0);
-  const archiveLedgers = {};
-  BOTS.forEach((b) => { archiveLedgers[b.id] = (state.bots[b.id].trades || []); });
   const summary = {
     version: from, startedTs: state.versionStartedTs || state.startedTs, endedTs: nowTs,
     endedDay: state.day, endedTick: state.tick, startEquity: startEq, endEquity: endEq,
@@ -235,15 +236,27 @@ function applyStrategyVersion(state, nowTs) {
     worst: perBot.slice().sort((a, c) => a.equity - c.equity)[0],
     nextLessons: STRATEGY_LESSONS[from + 1] || [],
   };
+  // write the archive BEFORE resetting anything; retry with smaller ledgers if the value is too big
+  let ledgerSaved = false;
+  for (const capN of [1200, 300, 0]) {
+    const ledgers = {};
+    BOTS.forEach((b) => { ledgers[b.id] = (state.bots[b.id].trades || []).slice(0, capN); });
+    try {
+      await KV.put(KVKEY + ':archive:v' + from, JSON.stringify({ version: from, summary, ledgers, trimmedTo: capN, ts: nowTs }));
+      ledgerSaved = true; summary.ledgerTrimmedTo = capN;
+      break;
+    } catch (e) { /* value too large or transient — retry smaller */ }
+  }
+  summary.ledgerSaved = ledgerSaved;
   state.versions.unshift(summary);
   if (state.versions.length > 20) state.versions.pop();
-  // fresh run for the new strategy version (v1 archived above is fully preserved + checkable)
+  // only now: fresh run for the new strategy version
   BOTS.forEach((b) => { state.bots[b.id] = freshWallet(b.dial); });
   state.strategyVersion = STRATEGY_VERSION;
   state.versionStartedTs = nowTs;
   state.season = 1; state.day = 0; state.lastLearnDay = 0; state.startedTs = nowTs; state.tick = 0;
   state.lastTickTs = 0; // let the fresh run start trading immediately
-  return { key: KVKEY + ':archive:v' + from, data: { version: from, summary, ledgers: archiveLedgers, ts: nowTs } };
+  return true;
 }
 
 function totalEquity(w) {
@@ -721,10 +734,10 @@ export async function onRequestGet({ request, env }) {
     return json({ id: botId, name: b.name, trades: w.trades || [], history: w.history || [], wins: w.wins, losses: w.losses, realized: Math.round(w.realized || 0), totalClosed: (w.wins || 0) + (w.losses || 0), ts: nowTs }, 200, { 'cache-control': 'no-store' });
   }
 
-  // strategy-version transition: archive the finished run + start fresh on the new strategy
+  // strategy-version transition: archive the finished run (write-first, size-safe) + start fresh
   if (!peek && (state.strategyVersion || 1) < STRATEGY_VERSION) {
-    const arch = applyStrategyVersion(state, nowTs);
-    if (arch) { try { await KV.put(arch.key, JSON.stringify(arch.data)); } catch (e) { /**/ } try { await KV.put(KVKEY, JSON.stringify(state)); } catch (e) { /**/ } }
+    const did = await applyStrategyVersion(state, env, nowTs);
+    if (did) { try { await KV.put(KVKEY, JSON.stringify(state)); } catch (e) { /**/ } }
   }
 
   let advanced = false;
