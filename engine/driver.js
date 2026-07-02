@@ -15,10 +15,10 @@
  */
 
 const BASE = process.env.ROKI_BASE || 'https://roki.buzz';
-const WALLET_EVERY = (+(process.env.WALLET_EVERY_S || 90)) * 1000;
 const LAB_EVERY = (+(process.env.LAB_EVERY_S || 150)) * 1000;
-// NOTE: no /api/newlaunches polling — v1 of this driver burned the Solana Tracker free quota
-// (720 calls/day vs 2,500/mo). The site now KV-caches that feed itself; the engine must not hit it.
+// PHASE 2: wallet scanning moved to the dedicated `roki-wallet-engine` process (its own JSON DB,
+// unlimited writes). This driver now ONLY ticks the lab. No /api/walletdb?scan=1 (redundant) and
+// no /api/newlaunches polling (v1 burned the Solana Tracker free quota; the site KV-caches it).
 
 const log = (...a) => console.log(new Date().toISOString(), ...a);
 
@@ -33,19 +33,17 @@ async function hit(path) {
   } catch (e) { return 'ERR ' + (e.message || e); }
 }
 
-let scans = 0, errs = 0;
-async function walletCycle() {
-  scans++;
-  const res = await hit('/api/walletdb?scan=1');
-  log(`walletscan #${scans}:`, res);
+let ticks = 0, errs = 0;
+async function labCycle() {
+  ticks++;
+  const res = await hit('/api/lab?tick=1');
+  log(`labtick #${ticks}:`, res);
   errs = res.startsWith('ERR') || res.startsWith('5') ? errs + 1 : 0;
   if (errs >= 10) { log('10 consecutive failures — exiting so pm2 restarts us clean.'); process.exit(1); }
 }
-async function labCycle() { log('labtick:', await hit('/api/lab?tick=1')); }
 
-log(`ROKI engine v2 → ${BASE} | wallet ${WALLET_EVERY / 1000}s · lab ${LAB_EVERY / 1000}s`);
-walletCycle();
-setInterval(walletCycle, WALLET_EVERY);
-setTimeout(() => { labCycle(); setInterval(labCycle, LAB_EVERY); }, 7000);
+log(`ROKI engine v3 (lab-only) → ${BASE} | lab ${LAB_EVERY / 1000}s`);
+labCycle();
+setInterval(labCycle, LAB_EVERY);
 // heartbeat line every 10 min so `pm2 logs` always shows signs of life
-setInterval(() => log('alive · scans so far:', scans), 600000);
+setInterval(() => log('alive · ticks so far:', ticks), 600000);

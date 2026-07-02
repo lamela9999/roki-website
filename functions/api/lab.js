@@ -573,7 +573,10 @@ function learn(w, day) {
 async function advance(state, env, nowTs) {
   // smart-money map: which tokens proven-winner wallets are accumulating now (built by walletdb)
   let smartMap = {}, capMaxOf = {};
-  try { const sm = await env.ZEN_KV.get('radar:db:smartmap', 'json'); if (sm && sm.tokens) smartMap = sm.tokens; } catch (e) { /**/ }
+  // Phase 2: smart-money map is computed by the OWNED droplet engine (unlimited writes). Read it
+  // live from there; fall back to the last KV snapshot if the engine is briefly unreachable.
+  try { const r = await fetch((env.ENGINE_URL || 'http://146.190.22.95:8787') + '/smartmap', { signal: AbortSignal.timeout(8000) }); if (r.ok) { const sm = await r.json(); if (sm && sm.tokens) smartMap = sm.tokens; } } catch (e) { /**/ }
+  if (!Object.keys(smartMap).length) { try { const sm = await env.ZEN_KV.get('radar:db:smartmap', 'json'); if (sm && sm.tokens) smartMap = sm.tokens; } catch (e) { /**/ } }
   // historical peak market cap per token (from the DB memory) → lets the knife spot 90%+ crashes
   try { const td = await env.ZEN_KV.get('radar:db:tokens', 'json'); if (td && td.tokens) { for (const m in td.tokens) capMaxOf[m] = td.tokens[m].capMax || 0; } } catch (e) { /**/ }
   const learnedEdge = state.signalEdge || {}; // what each signal has actually paid (from outcomes)
