@@ -13,7 +13,9 @@ import { json, preflight } from './_utils.js';
 
 export const onRequestOptions = () => preflight();
 
-const ENGINE = 'http://146.190.22.95:8787';
+// The owned engine on the droplet, exposed via nginx over TLS (raw IP:port is refused by CF
+// Workers — only real hostnames on standard ports are allowed for outbound fetch).
+const ENGINE = 'https://roki.lol/engine';
 
 async function proxy(env, path, cache) {
   const base = env.ENGINE_URL || ENGINE;
