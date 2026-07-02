@@ -18,7 +18,7 @@ const V = 5;                       // schema version. Bumping does NOT wipe — 
 // STRATEGY version. Bumping THIS archives the finished run (checkable via ?version=N) and starts
 // a fresh run with the new strategy — that's the deliberate "v1 did this, now we try v2" cycle,
 // separate from the schema version above. Each bump records the lessons that drove the change.
-const STRATEGY_VERSION = 3;
+const STRATEGY_VERSION = 4;
 const STRATEGY_LESSONS = {
   2: [
     'Chasing volume-spikes lost ~41% on average (33 trades) — v2 removes spikes as a buy trigger entirely.',
@@ -34,15 +34,23 @@ const STRATEGY_LESSONS = {
     'The smart-money signal was ANTI-predictive (-$19.7/trade, n=326): net-SOL "winners" are often the dumpers. v3 removes the smart-money buy override and rescoring winners by ROI + consistency instead of raw SOL taken out.',
     'Too many thin trades — fees + slippage ate everything. v3: fewer positions (max 4), pickier bar (55–75), deeper liquidity floors.',
   ],
+  4: [
+    '"Fresh" is the ONLY signal with positive measured edge (+$1.45/trade, 26% win rate — every other signal negative across 1,500+ samples). v4 doubles down on fresh-launch discovery (more sources, more candidates) and gives the fast archetypes a fresh-lane bonus.',
+    'v3 exits were binary take-profit-or-stop-loss, so winners round-tripped into losses (Momentum/Narrative: 0% win rate). v4 ships a real EXIT ENGINE: breakeven locks once a trade is up ~10%, trailing stops on runners, and scale-outs that bank profit early. Win rate is the explicit target.',
+    'Degen (-17%) was catching knives mid-dump. v4 requires the dip to be TURNING (last hour green) before any dip-buyer enters.',
+    'Faster everything: a round every 2.5 minutes (was 5), 64 candidates per scan (was 48), rotating discovery queries for wider coverage.',
+    'Wallet intel v2: 20+ SOL whale entries are tracked per token (a whale-lane signal), and crowds of consistent LOSERS on a token now penalize its score — dumb money marks tops.',
+    'Every archetype now has a complete written trading philosophy — entry, exit, patience and temperament tuned to its identity.',
+  ],
 };
 const START = 2000;                // each wallet starts here
 const GRAD = START * 10;           // 10× → graduate (champion)
 const BUST = START * 0.10;         // lose 90% → bust (dead)
-const TICK_MS = 5 * 60 * 1000;     // minimum spacing between ticks (any pinger can advance it)
+const TICK_MS = 150 * 1000;        // v4: a round every 2.5 min (any pinger can advance it)
 const DAY_MS = 24 * 60 * 60 * 1000;
 const FEE = 0.99;                  // 1% taker fee each side
-const POOL = 48;                   // candidate tokens fetched per tick (batched, multi-source)
-const LEARN_EVERY = 6;             // run a learning review every N ticks (frequent + visible)
+const POOL = 64;                   // v4: 64 candidate tokens per round (batched, multi-source)
+const LEARN_EVERY = 8;             // learning review every N rounds (~20 min at the v4 clock)
 // Full lifetime ledger — keep thousands of trades so the history is "from day one", never a
 // rolling window. (10 bots × 4000 trades × ~0.25KB ≈ 10MB, well under the 25MB KV value cap.)
 const TRADES_KEEP = 4000, EQUITY_KEEP = 1500, HISTORY_KEEP = 400;
@@ -80,15 +88,20 @@ const FACTORS = [
   { k: 'liq', g: 'On-chain health' }, { k: 'vol', g: 'On-chain health' }, { k: 'pressure', g: 'On-chain health' },
   { k: 'age', g: 'On-chain health' }, { k: 'priceTrend', g: 'Momentum' }, { k: 'lifecycle', g: 'Momentum' },
 ];
-// v3 signal weights, set by MEASURED outcomes (447 trades): small accumulation bonus (least-bad
-// signal), big bonus for crashed (the only profitable entry), and attention (boosts/trending/
-// spikes) is now a PENALTY — those entries averaged -$20 to -$25 per trade.
+// v4 signal weights, set by MEASURED outcomes: FRESH is the only positive-edge signal
+// (+$1.45/trade, 26% win rate — everything else negative over 1,500+ samples) so the fast lanes
+// lean into it hard; accumulation small; crashed big for the knife lane; whales-in favours the
+// deep-pocket lanes. Attention (boosts/trending/spikes) stays a PENALTY (-$20..-25/trade).
 const SRC_BONUS = {
+  fresh: { sniper: 9, degen: 7, balanced: 4, momentum: 4, insider: 3, knife: 2 },
+  'st-grad': { sniper: 9, degen: 7, balanced: 4, momentum: 4 },
   accumulation: { smart: 6, insider: 6, balanced: 4, whale: 3, conservative: 3 },
   crashed: { knife: 12, degen: 6, balanced: 4 },
+  whales: { whale: 8, conservative: 4, safety: 4, smart: 3 },
 };
-// flat score penalties for attention signals (applied to every archetype)
-const ATTN_PENALTY = { 'volume-spike': -10, boosted: -8, 'new-boost': -6, trending: -5 };
+// flat score penalties (applied to every archetype): attention = exit liquidity, and a crowd of
+// consistent LOSERS on a token marks a top (dumb money arrives last).
+const ATTN_PENALTY = { 'volume-spike': -10, boosted: -8, 'new-boost': -6, trending: -5, 'dumb-crowd': -7 };
 // v3: smart-money score boost neutralized (measured -$19.7/trade, 10% win rate, n=326). Kept at
 // tiny values only so the signal keeps accruing measurable data via edgeAdj.
 const SMART_EXTRA = { smart: 2, insider: 2 };
@@ -106,31 +119,68 @@ function deriveTags(p) {
   return tags;
 }
 
-// STRATEGY v3 — rebuilt from v2's 447 real trades (v2 lost 41.5%, win rate 10–13%). The data:
-//   • ALL attention entries bled (boosted -$25/tr, spike -$20, trending -$23) → promoted tokens
-//     are exit liquidity. v3: attention is a PENALTY; no archetype buys because of promotion.
-//   • The knife (buy after a 90% crash) was the ONLY profitable bot (+13%) → buy blood, not
-//     attention: most archetypes now enter on dips/pullbacks/crashes, not green candles.
-//   • Smart-money signal was anti-predictive (-$19.7/tr, n=326) → buy override removed; winner
-//     scoring rebuilt on ROI+consistency (rankWinners in _utils).
-//   • Costs ate thin trades → fewer positions (max 4), pickier bar, deeper liquidity floors.
-// `trig(M)` is the signal that makes it buy. M = raw per-token metrics from scanUniverse.
+// STRATEGY v4 — every archetype is now a COMPLETE trader: its own entry (what it hunts), its own
+// EXIT ENGINE (tp = first target where it banks `scaleOut` of the bag; be = once up this %, the
+// stop locks at +6% so a winner can never become a loser; trailStart/trailPct = ride runners with
+// a trailing stop off the peak; hold = patience in rounds), and its own written philosophy.
+// Grounded in measured data: fresh launches = the only +EV signal; dips must be TURNING (pc1>0)
+// before dip-buyers touch them; attention is penalized; loser-crowds mark tops.
 const PROFILE = {
-  // v3: nearly every archetype buys RED (dips, pullbacks, crashes) — the only entries that paid.
-  degen:        { capMin: 30e3,  capMax: 2e6,   liqMin: 15e3, hold: 14, tp: 45, sl: 22, trig: (m) => m.drawdown >= 0.5 && m.pc6 > -8 && m.buyRatio6 >= 0.5,                   label: 'half-price young movers (≥50% off peak)' },
-  sniper:       { capMin: 60e3,  capMax: 2e6,   liqMin: 25e3, hold: 10, tp: 30, sl: 15, trig: (m) => m.ageDays != null && m.ageDays >= 0.5 && m.ageDays < 6 && m.clean && m.pc6 < 0 && m.pc24 > -40 && m.buyRatio6 >= 0.5, label: 'young launches on their first pullback' },
-  insider:      { capMin: 100e3, capMax: 5e6,   liqMin: 25e3, hold: 20, trig: (m) => m.accum && m.clean && m.pc6 < 10,                                                        label: 'quiet accumulation, clean, not extended' },
-  smart:        { capMin: 150e3, capMax: 10e6,  liqMin: 30e3, hold: 20, trig: (m) => m.accum && m.clean && m.buyRatio24 > 0.5,                                                label: 'confirmed accumulation' },
-  momentum:     { capMin: 300e3, capMax: 25e6,  liqMin: 40e3, hold: 12, trig: (m) => m.pc24 > 10 && m.pc6 <= 0 && m.pc6 > -15,                                                label: 'uptrends, bought on the pullback' },
-  narrative:    { capMin: 300e3, capMax: 25e6,  liqMin: 30e3, hold: 14, trig: (m) => m.srcTrendy && m.pc6 < -5 && m.pc24 > -25,                                               label: 'hyped names on red candles only' },
-  balanced:     { capMin: 150e3, capMax: 50e6,  liqMin: 25e3, hold: 24, trig: (m) => (m.drawdown >= 0.4 && m.buyRatio6 > 0.5) || (m.accum && m.clean),                        label: 'discounts + accumulation' },
-  whale:        { capMin: 1e6,   capMax: 300e6, liqMin: 80e3, hold: 36, trig: (m) => m.liq >= 80e3 && m.pc6 <= -3 && m.pc24 > -25,                                            label: 'deep-liquidity dips' },
-  // The v2 champion (+13% while everything bled): tokens ≥85% off their peak, still liquid, still
-  // breathing. Buys the bottom, takes 70% at TP, rides a MOON BAG to +160% or breakeven.
-  knife:        { capMin: 3e3,   capMax: 100e3, liqMin: 3e3,  hold: 80, tp: 35, sl: 30, moonBag: true, moonTP: 160,
-                  trig: (m) => m.drawdown >= 0.85 && m.liq >= 3e3 && m.buyRatio6 >= 0.5,                                                                                     label: 'crashed tokens, bottom-fishing' },
-  conservative: { capMin: 1e6,   capMax: 300e6, liqMin: 60e3, hold: 40, trig: (m) => m.clean && m.ageDays != null && m.ageDays > 3 && m.pc6 < -2 && m.pc24 > -20,            label: 'established pullbacks' },
-  safety:       { capMin: 1e6,   capMax: 300e6, liqMin: 80e3, hold: 40, trig: (m) => m.clean && m.liq >= 80e3 && m.pc24 >= -15 && m.pc24 <= 10 && m.buyRatio24 >= 0.5,       label: 'deep, calm, clean' },
+  degen: {
+    capMin: 30e3, capMax: 2e6, liqMin: 15e3, hold: 14, tp: 35, sl: 18, be: 10, trailStart: 15, trailPct: 10, scaleOut: 0.5,
+    trig: (m) => m.drawdown >= 0.5 && m.pc1 > 0 && m.buyRatio6 >= 0.5,
+    label: 'half-price young movers, dip TURNING up',
+    philosophy: 'Buys fear, sells greed, fast. Wants tokens at half price where the last hour already turned green — never catches a falling mid-dump. Banks half at +35%, trails the rest, and refuses to let green turn red.' },
+  sniper: {
+    capMin: 50e3, capMax: 2e6, liqMin: 20e3, hold: 8, tp: 15, sl: 12, be: 7, trailStart: 12, trailPct: 8, scaleOut: 0.7,
+    trig: (m) => m.ageDays != null && m.ageDays >= 0.3 && m.ageDays < 5 && m.clean && m.pc6 < 5 && m.pc24 > -40 && m.buyRatio6 >= 0.52,
+    label: 'fresh launches, scalped',
+    philosophy: 'The scalper. Lives in the fresh-launch lane (the only signal with measured positive edge), enters after the first shake-out, banks 70% at +15% and is gone. Never marries a position — 8 rounds max, in and out.' },
+  insider: {
+    capMin: 100e3, capMax: 5e6, liqMin: 25e3, hold: 20, tp: 30, sl: 15, be: 11, trailStart: 20, trailPct: 12, scaleOut: 0.6,
+    trig: (m) => m.accum && m.clean && m.pc6 < 10,
+    label: 'quiet accumulation, clean, not extended',
+    philosophy: 'Watches for quiet, steady buying in clean contracts before the crowd arrives. Patient on entry, disciplined on exit: locks breakeven early, banks 60% at +30%, lets the insider thesis run with a trail.' },
+  smart: {
+    capMin: 150e3, capMax: 10e6, liqMin: 30e3, hold: 20, tp: 30, sl: 15, be: 11, trailStart: 20, trailPct: 12, scaleOut: 0.6,
+    trig: (m) => m.accum && m.clean && m.buyRatio24 > 0.5,
+    label: 'confirmed accumulation',
+    philosophy: 'Follows evidence, not hype: sustained accumulation with all-day buy pressure in clean contracts. Takes the confirmed setup, protects it at breakeven, and scales out into strength.' },
+  momentum: {
+    capMin: 300e3, capMax: 25e6, liqMin: 40e3, hold: 12, tp: 45, sl: 15, be: 10, trailStart: 10, trailPct: 10, scaleOut: 0.5,
+    trig: (m) => m.pc24 > 10 && m.pc6 <= 2 && m.pc6 > -15 && m.buyRatio6 >= 0.5,
+    label: 'uptrends, bought on the pullback',
+    philosophy: 'Rides trends but never chases candles: only enters an established uptrend during its pullback. The trailing stop IS the strategy — it starts trailing at just +10% and stays on the trend until the trend itself breaks.' },
+  narrative: {
+    capMin: 300e3, capMax: 25e6, liqMin: 30e3, hold: 14, tp: 25, sl: 14, be: 9, trailStart: 16, trailPct: 10, scaleOut: 0.6,
+    trig: (m) => m.srcTrendy && m.pc6 < -5 && m.pc24 > -25,
+    label: 'hyped names on red candles only',
+    philosophy: 'Trades attention AGAINST the crowd: hyped names only on their red candles, when paper hands are shaking out. Quick +25% target because narrative pops fade fast; breakeven-locked so a dead narrative costs nothing.' },
+  balanced: {
+    capMin: 150e3, capMax: 50e6, liqMin: 25e3, hold: 24, tp: 30, sl: 15, be: 10, trailStart: 18, trailPct: 11, scaleOut: 0.6,
+    trig: (m) => (m.drawdown >= 0.4 && m.pc1 > 0 && m.buyRatio6 > 0.5) || (m.accum && m.clean),
+    label: 'turning discounts + accumulation',
+    philosophy: 'The all-rounder: buys real discounts that are already turning, or clean accumulation. Middle-of-road targets, disciplined breakeven protection, moderate patience. Boring on purpose — and it led v3.' },
+  whale: {
+    capMin: 1e6, capMax: 300e6, liqMin: 80e3, hold: 36, tp: 25, sl: 14, be: 10, trailStart: 20, trailPct: 12, scaleOut: 0.5,
+    trig: (m) => m.liq >= 80e3 && m.pc6 <= -3 && m.pc24 > -25,
+    label: 'deep-liquidity dips (follows real whales)',
+    philosophy: 'Size needs depth: only deep pools where 20+ SOL whale entries are visible and exits are cheap. Buys institutional-grade dips, takes a modest +25% and trails — grinding singles, never swinging for fences.' },
+  knife: {
+    capMin: 3e3, capMax: 100e3, liqMin: 3e3, hold: 80, tp: 35, sl: 30, be: 14, moonBag: true, moonTP: 160,
+    trig: (m) => m.drawdown >= 0.85 && m.liq >= 3e3 && m.buyRatio6 >= 0.5,
+    label: 'crashed tokens, bottom-fishing',
+    philosophy: 'The contrarian champion (+13% while everything bled). Buys tokens down 85%+ that still breathe, banks 70% on the dead-cat bounce, and keeps a moon bag riding to +160% — because the one that re-runs pays for every one that stays dead.' },
+  conservative: {
+    capMin: 1e6, capMax: 300e6, liqMin: 60e3, hold: 40, tp: 25, sl: 13, be: 9, trailStart: 18, trailPct: 11, scaleOut: 0.5,
+    trig: (m) => m.clean && m.ageDays != null && m.ageDays > 3 && m.pc6 < -2 && m.pc24 > -20,
+    label: 'established pullbacks',
+    philosophy: 'Survival first. Only established, clean, deep names on orderly pullbacks. Small targets banked early, stops tight, breakeven locked fast — compounding beats gambling.' },
+  safety: {
+    capMin: 1e6, capMax: 300e6, liqMin: 80e3, hold: 40, tp: 20, sl: 12, be: 8, trailStart: 15, trailPct: 10, scaleOut: 0.6,
+    trig: (m) => m.clean && m.liq >= 80e3 && m.pc24 >= -15 && m.pc24 <= 10 && m.buyRatio24 >= 0.5,
+    label: 'deep, calm, clean',
+    philosophy: 'The most paranoid desk in the lab: every gate clean, deep liquidity, calm price action, real buy support. Takes +20% singles with an iron breakeven rule. Its job is to never explain a blow-up.' },
 };
 // does this archetype want this token? (cap band + liquidity floor + its trigger + quality bar)
 // v3: the smart-money buy override is GONE — the signal measured anti-predictive (-$19.7/trade).
@@ -324,10 +374,13 @@ async function scanUniverse(env, nowTs, smartMap, learnedEdge, capMaxOf) {
     const reawaken = ageDays != null && ageDays > 7 && spike;            // dormant token suddenly active
     const srcTrendy = sources.indexOf('trending') >= 0 || sources.indexOf('boosted') >= 0 || sources.indexOf('new-boost') >= 0;
     const sm = smartMap[mint]; const smart = sm ? (sm.score || 0) : 0; const smartCount = sm ? (sm.count || 0) : 0;
+    const whales = sm ? (sm.whales || 0) : 0; const dumb = sm ? (sm.dumb || 0) : 0;
     if (smartCount > 0 && sources.indexOf('smart-money') < 0) sources.push('smart-money');
+    if (whales > 0 && sources.indexOf('whales') < 0) sources.push('whales');
+    if (dumb >= 2 && sources.indexOf('dumb-crowd') < 0) sources.push('dumb-crowd');
     const capPeak = Math.max(capMaxOf[mint] || 0, mcap); const drawdown = capPeak > 0 ? +(1 - mcap / capPeak).toFixed(3) : 0;
     if (drawdown >= 0.9 && sources.indexOf('crashed') < 0) sources.push('crashed');
-    const M = { mcap, liq, ageDays, vol24, vol6, vol1, pc1, pc6, pc24, buyRatio6, buyRatio24, spike, accum, reawaken, clean, srcTrendy, smart, smartCount, capPeak, drawdown };
+    const M = { mcap, liq, ageDays, vol24, vol6, vol1, pc1, pc6, pc24, buyRatio6, buyRatio24, spike, accum, reawaken, clean, srcTrendy, smart, smartCount, whales, dumb, capPeak, drawdown };
 
     const Vv = {
       liq: logScore(liq, 3000, 1000000), vol: logScore(vol24, 5000, 5000000),
@@ -564,7 +617,13 @@ async function advance(state, env, nowTs) {
     const p = w.params;
     const prof = PROFILE[b.id];
 
-    // manage open positions (hold horizon is per-archetype)
+    // manage open positions — the v4 EXIT ENGINE (win rate is the target):
+    //   1. scale-out: at the first target, bank `scaleOut` of the bag; rest rides
+    //   2. breakeven lock: once the trade has BEEN up ≥ be%, the stop rises to +6% —
+    //      a winner can never round-trip into a loser again
+    //   3. trailing stop: once up ≥ trailStart%, trail trailPct% off the peak
+    //   4. second target: after scaling out, close the runner at 2× the first target
+    //   5. time-stop: per-archetype patience
     for (const m of Object.keys(w.positions)) {
       const pos = w.positions[m];
       const price = priceOf(m);
@@ -572,20 +631,31 @@ async function advance(state, env, nowTs) {
       pos.last = price;
       const liqNow = (uScore[m] && uScore[m].liq) || 0;
       const up = (price / pos.entry - 1) * 100;
+      pos.peakUp = Math.max(pos.peakUp || 0, up);
       const eTp = prof.tp != null ? prof.tp : p.tp;   // profile can override the learned TP/SL
       const eSl = prof.sl != null ? prof.sl : p.sl;
+      const be = prof.be != null ? prof.be : 11;
+      const tS = prof.trailStart != null ? prof.trailStart : 18;
+      const tP = prof.trailPct != null ? prof.trailPct : 11;
+      const sOut = prof.scaleOut != null ? prof.scaleOut : 0.6;
       let rec = null;
       if (prof.moonBag) {
-        // scale out: take most profit at TP, ride a moon bag to a big target or back to breakeven
+        // knife: bank 70% on the bounce, ride a moon bag; breakeven-lock protects pre-bounce gains
         if (!pos.moon && up >= eTp) { rec = sell(w, m, price, 'take-profit', tick, nowTs, liqNow, 0.7); if (rec) pos.moon = true; }
         else if (pos.moon && up >= prof.moonTP) rec = sell(w, m, price, 'moon-bag hit +' + prof.moonTP + '%', tick, nowTs, liqNow, 1);
         else if (pos.moon && up <= 3) rec = sell(w, m, price, 'moon-bag back to breakeven', tick, nowTs, liqNow, 1);
+        else if (!pos.moon && (pos.peakUp || 0) >= be && up <= 6) rec = sell(w, m, price, 'breakeven-lock', tick, nowTs, liqNow, 1);
         else if (!pos.moon && up <= -eSl) rec = sell(w, m, price, 'stop-loss', tick, nowTs, liqNow, 1);
         else if (tick - pos.tick >= prof.hold) rec = sell(w, m, price, 'time-stop', tick, nowTs, liqNow, 1);
       } else {
-        if (up >= eTp) rec = sell(w, m, price, 'take-profit', tick, nowTs, liqNow);
-        else if (up <= -eSl) rec = sell(w, m, price, 'stop-loss', tick, nowTs, liqNow);
-        else if (tick - pos.tick >= prof.hold) rec = sell(w, m, price, 'time-stop', tick, nowTs, liqNow);
+        // dynamic stop: hard stop → breakeven lock (+6%) → trailing off the peak
+        let stop = -eSl, stopReason = 'stop-loss';
+        if ((pos.peakUp || 0) >= tS) { const t = pos.peakUp - tP; if (t > stop) { stop = t; stopReason = 'trailing-stop'; } }
+        else if ((pos.peakUp || 0) >= be && 6 > stop) { stop = 6; stopReason = 'breakeven-lock'; }
+        if (!pos.scaled && up >= eTp) { rec = sell(w, m, price, 'take-profit', tick, nowTs, liqNow, sOut); if (rec) pos.scaled = true; }
+        else if (pos.scaled && up >= eTp * 2) rec = sell(w, m, price, 'second-target', tick, nowTs, liqNow, 1);
+        else if (up <= stop) rec = sell(w, m, price, stopReason, tick, nowTs, liqNow, 1);
+        else if (tick - pos.tick >= prof.hold) rec = sell(w, m, price, 'time-stop', tick, nowTs, liqNow, 1);
       }
       if (rec) closures.push({ mint: m, pnl: rec.pnl });
     }
@@ -672,7 +742,7 @@ function publicState(state, nowTs) {
       openCount: positions.length, positions,
       params: { threshold: w.params.threshold, tp: w.params.tp, sl: w.params.sl, posPct: Math.round(w.params.posPct * 100), slip: +(w.params.slip * 100).toFixed(1) },
       baseParams: baseParams(b.dial),
-      profile: { capMin: PROFILE[b.id].capMin, capMax: PROFILE[b.id].capMax, liqMin: PROFILE[b.id].liqMin, hold: PROFILE[b.id].hold, label: PROFILE[b.id].label },
+      profile: { capMin: PROFILE[b.id].capMin, capMax: PROFILE[b.id].capMax, liqMin: PROFILE[b.id].liqMin, hold: PROFILE[b.id].hold, label: PROFILE[b.id].label, philosophy: PROFILE[b.id].philosophy || '', exits: { tp: PROFILE[b.id].tp || null, sl: PROFILE[b.id].sl || null, be: PROFILE[b.id].be || null, trailStart: PROFILE[b.id].trailStart || null, trailPct: PROFILE[b.id].trailPct || null, scaleOut: PROFILE[b.id].scaleOut || null, moonTP: PROFILE[b.id].moonTP || null } },
       log: w.trades.slice(0, LOG_PREVIEW), logTotal: w.trades.length, totalClosed: w.wins + w.losses,
       history: w.history.slice(0, 60), historyTotal: w.history.length, equityCurve: w.equity.slice(-120),
     };

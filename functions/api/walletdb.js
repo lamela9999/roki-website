@@ -9,7 +9,7 @@
 // Net SOL across observed tokens is a recent-window performance PROXY (not lifetime PnL) — it
 // sharpens as the DB accumulates. Decoupled from the lab tick to respect CF subrequest limits.
 
-import { json, preflight, buildUniverse, rankWinners } from './_utils.js';
+import { json, preflight, buildUniverse, rankWinners, rankLosers } from './_utils.js';
 
 export const onRequestOptions = () => preflight();
 
@@ -170,23 +170,27 @@ export async function onRequestGet(context) {
       const SMART_TOP = 150;
       const ranked = rankWinners(db.wallets, SMART_TOP);
       const rankOf = {}; ranked.forEach((w, i) => { rankOf[w.addr] = i + 1; }); // 1 = best
+      const loserSet = new Set(rankLosers(db.wallets, 300).map((w) => w.addr)); // dumb-money crowd
       let smap = await KV.get('radar:db:smartmap', 'json').catch(() => null);
       if (!smap || !smap.tokens) smap = { tokens: {} };
       for (const mint of Object.keys(perByMint)) {
         const { per, sym } = perByMint[mint];
         const buyers = [], sellers = [];
+        let whales = 0, dumb = 0;
         for (const a of Object.keys(per)) {
-          if (rankOf[a] == null) continue;                 // only proven winners
+          if (per[a].in >= 20e9) whales++;                 // 20+ SOL into THIS token = whale entry
+          if (loserSet.has(a)) dumb++;                     // consistent loser present = top marker
+          if (rankOf[a] == null) continue;                 // only proven winners below
           const net = (per[a].out - per[a].in) / 1e9;      // <0 = accumulating, >0 = distributing
           if (net < 0) buyers.push({ addr: a, rank: rankOf[a], tokenNet: +net.toFixed(2) });
           else if (net > 0) sellers.push({ addr: a, rank: rankOf[a], tokenNet: +net.toFixed(2) });
         }
         buyers.sort((x, y) => x.rank - y.rank); sellers.sort((x, y) => x.rank - y.rank);
         const present = buyers.length + sellers.length;
-        if (present > 0) {
+        if (present > 0 || whales > 0 || dumb > 0) {
           // conviction score: ranked accumulators add, distributors subtract
           const score = +(buyers.reduce((s, b) => s + (SMART_TOP + 1 - b.rank) / SMART_TOP, 0) - sellers.length * 0.3).toFixed(2);
-          smap.tokens[mint] = { sym, score, count: buyers.length, sellers: sellers.length, present, buyers: buyers.slice(0, 10), updated: nowTs };
+          smap.tokens[mint] = { sym, score, count: buyers.length, sellers: sellers.length, present, whales, dumb, buyers: buyers.slice(0, 10), updated: nowTs };
         }
       }
       const sk = Object.keys(smap.tokens);

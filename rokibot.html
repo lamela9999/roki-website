@@ -901,7 +901,7 @@ function fmtCap(v){v=+v||0;if(v>=1e9)return '$'+(v/1e9).toFixed(2)+'B';if(v>=1e6
 function fmtPx(p){p=+p||0;if(p<=0)return '$0';if(p>=1)return '$'+p.toFixed(3);if(p>=0.001)return '$'+p.toFixed(5);return '$'+p.toPrecision(2);}
 function fmtT(ts){if(!ts)return '—';try{return new Date(ts).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});}catch(e){return '—';}}
 function fmtQty(q){q=+q||0;if(q>=1e6)return (q/1e6).toFixed(2)+'M';if(q>=1e3)return (q/1e3).toFixed(1)+'K';return q.toFixed(q<1?4:1);}
-var LAB_SRC={'smart-money':'🔥 smart money','crashed':'🔪 crashed -90%','volume-spike':'⚡ spike','accumulation':'📈 accumulation','trending':'🔥 trending','fresh':'🌱 new','boosted':'📣 boosted','volume':'📊 high volume','new-boost':'📣 boosted','profile':'📋 listed','search':'🔎 found'};
+var LAB_SRC={'smart-money':'🔥 smart money','crashed':'🔪 crashed -90%','volume-spike':'⚡ spike','accumulation':'📈 accumulation','trending':'🔥 trending','fresh':'🌱 new','boosted':'📣 boosted','volume':'📊 high volume','new-boost':'📣 boosted','profile':'📋 listed','search':'🔎 found','st-grad':'🌱 just graduated','whales':'🐋 whales in','dumb-crowd':'🙈 loser crowd'};
 function labSrcTag(src){if(!src)return '';var l=LAB_SRC[src]||src;return ' <span class="faint" style="font-size:9px;border:1px solid var(--hairline);border-radius:4px;padding:0 3px">'+l+'</span>';}
 function labUniverseLine(u){
   if(!u||!u.tags)return '';
@@ -972,7 +972,13 @@ function labStatusBadge(b){
 }
 function labDetail(b){
   var P=b.params,BP=b.baseParams,bpos=Math.round(BP.posPct*100);
-  var hunt=b.profile?'<div style="background:var(--paper);border:1px solid var(--hairline);border-radius:6px;padding:7px 9px;margin:6px 0;font-size:11px"><b>🎯 Hunts:</b> '+escapeHtml(b.profile.label)+' · market caps <b>'+fmtCap(b.profile.capMin)+'–'+fmtCap(b.profile.capMax)+'</b> · min liquidity '+fmtCap(b.profile.liqMin)+' · holds up to <b>'+b.profile.hold+' rounds</b></div>':'';
+  var ex=b.profile&&b.profile.exits;
+  var exitLine=ex?('banks '+(ex.scaleOut?Math.round(ex.scaleOut*100)+'% at':'at')+' +'+(ex.tp||'?')+'%'+(ex.moonTP?' · moon bag to +'+ex.moonTP+'%':(ex.trailStart?' · trails '+ex.trailPct+'% once +'+ex.trailStart+'%':''))+(ex.be?' · locks breakeven after +'+ex.be+'%':'')+' · stop -'+(ex.sl||'?')+'%'):'';
+  var hunt=b.profile?'<div style="background:var(--paper);border:1px solid var(--hairline);border-radius:6px;padding:7px 9px;margin:6px 0;font-size:11px">'
+    +(b.profile.philosophy?'<div style="margin-bottom:4px;font-style:italic;color:#5a544c">“'+escapeHtml(b.profile.philosophy)+'”</div>':'')
+    +'<b>🎯 Hunts:</b> '+escapeHtml(b.profile.label)+' · caps <b>'+fmtCap(b.profile.capMin)+'–'+fmtCap(b.profile.capMax)+'</b> · min liq '+fmtCap(b.profile.liqMin)+' · patience '+b.profile.hold+' rounds'
+    +(exitLine?'<div style="margin-top:3px"><b>🚪 Exits:</b> '+exitLine+'</div>':'')
+    +'</div>':'';
   var strat='<div style="background:var(--cream);border:1.5px solid var(--ink);border-radius:8px;padding:10px;margin:6px 0">'
     +'<div class="klabel" style="margin-bottom:6px">its strategy right now <span class="faint" style="text-transform:none">(vs the profile it started with)</span></div>'
     +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;font-size:12px">'
@@ -1000,7 +1006,8 @@ function labDetail(b){
         +'</div>';
     }
     var win=t.pnl>=0;var col=win?'#0F7A45':'#B02A2A';
-    var rlabel={'take-profit':'hit take-profit','stop-loss':'hit stop-loss','time-stop':'held too long'}[t.reason]||t.reason||'';
+    var rparts=(t.reason||'').split(' (');
+    var rlabel=({'take-profit':'hit take-profit','stop-loss':'hit stop-loss','time-stop':'held too long','breakeven-lock':'breakeven locked','trailing-stop':'trailed out off the peak','second-target':'second target hit'}[rparts[0]]||t.reason||'')+(rparts[1]?' ('+rparts[1]:'');
     var heldMin=(t.tsIn&&t.ts)?Math.max(1,Math.round((t.ts-t.tsIn)/60000)):null;
     return '<div style="border-bottom:1px solid var(--hairline);padding:6px 0">'
       +'<div style="display:flex;gap:6px;align-items:baseline;font-size:11px"><span class="faint mono">'+fmtT(t.ts)+'</span><span class="mono" style="color:'+col+';font-weight:700">SELL</span><span style="font-weight:600">$'+escapeHtml(t.symbol||'?')+'</span> <span class="faint">'+escapeHtml(rlabel)+'</span> '+(win?'<span style="color:#0F7A45">✓</span>':'<span style="color:#B02A2A">✗</span>')+'<span style="flex:1"></span><span class="mono" style="color:'+col+';font-weight:700">'+(win?'+':'')+lm(t.pnl)+'</span></div>'

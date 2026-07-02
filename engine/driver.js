@@ -15,8 +15,8 @@
  */
 
 const BASE = process.env.ROKI_BASE || 'https://roki.buzz';
-const WALLET_EVERY = (+(process.env.WALLET_EVERY_S || 120)) * 1000;
-const LAB_EVERY = (+(process.env.LAB_EVERY_S || 180)) * 1000;
+const WALLET_EVERY = (+(process.env.WALLET_EVERY_S || 90)) * 1000;
+const LAB_EVERY = (+(process.env.LAB_EVERY_S || 150)) * 1000;
 // NOTE: no /api/newlaunches polling — v1 of this driver burned the Solana Tracker free quota
 // (720 calls/day vs 2,500/mo). The site now KV-caches that feed itself; the engine must not hit it.
 

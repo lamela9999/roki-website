@@ -152,6 +152,21 @@ export function rankWinners(wallets, topN) {
     .slice(0, topN);
 }
 
+// The mirror image: CONSISTENT LOSERS. Wallets with real money in (≥1 SOL), a track record
+// (≥5 swaps), and a losing ROI (≤0.75×). A crowd of these on a token marks a top — dumb money
+// arrives last. Used as a per-token warning signal.
+export function rankLosers(wallets, topN) {
+  topN = topN || 300;
+  return Object.keys(wallets || {}).map((a) => {
+    const w = wallets[a] || {};
+    const inS = +w.inSol || 0, outS = +w.outSol || 0, n = +w.n || 0;
+    const roi = inS >= 1 ? outS / inS : 1;
+    return { addr: a, roi: +roi.toFixed(3), n };
+  }).filter((w) => w.n >= 5 && w.roi <= 0.75)
+    .sort((x, y) => x.roi - y.roi)
+    .slice(0, topN);
+}
+
 // Solana Tracker graduated feed, KV-cached 20 min so the whole site shares ONE upstream call —
 // protects the free-tier quota (a 2-min polling loop burned a month's credits in days).
 export async function getGraduated(env) {
@@ -193,7 +208,14 @@ export async function buildUniverse(env) {
   //    fast-fail so a rate-limit blip never stalls us
   //  • Solana Tracker — purpose-built new/trending/graduating feed; activates if SOLANATRACKER_KEY
   //    is set in the Cloudflare env (free key → real new launches). Dormant until then.
-  const SEARCH = ['pump', 'SOL', 'moon', 'wif'];
+  // v4: rotating search queries — a different 4-pack every 10 minutes, so successive rounds
+  // sweep DIFFERENT corners of the market instead of re-fetching the same 30 pairs.
+  const SEARCH_SETS = [
+    ['pump', 'SOL', 'moon', 'wif'],
+    ['ai', 'cat', 'dog', 'pepe'],
+    ['coin', 'baby', 'inu', 'trump'],
+  ];
+  const SEARCH = SEARCH_SETS[Math.floor(Date.now() / 600000) % SEARCH_SETS.length];
   const gtH = { accept: 'application/json' };
   const res = await Promise.all([
     get('https://api.dexscreener.com/token-boosts/top/v1'),
@@ -201,6 +223,7 @@ export async function buildUniverse(env) {
     get('https://api.dexscreener.com/token-profiles/latest/v1'),
     ...SEARCH.map((q) => get('https://api.dexscreener.com/latest/dex/search?q=' + encodeURIComponent(q))),
     get('https://api.geckoterminal.com/api/v2/networks/solana/new_pools?page=1', gtH, 2),
+    get('https://api.geckoterminal.com/api/v2/networks/solana/new_pools?page=2', gtH, 1),
     get('https://api.geckoterminal.com/api/v2/networks/solana/trending_pools?page=1', gtH, 2),
     // Solana Tracker just-graduated tokens — via the shared 20-min KV cache (quota-safe)
     getGraduated(env),
@@ -208,7 +231,7 @@ export async function buildUniverse(env) {
   let k = 0;
   const bt = res[k++], bl = res[k++], prof = res[k++];
   const searches = res.slice(k, k + SEARCH.length); k += SEARCH.length;
-  const np = res[k++], trend = res[k++], stGrad = res[k++];
+  const np = res[k++], np2 = res[k++], trend = res[k++], stGrad = res[k++];
 
   for (const b of bt || []) if (b && b.chainId === 'solana' && b.tokenAddress) add(b.tokenAddress, 'boosted');
   for (const b of bl || []) if (b && b.chainId === 'solana' && b.tokenAddress) add(b.tokenAddress, 'new-boost');
@@ -217,6 +240,7 @@ export async function buildUniverse(env) {
 
   const mintOf = (p) => { const id = p && p.relationships && p.relationships.base_token && p.relationships.base_token.data && p.relationships.base_token.data.id; return id ? String(id).replace(/^solana_/, '') : null; };
   for (const p of (np && np.data) || []) { const m = mintOf(p); if (m) add(m, 'fresh'); }
+  for (const p of (np2 && np2.data) || []) { const m = mintOf(p); if (m) add(m, 'fresh'); }
   for (const p of (trend && trend.data) || []) { const m = mintOf(p); if (m) add(m, 'trending'); }
 
   // Solana Tracker graduated tokens: each item is { token:{mint}, pools, risk, ... }
