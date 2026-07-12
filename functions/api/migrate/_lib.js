@@ -9,7 +9,10 @@
 //   roki:migration:sub:<solAddr>   — one key per registration (no read-modify-write races)
 //   roki:migration:cfg:secret      — HMAC secret for stateless nonces (self-initialized)
 //   roki:migration:cfg:adminkey    — admin key (bootstrapped via admin.js ?savekey=, like sourcetest)
-import { solRpc } from '../_utils.js';
+// NOTE: deliberately not using _utils.solRpc here — it routes cheap calls
+// publicnode-first, and publicnode answers getSignaturesForAddress with an
+// EMPTY list when throttling instead of an error. For a payout ledger an
+// empty answer must be treated as a failure, never as "no deposits".
 
 export const ROKI_MINT = 'J96hj2LiXw6UFPm7cpGQV99G5SJi4mpP7PQRZFC6brrr';
 export const DEPOSIT_ADDRESS = '97EasS5jL7SNhmZeFFWEcbAAyFWABooNVFGSy4wRzji3';
@@ -141,6 +144,32 @@ function rpcUrls(env) {
   ].filter(Boolean);
 }
 
+// Signature history page, Helius-first. An empty FIRST page for the deposit
+// account is impossible (it has real history) — treat it as a throttled/lying
+// endpoint and try the next one; only a paginated (before-cursor) empty page
+// is a legitimate end-of-history.
+async function sigPage(acc, before, env) {
+  let lastErr = 'no endpoint';
+  for (const url of rpcUrls(env)) {
+    try {
+      const r = await fetch(url, {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0', id: 1, method: 'getSignaturesForAddress',
+          params: [acc, { limit: 1000, before, commitment: 'confirmed' }],
+        }),
+      });
+      if (!r.ok) { lastErr = `HTTP ${r.status}`; continue; }
+      const j = await r.json();
+      if (j.error) { lastErr = JSON.stringify(j.error).slice(0, 120); continue; }
+      if (!Array.isArray(j.result)) { lastErr = 'malformed result'; continue; }
+      if (j.result.length === 0 && !before) { lastErr = 'empty first page (throttled?)'; continue; }
+      return j.result;
+    } catch (e) { lastErr = String(e.message || e); }
+  }
+  throw new Error(`signature history unavailable: ${lastErr}`);
+}
+
 // One JSON-RPC batch request = one subrequest, so a full history scan stays
 // well inside the Workers subrequest budget.
 async function txBatch(sigs, env) {
@@ -191,8 +220,7 @@ async function rescan(env) {
     const sigs = [];
     let before;
     for (;;) {
-      const page = await solRpc('getSignaturesForAddress', [acc, { limit: 1000, before, commitment: 'confirmed' }], env);
-      if (!Array.isArray(page)) throw new Error('signature fetch failed');
+      const page = await sigPage(acc, before, env);
       sigs.push(...page);
       if (page.length < 1000) break;
       before = page[page.length - 1].signature;
@@ -205,6 +233,10 @@ async function rescan(env) {
       for (const tx of txs) creditTransfers(tx, acc, senders);
     }
   }
+  // A ledger with zero credited deposits is always a failed scan for this
+  // account (392M+ ROKI was deposited) — never cache it, or /submit would
+  // wrongly reject every registrant for 5 minutes.
+  if (Object.keys(senders).length === 0) throw new Error('scan produced an empty ledger — refusing to cache');
   return { scannedAt: Date.now(), senders, txCount };
 }
 
