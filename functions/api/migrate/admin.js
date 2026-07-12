@@ -5,9 +5,34 @@
 //   &savekey=<key>       → one-time bootstrap of the admin key (only while none is set;
 //                          same pattern as sourcetest.js — env.MIGRATION_ADMIN_KEY overrides KV)
 import { json, preflight } from '../_utils.js';
-import { KV, getScan, contributionOf, toUi, allSubmissions, getAdminKey, isAdmin } from './_lib.js';
+import { KV, SOL_ADDR_RE, getScan, contributionOf, toUi, allSubmissions, getAdminKey, isAdmin } from './_lib.js';
 
 export const onRequestOptions = () => preflight();
+
+// POST /api/migrate/admin?key=<ADMIN_KEY> — import a ledger scanned elsewhere.
+// Body: { senders: { <solWallet>: { raw: "<digits>", txs: <n> } }, txCount }
+// Used to seed the KV scan cache when RPC is throttled from CF egress; live
+// rescans replace it whenever they succeed.
+export async function onRequestPost({ request, env }) {
+  if (!(await isAdmin(env, request))) return json({ error: 'Bad admin key.' }, 403);
+  let body;
+  try { body = await request.json(); } catch { return json({ error: 'Bad JSON body.' }, 400); }
+  const senders = {};
+  for (const [wallet, e] of Object.entries((body && body.senders) || {})) {
+    if (!SOL_ADDR_RE.test(wallet) || !e || !/^\d+$/.test(String(e.raw))) {
+      return json({ error: `Invalid entry: ${wallet}` }, 400);
+    }
+    senders[wallet] = { raw: String(e.raw), txs: Number(e.txs) || 0 };
+  }
+  if (Object.keys(senders).length === 0) return json({ error: 'Empty ledger refused.' }, 400);
+  const scan = { scannedAt: Date.now(), senders, txCount: Number(body.txCount) || 0, imported: true };
+  await env.ZEN_KV.put(KV.scan, JSON.stringify(scan));
+  return json({
+    ok: true,
+    wallets: Object.keys(senders).length,
+    totalUi: Object.values(senders).reduce((s, e) => s + toUi(e.raw), 0),
+  });
+}
 
 export async function onRequestGet({ request, env }) {
   const url = new URL(request.url);

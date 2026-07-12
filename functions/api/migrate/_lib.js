@@ -240,7 +240,10 @@ async function rescan(env) {
   return { scannedAt: Date.now(), senders, txCount };
 }
 
-export async function getScan(env, { maxAgeMs = 5 * 60_000, force = false } = {}) {
+// 30-min cache: deposit history changes rarely now, and while RPC is throttled
+// every stale visitor lookup would otherwise burn seconds on doomed retries.
+// Admin ?rescan=1 forces a fresh pass anytime.
+export async function getScan(env, { maxAgeMs = 30 * 60_000, force = false } = {}) {
   const cached = await env.ZEN_KV.get(KV.scan, 'json');
   if (cached && !force && Date.now() - cached.scannedAt < maxAgeMs) return cached;
   try {
