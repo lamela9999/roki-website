@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ROKI Migration — Solana → EVM</title>
+<meta name="description" content="Migrate your $ROKI from Solana. Connect the wallet you deposited from, register your EVM address, receive the same amount on the new chain." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#F5EFE6; --paper:#FBF6EC; --ink:#14110F; --ink-soft:#2C2824; --muted:#6B6258;
+  --hairline:#E2D9CB; --coral:#E8534A; --coral-dark:#CF3F37; --yellow:#FFDF3D;
+  --green:#25E684; --green-ink:#0F7A45; --red:#FF5959; --red-ink:#B02A2A; --blue:#2898E5;
+  --radius:14px; --radius-sm:10px;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:'Inter Tight',-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;
+  --display:'Archivo Black','Anton',sans-serif;
+  --shadow:3px 3px 0 var(--ink);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--cream)}
+body{color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+.container{max-width:760px;margin:0 auto;padding:0 20px}
+.mono{font-family:var(--mono)}
+
+header.top{position:sticky;top:0;z-index:30;background:var(--cream);padding:16px 0 6px}
+.nav{display:flex;align-items:center;gap:14px;background:var(--paper);
+  border:1.5px solid var(--ink);border-radius:14px;padding:10px 14px;box-shadow:var(--shadow)}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-mark{width:42px;height:42px;flex:none;background:var(--coral);border:1.5px solid var(--ink);
+  border-radius:9px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.brand-mark img{width:100%;height:100%;object-fit:cover}
+.brand-name{font-family:var(--display);font-size:20px;letter-spacing:-.02em;line-height:1}
+.brand-name .rad{color:var(--coral)}
+.brand-sub{font-size:9px;letter-spacing:.18em;font-weight:700;color:var(--muted);margin-top:4px;text-transform:uppercase}
+.spacer{flex:1}
+.pill-live{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.pill-live .dot{width:8px;height:8px;border-radius:50%;background:var(--green);border:1.5px solid var(--ink)}
+
+.hero{padding:34px 0 8px;text-align:center}
+.hero h1{font-family:var(--display);font-size:clamp(30px,6vw,46px);letter-spacing:-.02em;margin:0 0 12px}
+.hero h1 .hl{background:var(--yellow);border:1.5px solid var(--ink);border-radius:10px;
+  padding:0 12px;box-shadow:var(--shadow);display:inline-block}
+.hero p{color:var(--ink-soft);max-width:560px;margin:0 auto;font-size:16px}
+
+.card{background:var(--paper);border:1.5px solid var(--ink);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:22px;margin:22px 0}
+.card h2{display:flex;align-items:center;gap:12px;font-family:var(--display);font-size:15px;
+  letter-spacing:.04em;text-transform:uppercase;margin:0 0 14px}
+.step-num{background:var(--ink);color:var(--paper);width:28px;height:28px;flex:0 0 28px;border-radius:8px;
+  display:inline-flex;align-items:center;justify-content:center;font-size:14px}
+.card.done .step-num{background:var(--green);color:var(--ink);border:1.5px solid var(--ink)}
+
+button{font-family:var(--sans);font-weight:800;font-size:14px;text-transform:uppercase;letter-spacing:.06em;
+  background:var(--coral);color:#fff;border:1.5px solid var(--ink);border-radius:var(--radius-sm);
+  box-shadow:var(--shadow);padding:13px 20px;cursor:pointer;width:100%;
+  transition:transform .05s,box-shadow .05s}
+button:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--ink)}
+button:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+button:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:var(--shadow)}
+button.secondary{background:var(--paper);color:var(--ink)}
+button.yellow{background:var(--yellow);color:var(--ink)}
+.wallet-btns{display:flex;flex-direction:column;gap:10px}
+
+input[type=text]{font-family:var(--mono);font-size:14px;width:100%;padding:13px;
+  border:1.5px solid var(--ink);border-radius:var(--radius-sm);background:#fff;color:var(--ink)}
+input[type=text]:focus{outline:none;background:#FFFBE8}
+
+.addr{font-family:var(--mono);font-size:12.5px;background:var(--cream);border:1.5px dashed var(--ink);
+  border-radius:var(--radius-sm);padding:9px 12px;word-break:break-all;margin-top:10px}
+.amount-box{text-align:center;padding:18px;margin-top:14px;border:1.5px solid var(--ink);
+  border-radius:var(--radius-sm);background:var(--yellow);box-shadow:var(--shadow)}
+.amount-box .lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--ink-soft)}
+.amount-box .big{font-family:var(--display);font-size:32px;margin-top:4px}
+.msg{margin-top:14px;padding:11px 14px;border:1.5px solid var(--ink);border-radius:var(--radius-sm);
+  font-size:14px;font-weight:600;display:none}
+.msg.err{background:var(--red);color:#fff;display:block}
+.msg.ok{background:var(--green);color:var(--ink);display:block}
+.msg.info{background:var(--cream);display:block}
+.hint{font-size:13px;color:var(--muted);margin-top:12px;line-height:1.5}
+.hint b{color:var(--ink-soft)}
+.success-banner{display:none;background:var(--green);border:1.5px solid var(--ink);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:20px;text-align:center;font-weight:800;font-size:17px;margin:22px 0}
+footer{padding:26px 0 48px;text-align:center;color:var(--muted);font-size:12px}
+footer .mono{word-break:break-all}
+.hidden{display:none!important}
+@media(max-width:560px){ .pill-live{display:none} }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="container">
+    <div class="nav">
+      <a class="brand" href="/Roki.html" title="Back to roki.buzz">
+        <span class="brand-mark"><img src="assets/logo-head.png" alt="Roki"/></span>
+        <span>
+          <span class="brand-name">ROKI<span class="rad">MIGRATION</span></span>
+          <div class="brand-sub">Solana → EVM</div>
+        </span>
+      </a>
+      <div class="spacer"></div>
+      <div class="pill-live"><span class="dot"></span> free — sign only, no gas</div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="hero">
+    <h1>$ROKI IS <span class="hl">MOVING</span></h1>
+    <p>We're migrating from Solana to an EVM chain. Connect the Solana wallet you sent your $ROKI from, register your EVM wallet, and you'll receive the <b>same amount</b> on the new chain.</p>
+  </div>
+
+  <div class="success-banner" id="successBanner"></div>
+
+  <div class="card" id="step1">
+    <h2><span class="step-num">1</span> Connect your Solana wallet</h2>
+    <div class="wallet-btns" id="solWalletBtns"></div>
+    <div id="solConnected" class="hidden">
+      <div class="addr" id="solAddr"></div>
+      <div class="amount-box">
+        <div class="lbl">Deposits verified on-chain from this wallet</div>
+        <div class="big" id="amountVal">…</div>
+      </div>
+      <p class="hint">⚠ Only deposits sent from a <b>self-custody wallet</b> (Phantom, Solflare, …) can be verified. If you sent directly from an exchange, contact the team with your transaction signature.</p>
+    </div>
+    <div class="msg" id="msg1"></div>
+  </div>
+
+  <div class="card" id="step2">
+    <h2><span class="step-num">2</span> Your EVM wallet address</h2>
+    <input type="text" id="evmInput" placeholder="0x…" autocomplete="off" spellcheck="false">
+    <div style="margin-top:10px">
+      <button class="secondary" id="mmBtn">Fill from MetaMask</button>
+    </div>
+    <p class="hint">This address will receive your $ROKI on the new chain. <b>Triple-check it</b> — tokens sent to a wrong address are lost forever. Use a wallet where <b>you control the keys</b>, not an exchange deposit address.</p>
+    <div class="msg" id="msg2"></div>
+  </div>
+
+  <div class="card" id="step3">
+    <h2><span class="step-num">3</span> Sign &amp; register</h2>
+    <p class="hint" style="margin:0 0 14px">You'll sign a short message with your Solana wallet to prove you own it. Signing is <b>free</b> — no transaction, no gas, nothing leaves your wallet.</p>
+    <button id="submitBtn" class="yellow" disabled>Sign &amp; Register</button>
+    <div class="msg" id="msg3"></div>
+  </div>
+
+  <footer>
+    <div>Migration deposit address:</div>
+    <div class="mono" id="depositInfo"></div>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var API = '/api/migrate';
+  var state = { config: null, provider: null, solAddress: null, amountUi: 0 };
+
+  var $ = function (id) { return document.getElementById(id); };
+  function showMsg(id, text, cls) { var el = $(id); el.className = 'msg ' + cls; el.textContent = text; }
+  function clearMsg(id) { $(id).className = 'msg'; }
+  function short(a) { return a.slice(0, 6) + '…' + a.slice(-6); }
+  function fmt(n) { return Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 4 }); }
+
+  function detectWallets() {
+    var list = [];
+    if (window.phantom && window.phantom.solana && window.phantom.solana.isPhantom) list.push({ name: 'Phantom', provider: window.phantom.solana });
+    if (window.solflare && window.solflare.isSolflare) list.push({ name: 'Solflare', provider: window.solflare });
+    if (window.backpack && window.backpack.solana) list.push({ name: 'Backpack', provider: window.backpack.solana });
+    if (list.length === 0 && window.solana) list.push({ name: 'Solana Wallet', provider: window.solana });
+    return list;
+  }
+
+  function renderWalletButtons() {
+    var wallets = detectWallets();
+    var box = $('solWalletBtns');
+    box.innerHTML = '';
+    if (wallets.length === 0) {
+      showMsg('msg1', 'No Solana wallet found in this browser. Install Phantom or Solflare, then reload. On mobile: open this page inside your wallet app’s browser.', 'info');
+      return;
+    }
+    clearMsg('msg1');
+    wallets.forEach(function (w) {
+      var b = document.createElement('button');
+      b.textContent = 'Connect ' + w.name;
+      b.onclick = function () { connectSol(w.provider); };
+      box.appendChild(b);
+    });
+  }
+
+  async function connectSol(provider) {
+    clearMsg('msg1');
+    try {
+      var resp = await provider.connect();
+      var pk = (resp && resp.publicKey) || provider.publicKey;
+      state.provider = provider;
+      state.solAddress = pk.toString();
+      $('solWalletBtns').classList.add('hidden');
+      $('solConnected').classList.remove('hidden');
+      $('solAddr').textContent = state.solAddress;
+      $('step1').classList.add('done');
+      await loadStatus();
+    } catch (e) {
+      showMsg('msg1', 'Connection cancelled or failed: ' + (e.message || e), 'err');
+    }
+  }
+
+  async function loadStatus() {
+    $('amountVal').textContent = '…';
+    try {
+      var r = await fetch(API + '/status?wallet=' + encodeURIComponent(state.solAddress));
+      var data = await r.json();
+      if (!r.ok) throw new Error(data.error || 'lookup failed');
+      state.amountUi = data.amountUi || 0;
+      $('amountVal').textContent = fmt(state.amountUi) + ' ROKI';
+      if (state.amountUi > 0) {
+        $('submitBtn').disabled = false;
+      } else {
+        showMsg('msg1', 'No deposits found from this wallet. If you sent recently, wait a few minutes and reconnect.', 'info');
+      }
+      if (data.submission) {
+        $('evmInput').value = data.submission.evmAddress;
+        showMsg('msg3', 'Already registered with ' + short(data.submission.evmAddress) + '. You can sign again to update it.', 'info');
+      }
+    } catch (e) {
+      $('amountVal').textContent = '—';
+      showMsg('msg1', 'Could not check deposits: ' + e.message, 'err');
+    }
+  }
+
+  $('mmBtn').onclick = async function () {
+    clearMsg('msg2');
+    if (!window.ethereum) {
+      showMsg('msg2', 'No EVM wallet (MetaMask etc.) found in this browser — paste your address manually.', 'info');
+      return;
+    }
+    try {
+      var accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      if (accounts && accounts[0]) { $('evmInput').value = accounts[0]; $('step2').classList.add('done'); }
+    } catch (e) {
+      showMsg('msg2', 'MetaMask connection cancelled.', 'info');
+    }
+  };
+
+  $('submitBtn').onclick = async function () {
+    clearMsg('msg3');
+    var evm = $('evmInput').value.trim();
+    if (!state.solAddress || !state.provider) { showMsg('msg3', 'Connect your Solana wallet first (step 1).', 'err'); return; }
+    if (!/^0x[0-9a-fA-F]{40}$/.test(evm)) { showMsg('msg2', 'That does not look like a valid EVM address (0x + 40 hex characters).', 'err'); return; }
+    var btn = $('submitBtn');
+    btn.disabled = true; btn.textContent = 'Signing…';
+    try {
+      var nr = await fetch(API + '/nonce');
+      var nonce = (await nr.json()).nonce;
+      var message = 'ROKI migration: link EVM wallet ' + evm + ' to Solana wallet ' + state.solAddress + '\nNonce: ' + nonce;
+      var signed = await state.provider.signMessage(new TextEncoder().encode(message), 'utf8');
+      var sigBytes = signed.signature || signed;
+      var sigB64 = btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(sigBytes))));
+
+      btn.textContent = 'Submitting…';
+      var r = await fetch(API + '/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ solAddress: state.solAddress, evmAddress: evm, nonce: nonce, signature: sigB64 })
+      });
+      var data = await r.json();
+      if (!r.ok) throw new Error(data.error || 'Submission failed');
+      $('step2').classList.add('done');
+      $('step3').classList.add('done');
+      var banner = $('successBanner');
+      banner.style.display = 'block';
+      banner.textContent = '✓ Registered! ' + fmt(data.amountUi) + ' ROKI will be sent to ' + short(data.submission.evmAddress);
+      showMsg('msg3', 'You’re all set. You can sign again anytime to change your EVM address.', 'ok');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (e) {
+      showMsg('msg3', e.message || String(e), 'err');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Sign & Register';
+    }
+  };
+
+  (async function init() {
+    try {
+      var r = await fetch(API + '/config');
+      state.config = await r.json();
+      $('depositInfo').textContent = state.config.depositAddress;
+    } catch (e) { /* page still renders */ }
+    renderWalletButtons();
+    var poll = setInterval(function () {
+      if (detectWallets().length > 0) {
+        if (!state.solAddress) renderWalletButtons();
+        clearInterval(poll);
+      }
+    }, 1000);
+  })();
+})();
+</script>
+</body>
+</html>
