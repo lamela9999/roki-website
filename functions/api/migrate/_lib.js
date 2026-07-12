@@ -13,6 +13,11 @@ import { solRpc } from '../_utils.js';
 
 export const ROKI_MINT = 'J96hj2LiXw6UFPm7cpGQV99G5SJi4mpP7PQRZFC6brrr';
 export const DEPOSIT_ADDRESS = '97EasS5jL7SNhmZeFFWEcbAAyFWABooNVFGSy4wRzji3';
+// The deposit wallet's ROKI (Token-2022) associated token account. Fixed for a
+// given (owner, mint) pair, so scans don't need a getTokenAccountsByOwner
+// discovery call (which 429s constantly from CF egress). If the deposit wallet
+// ever changes, re-derive with getTokenAccountsByOwner(DEPOSIT_ADDRESS, {mint}).
+export const DEPOSIT_TOKEN_ACCOUNTS = ['FaaKtoLaGsQ3X3TfrBRLueyn38sErjRZvhc6THcP99EJ'];
 export const DECIMALS = 9;
 export const SYMBOL = 'ROKI';
 
@@ -178,11 +183,7 @@ function creditTransfers(tx, depositTokenAccount, senders) {
 }
 
 async function rescan(env) {
-  // deposit wallet's token account(s) for the mint
-  const accountsRes = await solRpc('getTokenAccountsByOwner', [DEPOSIT_ADDRESS, { mint: ROKI_MINT }, { encoding: 'jsonParsed' }], env);
-  const tokenAccounts = ((accountsRes && accountsRes.value) || []).map((a) => a.pubkey);
-  if (tokenAccounts.length === 0) throw new Error('deposit token account not found');
-
+  const tokenAccounts = DEPOSIT_TOKEN_ACCOUNTS;
   const senders = {};
   let txCount = 0;
   for (const acc of tokenAccounts) {
