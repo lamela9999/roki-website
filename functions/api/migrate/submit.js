@@ -62,7 +62,12 @@ export async function onRequestPost({ request, env }) {
     proof: { message: buildMessage(solAddress, evm, nonce), signature: String(signature) },
     history: [...((prev && prev.history) || []), { at: now, evmAddress: evm.toLowerCase() }].slice(-20),
   };
-  await env.ZEN_KV.put(KV.sub(solAddress), JSON.stringify(record));
+  try {
+    await env.ZEN_KV.put(KV.sub(solAddress), JSON.stringify(record));
+  } catch (e) {
+    // daily KV write quota can be exhausted by other site workloads
+    return json({ error: 'Registrations are temporarily paused (storage quota). Please come back in a few hours and sign again — your deposit is safe.' }, 503);
+  }
 
   return json({
     ok: true,
