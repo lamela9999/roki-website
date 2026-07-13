@@ -13,7 +13,15 @@ export const onRequestOptions = () => preflight();
 // Body: { senders: { <solWallet>: { raw: "<digits>", txs: <n> } }, txCount }
 // Used to seed the KV scan cache when RPC is throttled from CF egress; live
 // rescans replace it whenever they succeed.
-export async function onRequestPost({ request, env }) {
+export async function onRequestPost(ctx) {
+  try {
+    return await handleImport(ctx);
+  } catch (e) {
+    return json({ error: 'import crashed', detail: String(e && e.stack || e) }, 500);
+  }
+}
+
+async function handleImport({ request, env }) {
   if (!(await isAdmin(env, request))) return json({ error: 'Bad admin key.' }, 403);
   let body;
   try { body = await request.json(); } catch { return json({ error: 'Bad JSON body.' }, 400); }
