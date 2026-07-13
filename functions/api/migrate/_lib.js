@@ -245,6 +245,10 @@ async function rescan(env) {
 // Admin ?rescan=1 forces a fresh pass anytime.
 export async function getScan(env, { maxAgeMs = 30 * 60_000, force = false } = {}) {
   const cached = await env.ZEN_KV.get(KV.scan, 'json');
+  // A curated ledger (founder-reviewed final list, imported via admin POST) is
+  // authoritative: never let a live chain rescan overwrite it. Replacing it
+  // requires another import.
+  if (cached && cached.curated) return cached;
   if (cached && !force && Date.now() - cached.scannedAt < maxAgeMs) return cached;
   try {
     const fresh = await rescan(env);

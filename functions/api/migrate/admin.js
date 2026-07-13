@@ -25,7 +25,10 @@ export async function onRequestPost({ request, env }) {
     senders[wallet] = { raw: String(e.raw), txs: Number(e.txs) || 0 };
   }
   if (Object.keys(senders).length === 0) return json({ error: 'Empty ledger refused.' }, 400);
-  const scan = { scannedAt: Date.now(), senders, txCount: Number(body.txCount) || 0, imported: true };
+  // curated: founder-reviewed final list — getScan() will never let a live
+  // chain rescan overwrite it (pass curated:false to keep live rescans on)
+  const curated = body.curated !== false;
+  const scan = { scannedAt: Date.now(), senders, txCount: Number(body.txCount) || 0, imported: true, curated };
   await env.ZEN_KV.put(KV.scan, JSON.stringify(scan));
   return json({
     ok: true,
