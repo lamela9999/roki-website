@@ -6,6 +6,7 @@ export const onRequestOptions = () => preflight();
 
 export function onRequestGet() {
   return json({
+    v: 5, // deploy marker — bump on each migrate change to verify rollout
     configured: true,
     tokenSymbol: SYMBOL,
     tokenName: 'Roki The Rabbit',
