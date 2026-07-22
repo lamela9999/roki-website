@@ -7,7 +7,7 @@ const PALETTE = {
   pink: '#FF5B94', orange: '#FFA73F', cream: '#F5EFE6'
 };
 
-const CA = 'J96hj2LiXw6UFPm7cpGQV99G5SJi4mpP7PQRZFC6brrr';
+const CA = '0x326d11212661b9b6d0e68e188061faa9fcb1d1ff';
 
 // Crew gallery — each card uses an NFT image with its own bg color
 const CREW = [
